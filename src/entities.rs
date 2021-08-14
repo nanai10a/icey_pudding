@@ -5,6 +5,8 @@ pub struct User {
     pub id: UserId,
     pub admin: bool,
     pub sub_admin: bool,
+    pub posted: Vec<Uuid>,
+    pub bookmark: Vec<Uuid>,
 }
 
 pub struct Content {
