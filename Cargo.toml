@@ -7,6 +7,6 @@ edition = "2018"
 tokio = { version = "1", features = ["full"] }
 serenity = { version = "*", features = ["unstable_discord_api"] }
 anyhow = "*"
-uuid = "*"
+uuid = { version = "*", features = ["v4"] }
 chrono = "*"
 regex = "*"
