@@ -9,3 +9,4 @@ serenity = { version = "*", features = ["unstable_discord_api"] }
 anyhow = "*"
 uuid = "*"
 chrono = "*"
+regex = "*"
