@@ -53,7 +53,7 @@ impl Conductor {
                 let mut admin_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "admin".to_string() {
+                    .filter_map(|v| match v.name == "admin" {
                         false => None,
                         true => match v.value {
                             None => Some(None),
@@ -72,7 +72,7 @@ impl Conductor {
                 let mut sub_admin_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "sub_admin".to_string() {
+                    .filter_map(|v| match v.name == "sub_admin" {
                         false => None,
                         true => match v.value {
                             None => Some(None),
@@ -94,7 +94,7 @@ impl Conductor {
                 let mut id_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "id".to_string() {
+                    .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
                             Some(ref val) => match val {
@@ -117,7 +117,7 @@ impl Conductor {
                 let mut content_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "content".to_string() {
+                    .filter_map(|v| match v.name == "content" {
                         false => None,
                         true => match v.value {
                             Some(ref val) => match val {
@@ -140,7 +140,7 @@ impl Conductor {
                 let mut id_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "id".to_string() {
+                    .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
                             Some(ref val) => match val {
@@ -162,7 +162,7 @@ impl Conductor {
                 let mut content_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "content".to_string() {
+                    .filter_map(|v| match v.name == "content" {
                         false => None,
                         true => match v.value {
                             Some(ref val) => match val {
@@ -181,7 +181,7 @@ impl Conductor {
                 let mut id_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "id".to_string() {
+                    .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
                             Some(ref val) => match val {
@@ -203,7 +203,7 @@ impl Conductor {
                 let mut id_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "id".to_string() {
+                    .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
                             Some(ref val) => match val {
@@ -225,7 +225,7 @@ impl Conductor {
                 let mut id_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "id".to_string() {
+                    .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
                             Some(ref val) => match val {
@@ -247,7 +247,7 @@ impl Conductor {
                 let mut id_opt = data
                     .options
                     .iter()
-                    .filter_map(|v| match v.name == "id".to_string() {
+                    .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
                             Some(ref val) => match val {
