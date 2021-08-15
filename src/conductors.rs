@@ -56,11 +56,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "admin" {
                         false => None,
                         true => match v.value {
-                            None => Some(None),
-                            Some(ref val) => match val {
-                                Value::Bool(b) => Some(Some(b)),
-                                _ => Some(None),
-                            },
+                            Some(Value::Bool(ref b)) => Some(Some(b)),
+                            _ => Some(None),
                         },
                     })
                     .collect::<Vec<_>>();
@@ -75,11 +72,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "sub_admin" {
                         false => None,
                         true => match v.value {
-                            None => Some(None),
-                            Some(ref val) => match val {
-                                Value::Bool(b) => Some(Some(b)),
-                                _ => Some(None),
-                            },
+                            Some(Value::Bool(ref b)) => Some(Some(b)),
+                            _ => Some(None),
                         },
                     })
                     .collect::<Vec<_>>();
@@ -97,11 +91,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
-                            Some(ref val) => match val {
-                                Value::String(s) => Some(s),
-                                _ => None,
-                            },
-                            None => None,
+                            Some(Value::String(ref s)) => Some(s),
+                            _ => None,
                         },
                     })
                     .collect::<Vec<_>>();
@@ -120,11 +111,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "content" {
                         false => None,
                         true => match v.value {
-                            Some(ref val) => match val {
-                                Value::String(s) => Some(s),
-                                _ => None,
-                            },
-                            None => None,
+                            Some(Value::String(ref s)) => Some(s),
+                            _ => None,
                         },
                     })
                     .collect::<Vec<_>>();
@@ -143,11 +131,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
-                            Some(ref val) => match val {
-                                Value::String(s) => Some(s),
-                                _ => None,
-                            },
-                            None => None,
+                            Some(Value::String(ref s)) => Some(s),
+                            _ => None,
                         },
                     })
                     .collect::<Vec<_>>();
@@ -165,11 +150,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "content" {
                         false => None,
                         true => match v.value {
-                            Some(ref val) => match val {
-                                Value::String(s) => Some(s),
-                                _ => None,
-                            },
-                            None => None,
+                            Some(Value::String(ref s)) => Some(s),
+                            _ => None,
                         },
                     })
                     .collect::<Vec<_>>();
@@ -184,11 +166,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
-                            Some(ref val) => match val {
-                                Value::String(s) => Some(s),
-                                _ => None,
-                            },
-                            None => None,
+                            Some(Value::String(ref s)) => Some(s),
+                            _ => None,
                         },
                     })
                     .collect::<Vec<_>>();
@@ -206,11 +185,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
-                            Some(ref val) => match val {
-                                Value::String(s) => Some(s),
-                                _ => None,
-                            },
-                            None => None,
+                            Some(Value::String(ref s)) => Some(s),
+                            _ => None,
                         },
                     })
                     .collect::<Vec<_>>();
@@ -228,11 +204,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
-                            Some(ref val) => match val {
-                                Value::String(s) => Some(s),
-                                _ => None,
-                            },
-                            None => None,
+                            Some(Value::String(ref s)) => Some(s),
+                            _ => None,
                         },
                     })
                     .collect::<Vec<_>>();
@@ -250,11 +223,8 @@ impl Conductor {
                     .filter_map(|v| match v.name == "id" {
                         false => None,
                         true => match v.value {
-                            Some(ref val) => match val {
-                                Value::String(s) => Some(s),
-                                _ => None,
-                            },
-                            None => None,
+                            Some(Value::String(ref s)) => Some(s),
+                            _ => None,
                         },
                     })
                     .collect::<Vec<_>>();
