@@ -436,6 +436,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "regex",
+ "serde_json",
  "serenity",
  "tokio",
  "uuid",
