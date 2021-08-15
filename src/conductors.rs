@@ -2,9 +2,14 @@ use std::fmt::Display;
 
 use anyhow::bail;
 use serde_json::Value;
+use serenity::builder::CreateApplicationCommands;
 use serenity::client::{Context, EventHandler};
-use serenity::model::interactions::{Interaction, InteractionData};
-use serenity::utils::Colour;
+use serenity::http::Http;
+use serenity::model::id::GuildId;
+use serenity::model::interactions::{
+    ApplicationCommand, ApplicationCommandOptionType, Interaction, InteractionData,
+};
+use serenity::utils::{hashmap_to_json_map, Colour};
 use uuid::Uuid;
 
 use crate::entities::{Content, User};
@@ -165,8 +170,8 @@ impl Conductor {
                 Command::ContentRead(Uuid::parse_str(id.as_str())?)
             },
             "edit" => {
-                let content = extract_data!(Value::String => ref content in data)?;
                 let id = extract_data!(Value::String => ref id in data)?;
+                let content = extract_data!(Value::String => ref content in data)?;
 
                 Command::ContentUpdate(Uuid::parse_str(id.as_str())?, content.clone())
             },
@@ -358,4 +363,126 @@ impl EventHandler for Conductor {
             Err(e) => eprintln!("{}", e),
         };
     }
+}
+
+pub async fn application_command_create(
+    http: impl AsRef<Http>,
+    guild_id: Option<GuildId>,
+) -> anyhow::Result<Vec<ApplicationCommand>> {
+    let map = application_commands_create_inner().await;
+
+    let ac = match guild_id {
+        Some(GuildId(id)) =>
+            http.as_ref()
+                .create_guild_application_commands(id, &map)
+                .await?,
+        None =>
+            http.as_ref()
+                .create_global_application_commands(&map)
+                .await?,
+    };
+
+    Ok(ac)
+}
+
+async fn application_commands_create_inner() -> Value {
+    let mut cacs = CreateApplicationCommands::default();
+
+    cacs.create_application_command(|cac| cac.name("register").description("register user."))
+        .create_application_command(|cac| cac.name("info").description("get your user data."))
+        .create_application_command(|cac| {
+            cac.name("change")
+                .description("change your user data.")
+                .create_option(|caco| {
+                    caco.name("admin")
+                        .description("set bot's admin.")
+                        .required(false)
+                        .kind(ApplicationCommandOptionType::Boolean)
+                })
+                .create_option(|caco| {
+                    caco.name("sub_admin")
+                        .description("set bot's sub_admin.")
+                        .required(false)
+                        .kind(ApplicationCommandOptionType::Boolean)
+                })
+        })
+        .create_application_command(|cac| {
+            cac.name("bookmark")
+                .description("bookmark content.")
+                .create_option(|caco| {
+                    caco.name("id")
+                        .description("content's id.")
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+        })
+        .create_application_command(|cac| cac.name("delete_me").description("delete user."))
+        .create_application_command(|cac| {
+            cac.name("post")
+                .description("post content.")
+                .create_option(|caco| {
+                    caco.name("content")
+                        .description("content's content.")
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+        })
+        .create_application_command(|cac| {
+            cac.name("get")
+                .description("get content.")
+                .create_option(|caco| {
+                    caco.name("id")
+                        .description("content's id.")
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+        })
+        .create_application_command(|cac| {
+            cac.name("edit")
+                .description("edit content.")
+                .create_option(|caco| {
+                    caco.name("id")
+                        .description("content's id.")
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+                .create_option(|caco| {
+                    caco.name("content")
+                        .description("replace content.")
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+        })
+        .create_application_command(|cac| {
+            cac.name("like")
+                .description("like content.")
+                .create_option(|caco| {
+                    caco.name("id")
+                        .description("content's id.")
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+        })
+        .create_application_command(|cac| {
+            cac.name("pin")
+                .description("pin content.")
+                .create_option(|caco| {
+                    caco.name("id")
+                        .description("content's id.")
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+        })
+        .create_application_command(|cac| {
+            cac.name("remove")
+                .description("remove content.")
+                .create_option(|caco| {
+                    caco.name("id")
+                        .description("content's id.")
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+        });
+
+    Value::Array(cacs.0)
 }
