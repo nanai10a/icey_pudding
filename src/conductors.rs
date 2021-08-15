@@ -12,7 +12,7 @@ pub struct Conductor {
     pub handler: Handler,
 }
 
-enum Command {
+pub enum Command {
     UserRegister,
     UserRead,
     UserUpdate(Option<bool>, Option<bool>),
@@ -26,7 +26,7 @@ enum Command {
     ContentDelete(Uuid),
 }
 
-struct Response {
+pub struct Response {
     title: String,
     rgb: (u8, u8, u8),
     description: String,
