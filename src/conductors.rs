@@ -33,6 +33,45 @@ pub struct Response {
     fields: Vec<(String, String)>,
 }
 
+macro_rules! extract_data {
+    (opt $t:path => ref $v:ident in $d:ident) => {{
+        let mut opt = $d
+            .options
+            .iter()
+            .filter_map(|v| match v.name == stringify!($v) {
+                false => None,
+                true => match v.value {
+                    Some($t(ref val)) => Some(Some(val)),
+                    _ => Some(None),
+                },
+            })
+            .collect::<Vec<_>>();
+
+        match opt.len() {
+            1 => Ok(opt.remove(0)),
+            _ => Err(anyhow::anyhow!("cannot get value: `{}`", stringify!($v))),
+        }
+    }};
+    ($t:path => ref $v:ident in $d:ident) => {{
+        let mut opt = $d
+            .options
+            .iter()
+            .filter_map(|v| match v.name == stringify!($v) {
+                false => None,
+                true => match v.value {
+                    Some($t(ref val)) => Some(val),
+                    _ => None,
+                },
+            })
+            .collect::<Vec<_>>();
+
+        match opt.len() {
+            1 => Ok(opt.remove(0)),
+            _ => Err(anyhow::anyhow!("cannot get value: `id`")),
+        }
+    }};
+}
+
 impl Conductor {
     pub async fn parse(&self, interaction: &Interaction) -> anyhow::Result<Command> {
         let data = match match interaction.data {
@@ -50,188 +89,45 @@ impl Conductor {
             "register" => Command::UserRegister,
             "info" => Command::UserRead,
             "change" => {
-                let mut admin_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "admin" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::Bool(ref b)) => Some(Some(b)),
-                            _ => Some(None),
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if admin_opt.len() != 1 {
-                    bail!("cannot get value: `admin`");
-                }
-                let admin = admin_opt.remove(0);
-
-                let mut sub_admin_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "sub_admin" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::Bool(ref b)) => Some(Some(b)),
-                            _ => Some(None),
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if admin_opt.len() != 1 {
-                    bail!("cannot get value: `sub_admin`");
-                }
-                let sub_admin = sub_admin_opt.remove(0);
+                let admin = extract_data!(opt Value::Bool => ref admin in data)?;
+                let sub_admin = extract_data!(opt Value::Bool => ref sub_admin in data)?;
 
                 Command::UserUpdate(admin.copied(), sub_admin.copied())
             },
             "bookmark" => {
-                let mut id_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "id" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::String(ref s)) => Some(s),
-                            _ => None,
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if id_opt.len() != 1 {
-                    bail!("cannot get value: `id`")
-                }
-                let id = id_opt.remove(0);
+                let id = extract_data!(Value::String => ref id in data)?;
 
                 Command::Bookmark(Uuid::parse_str(id.as_str())?)
             },
             "delete_me" => Command::UserDelete,
             "post" => {
-                let mut content_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "content" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::String(ref s)) => Some(s),
-                            _ => None,
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if content_opt.len() != 1 {
-                    bail!("cannot get value: `content`")
-                }
-
-                let content = content_opt.remove(0);
+                let content = extract_data!(Value::String => ref id in data)?;
 
                 Command::ContentPost(content.clone())
             },
             "get" => {
-                let mut id_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "id" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::String(ref s)) => Some(s),
-                            _ => None,
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if id_opt.len() != 1 {
-                    bail!("cannot get value: `id`")
-                }
-                let id = id_opt.remove(0);
+                let id = extract_data!(Value::String => ref id in data)?;
 
                 Command::ContentRead(Uuid::parse_str(id.as_str())?)
             },
             "edit" => {
-                let mut content_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "content" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::String(ref s)) => Some(s),
-                            _ => None,
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if content_opt.len() != 1 {
-                    bail!("cannot get value: `content`")
-                }
-                let content = content_opt.remove(0);
-
-                let mut id_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "id" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::String(ref s)) => Some(s),
-                            _ => None,
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if id_opt.len() != 1 {
-                    bail!("cannot get value: `id`")
-                }
-                let id = id_opt.remove(0);
+                let content = extract_data!(Value::String => ref content in data)?;
+                let id = extract_data!(Value::String => ref id in data)?;
 
                 Command::ContentUpdate(Uuid::parse_str(id.as_str())?, content.clone())
             },
             "like" => {
-                let mut id_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "id" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::String(ref s)) => Some(s),
-                            _ => None,
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if id_opt.len() != 1 {
-                    bail!("cannot get value: `id`")
-                }
-                let id = id_opt.remove(0);
+                let id = extract_data!(Value::String => ref id in data)?;
 
                 Command::Like(Uuid::parse_str(id.as_str())?)
             },
             "pin" => {
-                let mut id_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "id" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::String(ref s)) => Some(s),
-                            _ => None,
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if id_opt.len() != 1 {
-                    bail!("cannot get value: `id`")
-                }
-                let id = id_opt.remove(0);
+                let id = extract_data!(Value::String => ref id in data)?;
 
                 Command::Pin(Uuid::parse_str(id.as_str())?)
             },
             "remove" => {
-                let mut id_opt = data
-                    .options
-                    .iter()
-                    .filter_map(|v| match v.name == "id" {
-                        false => None,
-                        true => match v.value {
-                            Some(Value::String(ref s)) => Some(s),
-                            _ => None,
-                        },
-                    })
-                    .collect::<Vec<_>>();
-                if id_opt.len() != 1 {
-                    bail!("cannot get value: `id`")
-                }
-                let id = id_opt.remove(0);
+                let id = extract_data!(Value::String => ref id in data)?;
 
                 Command::ContentDelete(Uuid::parse_str(id.as_str())?)
             },
