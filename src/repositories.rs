@@ -10,15 +10,7 @@ pub trait Repository {
 
     async fn save(&self, item: Self::Item) -> anyhow::Result<()>;
     async fn get_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>>;
-    async fn get_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item> {
-        let mut matches = self.get_matches(queries).await?;
-
-        if matches.len() != 1 {
-            bail!("cannot find match one. matched: {}.", matches.len());
-        }
-
-        Ok(matches.remove(0))
-    }
+    async fn get_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item>;
     async fn remove_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>>;
     async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item>;
 }
@@ -67,6 +59,16 @@ impl Repository for InMemoryRepository<User> {
         });
 
         Ok(vec.drain(..).cloned().collect())
+    }
+
+    async fn get_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item> {
+        let mut matches = self.get_matches(queries).await?;
+
+        if matches.len() != 1 {
+            bail!("cannot find match one. matched: {}.", matches.len());
+        }
+
+        Ok(matches.remove(0))
     }
 
     async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item> {
@@ -197,6 +199,16 @@ impl Repository for InMemoryRepository<Content> {
         }
 
         Ok(vec.drain(..).cloned().collect())
+    }
+
+    async fn get_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item> {
+        let mut matches = self.get_matches(queries).await?;
+
+        if matches.len() != 1 {
+            bail!("cannot find match one. matched: {}.", matches.len());
+        }
+
+        Ok(matches.remove(0))
     }
 
     async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item> {
