@@ -5,11 +5,12 @@ use serde_json::Value;
 use serenity::builder::CreateApplicationCommands;
 use serenity::client::{Context, EventHandler};
 use serenity::http::Http;
+use serenity::model::channel::Message;
 use serenity::model::id::GuildId;
 use serenity::model::interactions::{
     ApplicationCommand, ApplicationCommandOptionType, Interaction, InteractionData,
 };
-use serenity::utils::{hashmap_to_json_map, Colour};
+use serenity::utils::Colour;
 use uuid::Uuid;
 
 use crate::entities::{Content, User};
@@ -196,7 +197,7 @@ impl Conductor {
         Ok(com)
     }
 
-    pub async fn handle(&self, interaction: &Interaction) -> Response {
+    pub async fn handle_ia(&self, interaction: &Interaction) -> Response {
         let res: anyhow::Result<Response> = try {
             let user = match interaction.user {
                 Some(ref u) => Ok(u),
@@ -327,6 +328,8 @@ impl Conductor {
             },
         }
     }
+
+    pub async fn handle_msg(&self, msg: &Message) -> Response { unimplemented!() }
 }
 
 #[serenity::async_trait]
@@ -337,7 +340,7 @@ impl EventHandler for Conductor {
             rgb,
             description,
             mut fields,
-        } = self.handle(&interaction).await;
+        } = self.handle_ia(&interaction).await;
         let (r, g, b) = rgb;
 
         let res = interaction
@@ -363,6 +366,8 @@ impl EventHandler for Conductor {
             Err(e) => eprintln!("{}", e),
         };
     }
+
+    async fn message(&self, ctx: Context, msg: Message) { self.handle_msg(&msg).await; }
 }
 
 pub async fn application_command_create(
