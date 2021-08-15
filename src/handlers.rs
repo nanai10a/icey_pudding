@@ -79,7 +79,11 @@ impl Handler {
         Ok(())
     }
 
-    pub async fn create_content(&self, content: String) -> anyhow::Result<Content> {
+    pub async fn create_content_and_posted_update_user(
+        &self,
+        content: String,
+        user: UserId,
+    ) -> anyhow::Result<Content> {
         let new_content = Content {
             id: uuid::Uuid::new_v4(),
             content,
@@ -89,6 +93,15 @@ impl Handler {
         };
 
         self.content_repository.save(new_content.clone()).await?;
+
+        let mut current_user = self
+            .user_repository
+            .remove_match(vec![UserQuery::Id(user)])
+            .await?;
+
+        current_user.posted.push(new_content.id);
+
+        self.user_repository.save(current_user).await?;
 
         Ok(new_content)
     }
