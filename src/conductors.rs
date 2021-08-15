@@ -333,7 +333,7 @@ impl Conductor {
                         description: format!("from user (id): {}", user.id),
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
-                            ("content:".to_string(), format!("{}", content)),
+                            ("content:".to_string(), content),
                             ("liked:".to_string(), format!("{}", liked.len())),
                             ("pinned:".to_string(), format!("{}", pinned.len())),
                             ("bookmarked:".to_string(), format!("{}", bookmarked)),
@@ -368,7 +368,7 @@ impl Conductor {
                         description: format!("from user (id): {}", user.id),
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
-                            ("content:".to_string(), format!("{}", content)),
+                            ("content:".to_string(), content),
                             ("liked:".to_string(), format!("{}", liked.len())),
                             ("pinned:".to_string(), format!("{}", pinned.len())),
                             ("bookmarked:".to_string(), format!("{}", bookmarked)),
@@ -390,7 +390,7 @@ impl Conductor {
                         description: "".to_string(),
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
-                            ("content:".to_string(), format!("{}", content)),
+                            ("content:".to_string(), content),
                             ("liked:".to_string(), format!("{}", liked.len())),
                             ("pinned:".to_string(), format!("{}", pinned.len())),
                             ("bookmarked:".to_string(), format!("{}", bookmarked)),
@@ -412,7 +412,7 @@ impl Conductor {
                         description: format!("from user (id): {}", user.id),
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
-                            ("content:".to_string(), format!("{}", content)),
+                            ("content:".to_string(), content),
                             ("liked:".to_string(), format!("{}", liked.len())),
                             ("pinned:".to_string(), format!("{}", pinned.len())),
                             ("bookmarked:".to_string(), format!("{}", bookmarked)),
