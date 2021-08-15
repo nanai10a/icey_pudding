@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use anyhow::bail;
 use serde_json::Value;
 use serenity::client::{Context, EventHandler};
@@ -70,6 +72,56 @@ macro_rules! extract_data {
             _ => Err(anyhow::anyhow!("cannot get value: `id`")),
         }
     }};
+}
+
+fn resp_from_user(
+    title: impl Display,
+    rgb: (u8, u8, u8),
+    User {
+        id,
+        admin,
+        sub_admin,
+        posted,
+        bookmark,
+    }: User,
+) -> Response {
+    Response {
+        title: format!("{}", title),
+        rgb,
+        description: format!("id: {}", id),
+        fields: vec![
+            ("is_admin?".to_string(), format!("{}", admin)),
+            ("is_sub_admin?".to_string(), format!("{}", sub_admin)),
+            ("posted:".to_string(), format!("{}", posted.len())),
+            ("bookmarked:".to_string(), format!("{}", bookmark.len())),
+        ],
+    }
+}
+
+fn resp_from_content(
+    title: impl Display,
+    description: impl Display,
+    rgb: (u8, u8, u8),
+    Content {
+        id,
+        content,
+        liked,
+        bookmarked,
+        pinned,
+    }: Content,
+) -> Response {
+    Response {
+        title: format!("{}", title),
+        rgb,
+        description: format!("{}", description),
+        fields: vec![
+            ("id:".to_string(), format!("{}", id)),
+            ("content:".to_string(), content),
+            ("liked:".to_string(), format!("{}", liked.len())),
+            ("pinned:".to_string(), format!("{}", pinned.len())),
+            ("bookmarked:".to_string(), format!("{}", bookmarked)),
+        ],
+    }
 }
 
 impl Conductor {
@@ -147,74 +199,24 @@ impl Conductor {
             }?;
 
             let resp: Response = match self.parse(interaction).await? {
-                Command::UserRegister => {
-                    let User {
-                        id,
-                        admin,
-                        sub_admin,
-                        posted,
-                        bookmark,
-                    } = self.handler.create_user(user.id).await?;
-
-                    Response {
-                        title: format!("name: [unimplemented]"), // FIXME
-                        rgb: (0, 0, 0),                          // FIXME: 色決め
-                        description: format!("id: {}", id),
-                        fields: vec![
-                            ("is_admin?".to_string(), format!("{}", admin)),
-                            ("is_sub_admin?".to_string(), format!("{}", sub_admin)),
-                            ("posted:".to_string(), format!("{}", posted.len())),
-                            ("bookmarked:".to_string(), format!("{}", bookmark.len())),
-                        ],
-                    }
-                },
-                Command::UserRead => {
-                    let User {
-                        id,
-                        admin,
-                        sub_admin,
-                        posted,
-                        bookmark,
-                    } = self.handler.read_user(user.id).await?;
-
-                    Response {
-                        title: format!("name: [unimplemented]"), // FIXME
-                        rgb: (0, 0, 0),                          // FIXME: 色決め
-                        description: format!("id: {}", id),
-                        fields: vec![
-                            ("is_admin?".to_string(), format!("{}", admin)),
-                            ("is_sub_admin?".to_string(), format!("{}", sub_admin)),
-                            ("posted:".to_string(), format!("{}", posted.len())),
-                            ("bookmarked:".to_string(), format!("{}", bookmark.len())),
-                        ],
-                    }
-                },
-                Command::UserUpdate(new_admin, new_sub_admin) => {
-                    let User {
-                        id,
-                        admin,
-                        sub_admin,
-                        posted,
-                        bookmark,
-                    } = self
-                        .handler
+                Command::UserRegister => resp_from_user(
+                    format!("name: [unimplemented]"),
+                    (0, 0, 0),
+                    self.handler.create_user(user.id).await?,
+                ),
+                Command::UserRead => resp_from_user(
+                    format!("name: [unimplemented]"),
+                    (0, 0, 0),
+                    self.handler.read_user(user.id).await?,
+                ),
+                Command::UserUpdate(new_admin, new_sub_admin) => resp_from_user(
+                    format!("name: [unimplemented]"),
+                    (0, 0, 0),
+                    self.handler
                         .update_user(user.id, new_admin, new_sub_admin)
-                        .await?;
-
-                    Response {
-                        title: format!("name: [unimplemented]"), // FIXME
-                        rgb: (0, 0, 0),                          // FIXME: 色決め
-                        description: format!("id: {}", id),
-                        fields: vec![
-                            ("is_admin?".to_string(), format!("{}", admin)),
-                            ("is_sub_admin?".to_string(), format!("{}", sub_admin)),
-                            ("posted:".to_string(), format!("{}", posted.len())),
-                            ("bookmarked:".to_string(), format!("{}", bookmark.len())),
-                        ],
-                    }
-                },
+                        .await?,
+                ),
                 Command::Bookmark(id) => {
-                    let () = self.handler.bookmark_update_user(user.id, id).await?;
                     let Content {
                         id,
                         content,
@@ -222,6 +224,7 @@ impl Conductor {
                         bookmarked,
                         pinned,
                     } = self.handler.read_content(id).await?;
+                    let () = self.handler.bookmark_update_user(user.id, id).await?;
 
                     Response {
                         title: "bookmarked".to_string(),
@@ -246,77 +249,29 @@ impl Conductor {
                         fields: vec![],
                     }
                 },
-                Command::ContentPost(content) => {
-                    let Content {
-                        id,
-                        content,
-                        liked,
-                        bookmarked,
-                        pinned,
-                    } = self
-                        .handler
+                Command::ContentPost(content) => resp_from_content(
+                    "posted",
+                    format!("from user (id): {}", user.id),
+                    (0, 0, 0),
+                    self.handler
                         .create_content_and_posted_update_user(content, user.id)
-                        .await?;
+                        .await?,
+                ),
+                Command::ContentRead(id) => resp_from_content(
+                    "showing content",
+                    "",
+                    (0, 0, 0),
+                    self.handler.read_content(id).await?,
+                ),
+                Command::ContentUpdate(id, new_content) => resp_from_content(
+                    "updated",
+                    format!("from user (id): {}", user.id),
+                    (0, 0, 0),
+                    self.handler.update_content(id, new_content).await?,
+                ),
 
-                    Response {
-                        title: "posted".to_string(),
-                        rgb: (0, 0, 0), // TODO: 色決め
-                        description: format!("from user (id): {}", user.id),
-                        fields: vec![
-                            ("id:".to_string(), format!("{}", id)),
-                            ("content:".to_string(), content),
-                            ("liked:".to_string(), format!("{}", liked.len())),
-                            ("pinned:".to_string(), format!("{}", pinned.len())),
-                            ("bookmarked:".to_string(), format!("{}", bookmarked)),
-                        ],
-                    }
-                },
-                Command::ContentRead(id) => {
-                    let Content {
-                        id,
-                        content,
-                        liked,
-                        bookmarked,
-                        pinned,
-                    } = self.handler.read_content(id).await?;
-
-                    Response {
-                        title: "showing content".to_string(),
-                        rgb: (0, 0, 0), // TODO: 色決め
-                        description: "".to_string(),
-                        fields: vec![
-                            ("id:".to_string(), format!("{}", id)),
-                            ("content:".to_string(), content),
-                            ("liked:".to_string(), format!("{}", liked.len())),
-                            ("pinned:".to_string(), format!("{}", pinned.len())),
-                            ("bookmarked:".to_string(), format!("{}", bookmarked)),
-                        ],
-                    }
-                },
-                Command::ContentUpdate(id, new_content) => {
-                    let Content {
-                        id,
-                        content,
-                        liked,
-                        pinned,
-                        bookmarked,
-                    } = self.handler.update_content(id, new_content).await?;
-
-                    Response {
-                        title: "updated".to_string(),
-                        rgb: (0, 0, 0), // TODO: 色決め
-                        description: format!("from user (id): {}", user.id),
-                        fields: vec![
-                            ("id:".to_string(), format!("{}", id)),
-                            ("content:".to_string(), content),
-                            ("liked:".to_string(), format!("{}", liked.len())),
-                            ("pinned:".to_string(), format!("{}", pinned.len())),
-                            ("bookmarked:".to_string(), format!("{}", bookmarked)),
-                        ],
-                    }
-                },
                 Command::Like(id) => {
-                    let () = self.handler.like_update_content(id, user.id).await?;
+                    self.handler.like_update_content(id, user.id).await?;
 
                     Response {
                         title: "liked".to_string(),
@@ -326,7 +281,7 @@ impl Conductor {
                     }
                 },
                 Command::Pin(id) => {
-                    let () = self.handler.pin_update_content(id, user.id).await?;
+                    self.handler.pin_update_content(id, user.id).await?;
 
                     Response {
                         title: "pinned".to_string(),
@@ -336,7 +291,7 @@ impl Conductor {
                     }
                 },
                 Command::ContentDelete(id) => {
-                    let () = self.handler.delete_content(id).await?;
+                    self.handler.delete_content(id).await?;
 
                     Response {
                         title: "deleted".to_string(),
