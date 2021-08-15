@@ -82,7 +82,7 @@ impl Conductor {
                 }
                 let sub_admin = sub_admin_opt.remove(0);
 
-                Command::UserUpdate(admin.map(|v| *v), sub_admin.map(|v| *v))
+                Command::UserUpdate(admin.copied(), sub_admin.copied())
             },
             "bookmark" => {
                 let mut id_opt = data
