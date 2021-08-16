@@ -390,100 +390,202 @@ pub async fn application_command_create(
     Ok(ac)
 }
 
+mod command_strs {
+    consts::consts! {
+        register {
+            NAME: "register";
+            DESC: "register user.";
+        }
+
+        info {
+            NAME: "info";
+            DESC: "get your user data.";
+        }
+
+
+        change {
+            NAME: "change";
+            DESC: "change your user data.";
+            admin {
+                NAME: "admin";
+                DESC: "set bot's admin.";
+            }
+            sub_admin {
+                NAME: "sub_admin";
+                DESC: "set bot's sub_admin.";
+            }
+        }
+
+        bookmark {
+            NAME: "bookmark";
+            DESC: "bookmark content.";
+            id {
+                NAME: "id";
+                DESC: "content's id.";
+            }
+        }
+
+        delete_me {
+            NAME: "delete_me";
+            DESC: "delete user.";
+        }
+
+        post {
+            NAME: "post";
+            DESC: "post content.";
+            content {
+                NAME: "content";
+                DESC: "content's content.";
+            }
+        }
+
+        get {
+            NAME: "get";
+            DESC: "get content.";
+            id {
+                NAME: "id";
+                DESC: "content's id.";
+            }
+        }
+
+        edit {
+            NAME: "edit";
+            DESC: "edit content.";
+            id {
+                NAME: "id";
+                DESC: "content's id.";
+            }
+            content {
+                NAME: "content";
+                DESC: "replace content.";
+            }
+        }
+
+        like {
+            NAME: "like";
+            DESC: "like content.";
+            id {
+                NAME: "id";
+                DESC: "content's id.";
+            }
+        }
+
+        pin {
+            NAME: "pin";
+            DESC: "pin content.";
+            id {
+                NAME: "id";
+                DESC: "content's id.";
+            }
+        }
+
+        remove {
+            NAME: "remove";
+            DESC: "remove content.";
+            id {
+                NAME: "id";
+                DESC: "content's id.";
+            }
+        }
+    }
+}
+
 async fn application_commands_create_inner() -> Value {
     let mut cacs = CreateApplicationCommands::default();
 
-    cacs.create_application_command(|cac| cac.name("register").description("register user."))
-        .create_application_command(|cac| cac.name("info").description("get your user data."))
+    use command_strs::*;
+
+    cacs.create_application_command(|cac| cac.name(register::NAME).description(register::DESC))
+        .create_application_command(|cac| cac.name(info::NAME).description(info::DESC))
         .create_application_command(|cac| {
-            cac.name("change")
-                .description("change your user data.")
+            cac.name(change::NAME)
+                .description(change::DESC)
                 .create_option(|caco| {
-                    caco.name("admin")
-                        .description("set bot's admin.")
+                    caco.name(change::admin::NAME)
+                        .description(change::admin::DESC)
                         .required(false)
                         .kind(ApplicationCommandOptionType::Boolean)
                 })
                 .create_option(|caco| {
-                    caco.name("sub_admin")
-                        .description("set bot's sub_admin.")
+                    caco.name(change::sub_admin::NAME)
+                        .description(change::sub_admin::DESC)
                         .required(false)
                         .kind(ApplicationCommandOptionType::Boolean)
                 })
         })
         .create_application_command(|cac| {
-            cac.name("bookmark")
-                .description("bookmark content.")
+            cac.name(bookmark::NAME)
+                .description(bookmark::DESC)
                 .create_option(|caco| {
-                    caco.name("id")
-                        .description("content's id.")
+                    caco.name(bookmark::id::NAME)
+                        .description(bookmark::id::DESC)
                         .required(true)
                         .kind(ApplicationCommandOptionType::String)
                 })
         })
-        .create_application_command(|cac| cac.name("delete_me").description("delete user."))
+        .create_application_command(|cac| cac.name(delete_me::NAME).description(delete_me::DESC))
         .create_application_command(|cac| {
-            cac.name("post")
-                .description("post content.")
+            cac.name(post::NAME)
+                .description(post::DESC)
                 .create_option(|caco| {
-                    caco.name("content")
-                        .description("content's content.")
-                        .required(true)
-                        .kind(ApplicationCommandOptionType::String)
-                })
-        })
-        .create_application_command(|cac| {
-            cac.name("get")
-                .description("get content.")
-                .create_option(|caco| {
-                    caco.name("id")
-                        .description("content's id.")
+                    caco.name(post::content::NAME)
+                        .description(post::content::DESC)
                         .required(true)
                         .kind(ApplicationCommandOptionType::String)
                 })
         })
         .create_application_command(|cac| {
-            cac.name("edit")
-                .description("edit content.")
+            cac.name(get::NAME)
+                .description(get::DESC)
                 .create_option(|caco| {
-                    caco.name("id")
-                        .description("content's id.")
-                        .required(true)
-                        .kind(ApplicationCommandOptionType::String)
-                })
-                .create_option(|caco| {
-                    caco.name("content")
-                        .description("replace content.")
+                    caco.name(get::id::NAME)
+                        .description(get::id::DESC)
                         .required(true)
                         .kind(ApplicationCommandOptionType::String)
                 })
         })
         .create_application_command(|cac| {
-            cac.name("like")
-                .description("like content.")
+            cac.name(edit::NAME)
+                .description(edit::DESC)
                 .create_option(|caco| {
-                    caco.name("id")
-                        .description("content's id.")
+                    caco.name(edit::id::NAME)
+                        .description(edit::id::DESC)
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+                .create_option(|caco| {
+                    caco.name(edit::content::NAME)
+                        .description(edit::content::DESC)
                         .required(true)
                         .kind(ApplicationCommandOptionType::String)
                 })
         })
         .create_application_command(|cac| {
-            cac.name("pin")
-                .description("pin content.")
+            cac.name(like::NAME)
+                .description(like::DESC)
                 .create_option(|caco| {
-                    caco.name("id")
-                        .description("content's id.")
+                    caco.name(like::id::NAME)
+                        .description(like::id::DESC)
                         .required(true)
                         .kind(ApplicationCommandOptionType::String)
                 })
         })
         .create_application_command(|cac| {
-            cac.name("remove")
-                .description("remove content.")
+            cac.name(pin::NAME)
+                .description(pin::DESC)
                 .create_option(|caco| {
-                    caco.name("id")
-                        .description("content's id.")
+                    caco.name(pin::id::NAME)
+                        .description(pin::id::DESC)
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
+        })
+        .create_application_command(|cac| {
+            cac.name(remove::NAME)
+                .description(remove::DESC)
+                .create_option(|caco| {
+                    caco.name(remove::id::NAME)
+                        .description(remove::id::DESC)
                         .required(true)
                         .kind(ApplicationCommandOptionType::String)
                 })
