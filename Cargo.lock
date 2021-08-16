@@ -180,6 +180,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "consts"
+version = "0.1.0-alpha"
+source = "git+https://github.com/Nanai10a/consts#2f5d15c24f4d53ac222e74ea13d3803c53891bec"
+
+[[package]]
 name = "cpufeatures"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -471,6 +476,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
+ "consts",
  "regex",
  "serde_json",
  "serenity",
