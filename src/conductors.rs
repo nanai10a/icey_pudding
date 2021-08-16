@@ -391,7 +391,13 @@ pub async fn application_command_create(
 }
 
 mod command_strs {
+    pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
     consts::consts! {
+        NAME: "icey_pudding";
+        PREFIX: "*ip";
+        ABOUT: "this is a ICEy_PUDDING.";
+
         register {
             NAME: "register";
             DESC: "register user.";
@@ -592,4 +598,87 @@ async fn application_commands_create_inner() -> Value {
         });
 
     Value::Array(cacs.0)
+}
+
+pub fn create_clap_app() -> clap::App<'static, 'static> {
+    use clap::{App, Arg, SubCommand};
+    use command_strs::*;
+
+    App::new(PREFIX).name(NAME).about(ABOUT).subcommands(vec![
+        SubCommand::with_name(register::NAME).about(register::DESC),
+        SubCommand::with_name(info::NAME).about(info::DESC),
+        SubCommand::with_name(change::NAME)
+            .about(change::DESC)
+            .args(&vec![
+                Arg::with_name(change::admin::NAME)
+                    .help(change::admin::DESC)
+                    .required(false)
+                    .takes_value(true)
+                    .value_name(change::admin::NAME),
+                Arg::with_name(change::sub_admin::NAME)
+                    .help(change::sub_admin::DESC)
+                    .required(false)
+                    .takes_value(true)
+                    .value_name(change::sub_admin::NAME),
+            ]),
+        SubCommand::with_name(bookmark::NAME)
+            .about(bookmark::DESC)
+            .arg(
+                Arg::with_name(bookmark::id::NAME)
+                    .help(bookmark::id::DESC)
+                    .required(true)
+                    .takes_value(true)
+                    .value_name(bookmark::id::NAME),
+            ),
+        SubCommand::with_name(delete_me::NAME).about(delete_me::DESC),
+        SubCommand::with_name(post::NAME).about(post::DESC).arg(
+            Arg::with_name(post::content::NAME)
+                .help(post::content::DESC)
+                .required(true)
+                .takes_value(true)
+                .value_name(post::content::NAME),
+        ),
+        SubCommand::with_name(get::NAME).about(get::DESC).arg(
+            Arg::with_name(get::id::NAME)
+                .help(get::id::DESC)
+                .required(true)
+                .takes_value(true)
+                .value_name(get::id::NAME),
+        ),
+        SubCommand::with_name(edit::NAME)
+            .about(edit::DESC)
+            .args(&vec![
+                Arg::with_name(edit::id::NAME)
+                    .help(edit::id::DESC)
+                    .required(true)
+                    .takes_value(true)
+                    .value_name(edit::id::NAME),
+                Arg::with_name(edit::content::NAME)
+                    .help(edit::content::DESC)
+                    .required(true)
+                    .takes_value(true)
+                    .value_name(edit::content::NAME),
+            ]),
+        SubCommand::with_name(like::NAME).about(like::DESC).arg(
+            Arg::with_name(like::id::NAME)
+                .help(like::id::DESC)
+                .required(true)
+                .takes_value(true)
+                .value_name(like::id::NAME),
+        ),
+        SubCommand::with_name(pin::NAME).about(pin::DESC).arg(
+            Arg::with_name(pin::id::NAME)
+                .help(pin::id::DESC)
+                .required(true)
+                .takes_value(true)
+                .value_name(pin::id::NAME),
+        ),
+        SubCommand::with_name(remove::NAME).about(remove::DESC).arg(
+            Arg::with_name(remove::id::NAME)
+                .help(remove::id::DESC)
+                .required(true)
+                .takes_value(true)
+                .value_name(remove::id::NAME),
+        ),
+    ])
 }
