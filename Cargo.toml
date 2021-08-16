@@ -12,3 +12,4 @@ chrono = "*"
 regex = "*"
 serde_json = "*"
 clap = "*"
+consts = { git = "https://github.com/Nanai10a/consts" }
