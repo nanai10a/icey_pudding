@@ -328,6 +328,11 @@ impl Conductor {
 #[serenity::async_trait]
 impl EventHandler for Conductor {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        let aci = match interaction {
+            Interaction::ApplicationCommand(ref aci) => aci,
+            _ => return eprintln!("received not `application command`"),
+        };
+
         let Response {
             title,
             rgb,
@@ -336,7 +341,7 @@ impl EventHandler for Conductor {
         } = self.handle_ia(&interaction).await;
         let (r, g, b) = rgb;
 
-        let res = interaction
+        let res = aci
             .create_interaction_response(ctx.http, |cir| {
                 cir.interaction_response_data(|cird| {
                     cird.create_embed(|ce| {
