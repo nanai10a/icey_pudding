@@ -194,11 +194,9 @@ impl Conductor {
 
     pub async fn handle_ia(&self, interaction: &Interaction) -> Response {
         let res: anyhow::Result<Response> = try {
-            let user = match interaction.user {
-                Some(ref u) => Ok(u),
-                None => Err(anyhow::anyhow!(
-                    "cannot get user info. (maybe it's DM? sorry, not supported.)"
-                )),
+            let aci = match interaction {
+                Interaction::ApplicationCommand(aci) => Ok(aci),
+                _ => Err(anyhow::anyhow!("sorry, only supporting `application command`.")),
             }?;
 
             let resp: Response = match self.parse(interaction).await? {
@@ -206,25 +204,25 @@ impl Conductor {
                     "registered user",
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
-                    self.handler.create_user(user.id).await?,
+                    self.handler.create_user(aci.user.id).await?,
                 ),
                 Command::UserRead => resp_from_user(
                     "showing user",
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
-                    self.handler.read_user(user.id).await?,
+                    self.handler.read_user(aci.user.id).await?,
                 ),
                 Command::UserUpdate(new_admin, new_sub_admin) => resp_from_user(
                     "updated user",
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
                     self.handler
-                        .update_user(user.id, new_admin, new_sub_admin)
+                        .update_user(aci.user.id, new_admin, new_sub_admin)
                         .await?,
                 ),
                 Command::Bookmark(id) => {
                     self.handler.read_content(id).await?;
-                    self.handler.bookmark_update_user(user.id, id).await?;
+                    self.handler.bookmark_update_user(aci.user.id, id).await?;
                     let Content { bookmarked, .. } = self.handler.read_content(id).await?;
 
                     Response {
@@ -238,7 +236,7 @@ impl Conductor {
                     }
                 },
                 Command::UserDelete => {
-                    self.handler.delete_user(user.id).await?;
+                    self.handler.delete_user(aci.user.id).await?;
 
                     Response {
                         title: "deleted user".to_string(),
@@ -252,7 +250,7 @@ impl Conductor {
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
                     self.handler
-                        .create_content_and_posted_update_user(content, user.id)
+                        .create_content_and_posted_update_user(content, aci.user.id)
                         .await?,
                 ),
                 Command::ContentRead(id) => resp_from_content(
@@ -270,7 +268,7 @@ impl Conductor {
 
                 Command::Like(id) => {
                     self.handler.read_content(id).await?;
-                    self.handler.like_update_content(id, user.id).await?;
+                    self.handler.like_update_content(id, aci.user.id).await?;
                     let Content { liked, .. } = self.handler.read_content(id).await?;
 
                     Response {
@@ -285,7 +283,7 @@ impl Conductor {
                 },
                 Command::Pin(id) => {
                     self.handler.read_content(id).await?;
-                    self.handler.pin_update_content(id, user.id).await?;
+                    self.handler.pin_update_content(id, aci.user.id).await?;
                     let Content { pinned, .. } = self.handler.read_content(id).await?;
 
                     Response {
