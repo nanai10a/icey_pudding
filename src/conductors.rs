@@ -132,7 +132,7 @@ fn resp_from_content(
 }
 
 impl Conductor {
-    pub async fn parse(&self, acid: &ApplicationCommandInteractionData) -> anyhow::Result<Command> {
+    pub async fn parse_ia(&self, acid: &ApplicationCommandInteractionData) -> anyhow::Result<Command> {
         let com = match acid.name.as_str() {
             "register" => Command::UserRegister,
             "info" => Command::UserRead,
@@ -185,9 +185,11 @@ impl Conductor {
         Ok(com)
     }
 
+    pub async fn parse_msg(&self, msg: &Message) -> anyhow::Result<Command> { unimplemented!()}
+
     pub async fn handle_ia(&self, aci: &ApplicationCommandInteraction) -> Response {
         let res: anyhow::Result<Response> = try {
-            let resp: Response = match self.parse(&aci.data).await? {
+            let resp: Response = match self.parse_ia(&aci.data).await? {
                 Command::UserRegister => resp_from_user(
                     "registered user",
                     format!("from: [unimplemented]"),
