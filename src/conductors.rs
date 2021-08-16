@@ -7,9 +7,7 @@ use serenity::client::{Context, EventHandler};
 use serenity::http::Http;
 use serenity::model::channel::Message;
 use serenity::model::id::GuildId;
-use serenity::model::interactions::application_command::{
-    ApplicationCommand, ApplicationCommandOptionType,
-};
+use serenity::model::interactions::application_command::{ApplicationCommand, ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType};
 use serenity::model::interactions::Interaction;
 use serenity::utils::Colour;
 use uuid::Uuid;
@@ -134,12 +132,7 @@ fn resp_from_content(
 }
 
 impl Conductor {
-    pub async fn parse(&self, interaction: &Interaction) -> anyhow::Result<Command> {
-        let acid = match interaction {
-            Interaction::ApplicationCommand(aci) => &aci.data,
-            _ => bail!("sorry, only supporting `application command`."),
-        };
-
+    pub async fn parse(&self, acid: &ApplicationCommandInteractionData) -> anyhow::Result<Command> {
         let com = match acid.name.as_str() {
             "register" => Command::UserRegister,
             "info" => Command::UserRead,
@@ -192,14 +185,9 @@ impl Conductor {
         Ok(com)
     }
 
-    pub async fn handle_ia(&self, interaction: &Interaction) -> Response {
+    pub async fn handle_ia(&self, aci: &ApplicationCommandInteraction) -> Response {
         let res: anyhow::Result<Response> = try {
-            let aci = match interaction {
-                Interaction::ApplicationCommand(aci) => Ok(aci),
-                _ => Err(anyhow::anyhow!("sorry, only supporting `application command`.")),
-            }?;
-
-            let resp: Response = match self.parse(interaction).await? {
+            let resp: Response = match self.parse(&aci.data).await? {
                 Command::UserRegister => resp_from_user(
                     "registered user",
                     format!("from: [unimplemented]"),
@@ -329,7 +317,7 @@ impl Conductor {
 impl EventHandler for Conductor {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         let aci = match interaction {
-            Interaction::ApplicationCommand(ref aci) => aci,
+            Interaction::ApplicationCommand(aci) => aci,
             _ => return eprintln!("received not `application command`"),
         };
 
@@ -338,7 +326,7 @@ impl EventHandler for Conductor {
             rgb,
             description,
             mut fields,
-        } = self.handle_ia(&interaction).await;
+        } = self.handle_ia(&aci).await;
         let (r, g, b) = rgb;
 
         let res = aci
