@@ -6,7 +6,7 @@ use serenity::builder::CreateApplicationCommands;
 use serenity::client::{Context, EventHandler};
 use serenity::http::Http;
 use serenity::model::channel::Message;
-use serenity::model::id::GuildId;
+use serenity::model::id::{GuildId, UserId};
 use serenity::model::interactions::application_command::{
     ApplicationCommand, ApplicationCommandInteraction, ApplicationCommandInteractionData,
     ApplicationCommandOptionType,
@@ -193,32 +193,32 @@ impl Conductor {
 
     pub async fn parse_msg(&self, msg: &Message) -> anyhow::Result<Command> { unimplemented!() }
 
-    pub async fn handle_ia(&self, aci: &ApplicationCommandInteraction) -> Response {
+    pub async fn handle_ia(&self, cmd: Command, user_id: UserId) -> Response {
         let res: anyhow::Result<Response> = try {
-            let resp: Response = match self.parse_ia(&aci.data).await? {
+            let resp: Response = match cmd {
                 Command::UserRegister => resp_from_user(
                     "registered user",
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
-                    self.handler.create_user(aci.user.id).await?,
+                    self.handler.create_user(user_id).await?,
                 ),
                 Command::UserRead => resp_from_user(
                     "showing user",
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
-                    self.handler.read_user(aci.user.id).await?,
+                    self.handler.read_user(user_id).await?,
                 ),
                 Command::UserUpdate(new_admin, new_sub_admin) => resp_from_user(
                     "updated user",
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
                     self.handler
-                        .update_user(aci.user.id, new_admin, new_sub_admin)
+                        .update_user(user_id, new_admin, new_sub_admin)
                         .await?,
                 ),
                 Command::Bookmark(id) => {
                     self.handler.read_content(id).await?;
-                    self.handler.bookmark_update_user(aci.user.id, id).await?;
+                    self.handler.bookmark_update_user(user_id, id).await?;
                     let Content { bookmarked, .. } = self.handler.read_content(id).await?;
 
                     Response {
@@ -232,7 +232,7 @@ impl Conductor {
                     }
                 },
                 Command::UserDelete => {
-                    self.handler.delete_user(aci.user.id).await?;
+                    self.handler.delete_user(user_id).await?;
 
                     Response {
                         title: "deleted user".to_string(),
@@ -246,7 +246,7 @@ impl Conductor {
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
                     self.handler
-                        .create_content_and_posted_update_user(content, aci.user.id)
+                        .create_content_and_posted_update_user(content, user_id)
                         .await?,
                 ),
                 Command::ContentRead(id) => resp_from_content(
@@ -264,7 +264,7 @@ impl Conductor {
 
                 Command::Like(id) => {
                     self.handler.read_content(id).await?;
-                    self.handler.like_update_content(id, aci.user.id).await?;
+                    self.handler.like_update_content(id, user_id).await?;
                     let Content { liked, .. } = self.handler.read_content(id).await?;
 
                     Response {
@@ -279,7 +279,7 @@ impl Conductor {
                 },
                 Command::Pin(id) => {
                     self.handler.read_content(id).await?;
-                    self.handler.pin_update_content(id, aci.user.id).await?;
+                    self.handler.pin_update_content(id, user_id).await?;
                     let Content { pinned, .. } = self.handler.read_content(id).await?;
 
                     Response {
@@ -329,12 +329,17 @@ impl EventHandler for Conductor {
             _ => return eprintln!("received not `application command`"),
         };
 
+        let cmd = match self.parse_ia(&aci.data).await {
+            Ok(c) => c,
+            Err(e) => return eprintln!("{}", e),
+        };
+
         let Response {
             title,
             rgb,
             description,
             mut fields,
-        } = self.handle_ia(&aci).await;
+        } = self.handle_ia(cmd, aci.user.id).await;
         let (r, g, b) = rgb;
 
         let res = aci
