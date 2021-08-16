@@ -7,9 +7,10 @@ use serenity::client::{Context, EventHandler};
 use serenity::http::Http;
 use serenity::model::channel::Message;
 use serenity::model::id::GuildId;
-use serenity::model::interactions::{
-    ApplicationCommand, ApplicationCommandOptionType, Interaction, InteractionData,
+use serenity::model::interactions::application_command::{
+    ApplicationCommand, ApplicationCommandOptionType,
 };
+use serenity::model::interactions::Interaction;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
@@ -134,60 +135,54 @@ fn resp_from_content(
 
 impl Conductor {
     pub async fn parse(&self, interaction: &Interaction) -> anyhow::Result<Command> {
-        let data = match match interaction.data {
-            Some(ref d) => d,
-            None => bail!("cannot get interactiion_data."),
-        } {
-            InteractionData::ApplicationCommand(d) => d,
-            _ => bail!(
-                "cannot get application_command_interaction_data. (maybe it's message-component? \
-                 sorry, not supported.)"
-            ),
+        let acid = match interaction {
+            Interaction::ApplicationCommand(aci) => &aci.data,
+            _ => bail!("sorry, only supporting `application command`."),
         };
 
-        let com = match data.name.as_str() {
+        let com = match acid.name.as_str() {
             "register" => Command::UserRegister,
             "info" => Command::UserRead,
             "change" => {
-                let admin = extract_data!(opt Value::Bool => ref admin in data)?;
-                let sub_admin = extract_data!(opt Value::Bool => ref sub_admin in data)?;
+                let admin = extract_data!(opt Value::Bool => ref admin in acid)?;
+                let sub_admin = extract_data!(opt Value::Bool => ref sub_admin in acid)?;
 
                 Command::UserUpdate(admin.copied(), sub_admin.copied())
             },
             "bookmark" => {
-                let id = extract_data!(Value::String => ref id in data)?;
+                let id = extract_data!(Value::String => ref id in acid)?;
 
                 Command::Bookmark(Uuid::parse_str(id.as_str())?)
             },
             "delete_me" => Command::UserDelete,
             "post" => {
-                let content = extract_data!(Value::String => ref id in data)?;
+                let content = extract_data!(Value::String => ref id in acid)?;
 
                 Command::ContentPost(content.clone())
             },
             "get" => {
-                let id = extract_data!(Value::String => ref id in data)?;
+                let id = extract_data!(Value::String => ref id in acid)?;
 
                 Command::ContentRead(Uuid::parse_str(id.as_str())?)
             },
             "edit" => {
-                let id = extract_data!(Value::String => ref id in data)?;
-                let content = extract_data!(Value::String => ref content in data)?;
+                let id = extract_data!(Value::String => ref id in acid)?;
+                let content = extract_data!(Value::String => ref content in acid)?;
 
                 Command::ContentUpdate(Uuid::parse_str(id.as_str())?, content.clone())
             },
             "like" => {
-                let id = extract_data!(Value::String => ref id in data)?;
+                let id = extract_data!(Value::String => ref id in acid)?;
 
                 Command::Like(Uuid::parse_str(id.as_str())?)
             },
             "pin" => {
-                let id = extract_data!(Value::String => ref id in data)?;
+                let id = extract_data!(Value::String => ref id in acid)?;
 
                 Command::Pin(Uuid::parse_str(id.as_str())?)
             },
             "remove" => {
-                let id = extract_data!(Value::String => ref id in data)?;
+                let id = extract_data!(Value::String => ref id in acid)?;
 
                 Command::ContentDelete(Uuid::parse_str(id.as_str())?)
             },
