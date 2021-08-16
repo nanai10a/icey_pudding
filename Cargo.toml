@@ -11,3 +11,4 @@ uuid = { version = "*", features = ["v4"] }
 chrono = "*"
 regex = "*"
 serde_json = "*"
+clap = "*"
