@@ -40,7 +40,7 @@ pub struct Response {
     fields: Vec<(String, String)>,
 }
 
-macro_rules! extract_data {
+macro_rules! extract_option {
     (opt $t:path => ref $v:ident in $d:ident) => {{
         let mut opt = $d
             .options
@@ -137,45 +137,45 @@ impl Conductor {
             "register" => Command::UserRegister,
             "info" => Command::UserRead,
             "change" => {
-                let admin = extract_data!(opt Value::Bool => ref admin in acid)?;
-                let sub_admin = extract_data!(opt Value::Bool => ref sub_admin in acid)?;
+                let admin = extract_option!(opt Value::Bool => ref admin in acid)?;
+                let sub_admin = extract_option!(opt Value::Bool => ref sub_admin in acid)?;
 
                 Command::UserUpdate(admin.copied(), sub_admin.copied())
             },
             "bookmark" => {
-                let id = extract_data!(Value::String => ref id in acid)?;
+                let id = extract_option!(Value::String => ref id in acid)?;
 
                 Command::Bookmark(Uuid::parse_str(id.as_str())?)
             },
             "delete_me" => Command::UserDelete,
             "post" => {
-                let content = extract_data!(Value::String => ref id in acid)?;
+                let content = extract_option!(Value::String => ref id in acid)?;
 
                 Command::ContentPost(content.clone())
             },
             "get" => {
-                let id = extract_data!(Value::String => ref id in acid)?;
+                let id = extract_option!(Value::String => ref id in acid)?;
 
                 Command::ContentRead(Uuid::parse_str(id.as_str())?)
             },
             "edit" => {
-                let id = extract_data!(Value::String => ref id in acid)?;
-                let content = extract_data!(Value::String => ref content in acid)?;
+                let id = extract_option!(Value::String => ref id in acid)?;
+                let content = extract_option!(Value::String => ref content in acid)?;
 
                 Command::ContentUpdate(Uuid::parse_str(id.as_str())?, content.clone())
             },
             "like" => {
-                let id = extract_data!(Value::String => ref id in acid)?;
+                let id = extract_option!(Value::String => ref id in acid)?;
 
                 Command::Like(Uuid::parse_str(id.as_str())?)
             },
             "pin" => {
-                let id = extract_data!(Value::String => ref id in acid)?;
+                let id = extract_option!(Value::String => ref id in acid)?;
 
                 Command::Pin(Uuid::parse_str(id.as_str())?)
             },
             "remove" => {
-                let id = extract_data!(Value::String => ref id in acid)?;
+                let id = extract_option!(Value::String => ref id in acid)?;
 
                 Command::ContentDelete(Uuid::parse_str(id.as_str())?)
             },
