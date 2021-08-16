@@ -7,7 +7,10 @@ use serenity::client::{Context, EventHandler};
 use serenity::http::Http;
 use serenity::model::channel::Message;
 use serenity::model::id::GuildId;
-use serenity::model::interactions::application_command::{ApplicationCommand, ApplicationCommandInteraction, ApplicationCommandInteractionData, ApplicationCommandOptionType};
+use serenity::model::interactions::application_command::{
+    ApplicationCommand, ApplicationCommandInteraction, ApplicationCommandInteractionData,
+    ApplicationCommandOptionType,
+};
 use serenity::model::interactions::Interaction;
 use serenity::utils::Colour;
 use uuid::Uuid;
@@ -132,7 +135,10 @@ fn resp_from_content(
 }
 
 impl Conductor {
-    pub async fn parse_ia(&self, acid: &ApplicationCommandInteractionData) -> anyhow::Result<Command> {
+    pub async fn parse_ia(
+        &self,
+        acid: &ApplicationCommandInteractionData,
+    ) -> anyhow::Result<Command> {
         let com = match acid.name.as_str() {
             "register" => Command::UserRegister,
             "info" => Command::UserRead,
@@ -185,7 +191,7 @@ impl Conductor {
         Ok(com)
     }
 
-    pub async fn parse_msg(&self, msg: &Message) -> anyhow::Result<Command> { unimplemented!()}
+    pub async fn parse_msg(&self, msg: &Message) -> anyhow::Result<Command> { unimplemented!() }
 
     pub async fn handle_ia(&self, aci: &ApplicationCommandInteraction) -> Response {
         let res: anyhow::Result<Response> = try {
