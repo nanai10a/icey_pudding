@@ -391,7 +391,7 @@ pub async fn application_command_create(
 }
 
 mod command_strs {
-    pub const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+    pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
     consts::consts! {
         NAME: "icey_pudding";
