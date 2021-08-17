@@ -13,7 +13,7 @@ pub struct User {
 #[derive(Debug, Clone)]
 pub struct Content {
     pub id: Uuid,
-    pub author: UserId,
+    pub author: String,
     pub posted: UserId,
     pub content: String,
     pub liked: Vec<UserId>,
