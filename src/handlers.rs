@@ -82,26 +82,29 @@ impl Handler {
     pub async fn create_content_and_posted_update_user(
         &self,
         content: String,
-        user: UserId,
+        posted: UserId,
+        author: UserId,
     ) -> anyhow::Result<Content> {
         let new_content = Content {
             id: uuid::Uuid::new_v4(),
             content,
+            author,
+            posted,
             liked: vec![],
             bookmarked: 0,
             pinned: vec![],
         };
 
-        self.content_repository.save(new_content.clone()).await?;
-
         let mut current_user = self
             .user_repository
-            .remove_match(vec![UserQuery::Id(user)])
+            .remove_match(vec![UserQuery::Id(posted)])
             .await?;
 
         current_user.posted.push(new_content.id);
 
         self.user_repository.save(current_user).await?;
+
+        self.content_repository.save(new_content.clone()).await?;
 
         Ok(new_content)
     }
