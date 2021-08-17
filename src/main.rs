@@ -3,7 +3,7 @@ use std::env::{args, var};
 use icey_pudding::conductors::Conductor;
 use icey_pudding::entities::{Content, User};
 use icey_pudding::handlers::Handler;
-use icey_pudding::repositories::{InMemoryRepository, Repository, UserQuery};
+use icey_pudding::repositories::InMemoryRepository;
 use serenity::client::bridge::gateway::GatewayIntents;
 use serenity::client::ClientBuilder;
 
