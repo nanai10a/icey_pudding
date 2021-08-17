@@ -104,5 +104,5 @@ fn thread_name_generator() -> String {
         }
     };
 
-    format!("{}", num)
+    dbg!(format!("icey_pudding-worker-{}", num))
 }
