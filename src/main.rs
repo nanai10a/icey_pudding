@@ -72,7 +72,11 @@ async fn async_main() {
 fn main() {
     let rt = match tokio::runtime::Builder::new_multi_thread()
         .enable_all()
-        .thread_name_fn(thread_name_generator)
+        .thread_name_fn(|| {
+            let num = unsafe { NUM };
+            unsafe { NUM += 1 }
+            format!("icey_pudding-worker-{}", num)
+        })
         .build()
     {
         Ok(r) => r,
@@ -82,27 +86,4 @@ fn main() {
     rt.block_on(async_main())
 }
 
-fn thread_name_generator() -> String {
-    static mut NUMS: Vec<u32> = vec![];
-
-    let mut num_tmp = 0u32;
-    let mut iter = unsafe {
-        NUMS.sort_unstable();
-        NUMS.iter()
-    };
-    let num = loop {
-        let n = match iter.next() {
-            Some(n) => n,
-            None => break num_tmp + 1,
-        };
-
-        if *n == num_tmp {
-            num_tmp += 1;
-            continue;
-        } else {
-            break num_tmp;
-        }
-    };
-
-    dbg!(format!("icey_pudding-worker-{}", num))
-}
+static mut NUM: u32 = 0;
