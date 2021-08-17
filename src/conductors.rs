@@ -1,13 +1,14 @@
+use std::collections::HashMap;
 use std::fmt::Display;
 
 use anyhow::bail;
 use clap::ErrorKind;
-use serde_json::{json, Value};
+use serde_json::{json, Number, Value};
 use serenity::builder::{CreateApplicationCommands, CreateEmbed, CreateMessage};
 use serenity::client::{Context, EventHandler};
 use serenity::http::Http;
 use serenity::model::channel::Message;
-use serenity::model::id::{GuildId, UserId};
+use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
 use serenity::model::interactions::application_command::{
     ApplicationCommand, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
@@ -23,6 +24,7 @@ pub struct Conductor {
     pub handler: Handler,
 }
 
+#[derive(Debug)]
 pub enum Command {
     UserRegister,
     UserRead,
@@ -37,11 +39,13 @@ pub enum Command {
     ContentDelete(Uuid),
 }
 
+#[derive(Debug)]
 pub enum MsgCommand {
     Command(Command),
     Showing(String),
 }
 
+#[derive(Debug)]
 pub struct Response {
     title: String,
     rgb: (u8, u8, u8),
