@@ -867,10 +867,11 @@ async fn application_commands_create_inner() -> Value {
 }
 
 pub fn create_clap_app() -> clap::App<'static, 'static> {
-    use clap::{App, Arg, SubCommand};
+    use clap::{App, Arg, SubCommand, AppSettings};
     use command_strs::*;
 
     App::new(PREFIX)
+        .global_setting(AppSettings::ColorNever)
         .name(NAME)
         .about(ABOUT)
         .version(VERSION)
