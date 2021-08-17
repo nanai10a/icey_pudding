@@ -335,24 +335,26 @@ impl Conductor {
     ) -> Response {
         let from_user_shows = format!("from: {} ({})", user_name, user_nick.unwrap_or(""));
 
+        use command_colors::*;
+
         let res: anyhow::Result<Response> = try {
             let resp: Response = match cmd {
                 Command::UserRegister => resp_from_user(
                     "registered user",
                     from_user_shows,
-                    (0, 0, 0),
+                    REGISTER,
                     self.handler.create_user(user_id).await?,
                 ),
                 Command::UserRead => resp_from_user(
                     "showing user",
                     from_user_shows,
-                    (0, 0, 0),
+                    INFO,
                     self.handler.read_user(user_id).await?,
                 ),
                 Command::UserUpdate(new_admin, new_sub_admin) => resp_from_user(
                     "updated user",
                     from_user_shows,
-                    (0, 0, 0),
+                    CHANGE,
                     self.handler
                         .update_user(user_id, new_admin, new_sub_admin)
                         .await?,
@@ -364,7 +366,7 @@ impl Conductor {
 
                     Response {
                         title: "bookmarked".to_string(),
-                        rgb: (0, 0, 0),
+                        rgb: BOOKMARK,
                         description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
@@ -377,7 +379,7 @@ impl Conductor {
 
                     Response {
                         title: "deleted user".to_string(),
-                        rgb: (0, 0, 0), // TODO: 色決め
+                        rgb: DELETE_ME,
                         description: "see you!".to_string(),
                         fields: vec![],
                     }
@@ -385,7 +387,7 @@ impl Conductor {
                 Command::ContentPost(content, author) => resp_from_content(
                     "posted content",
                     from_user_shows,
-                    (0, 0, 0),
+                    POST,
                     self.handler
                         .create_content_and_posted_update_user(content, user_id, author)
                         .await?,
@@ -393,13 +395,13 @@ impl Conductor {
                 Command::ContentRead(id) => resp_from_content(
                     "showing content",
                     from_user_shows,
-                    (0, 0, 0),
+                    GET,
                     self.handler.read_content(id).await?,
                 ),
                 Command::ContentUpdate(id, new_content) => resp_from_content(
                     "updated content",
                     from_user_shows,
-                    (0, 0, 0),
+                    EDIT,
                     self.handler.update_content(id, new_content).await?,
                 ),
 
@@ -410,7 +412,7 @@ impl Conductor {
 
                     Response {
                         title: "liked".to_string(),
-                        rgb: (0, 0, 0),
+                        rgb: LIKE,
                         description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
@@ -425,7 +427,7 @@ impl Conductor {
 
                     Response {
                         title: "pinned".to_string(),
-                        rgb: (0, 0, 0),
+                        rgb: PIN,
                         description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
@@ -439,7 +441,7 @@ impl Conductor {
                     Response {
                         title: "deleted content".to_string(),
                         description: "i'm sad...".to_string(),
-                        rgb: (0, 0, 0), // TODO: 色決め
+                        rgb: REMOVE,
                         fields: vec![("id:".to_string(), format!("{}", id))],
                     }
                 },
@@ -452,7 +454,7 @@ impl Conductor {
             Ok(r) => r,
             Err(e) => Response {
                 title: "error occurred".to_string(),
-                rgb: (Colour::RED.r(), Colour::RED.g(), Colour::RED.b()),
+                rgb: ERROR,
                 description: format!("{}", e),
                 fields: vec![],
             },
@@ -622,6 +624,22 @@ pub async fn application_command_create(
     };
 
     Ok(ac)
+}
+
+mod command_colors {
+    pub const REGISTER: (u8, u8, u8) = (0xd5, 0xc4, 0xa1);
+    pub const INFO: (u8, u8, u8) = (0x83, 0xa5, 0x98);
+    pub const CHANGE: (u8, u8, u8) = (0xb8, 0xb2, 0x26);
+    pub const BOOKMARK: (u8, u8, u8) = (0x83, 0xa5, 0x98);
+    pub const DELETE_ME: (u8, u8, u8) = (0x1d, 0x20, 0x21);
+    pub const POST: (u8, u8, u8) = (0xfb, 0xf1, 0xc7);
+    pub const GET: (u8, u8, u8) = (0xfa, 0xdb, 0x2f);
+    pub const EDIT: (u8, u8, u8) = (0x8e, 0xc0, 0x7c);
+    pub const LIKE: (u8, u8, u8) = (0xd3, 0x86, 0x9b);
+    pub const PIN: (u8, u8, u8) = (0xfb, 0x49, 0x34);
+    pub const REMOVE: (u8, u8, u8) = (0x66, 0x5c, 0x54);
+
+    pub const ERROR: (u8, u8, u8) = (0xfe, 0x80, 0x19);
 }
 
 mod command_strs {
