@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::fmt::Display;
 
 use anyhow::bail;
-use clap::ErrorKind;
 use serde_json::{json, Number, Value};
 use serenity::builder::{CreateApplicationCommands, CreateEmbed, CreateMessage};
 use serenity::client::{Context, EventHandler};
