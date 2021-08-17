@@ -227,14 +227,13 @@ impl Conductor {
     pub async fn parse_msg(&self, msg: &str) -> anyhow::Result<MsgCommand> {
         let splitted = shell_words::split(msg)?;
 
+        if let Some(n) = splitted.get(0){
+            if n != command_strs::PREFIX { bail!("not command, abort.") }
+        }
+
         let ams = match create_clap_app().get_matches_from_safe(splitted) {
             Ok(o) => o,
-            Err(e) =>
-                return match e.kind {
-                    ErrorKind::HelpDisplayed => Ok(MsgCommand::Showing(e.message)),
-                    ErrorKind::VersionDisplayed => Ok(MsgCommand::Showing(e.message)),
-                    _ => bail!("parsing error: {}", e),
-                },
+            Err(e) => return Ok(MsgCommand::Showing(e.message)),
         };
 
         use std::str::FromStr;
