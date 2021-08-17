@@ -13,8 +13,8 @@ pub struct User {
 #[derive(Debug, Clone)]
 pub struct Content {
     pub id: Uuid,
-    // FIXME:    pub author: UserId,
-    // FIXME:    pub posted: UserId,
+    pub author: UserId,
+    pub posted: UserId,
     pub content: String,
     pub liked: Vec<UserId>,
     pub bookmarked: u32,
