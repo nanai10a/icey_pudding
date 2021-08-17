@@ -9,7 +9,7 @@ use serenity::http::Http;
 use serenity::model::channel::Message;
 use serenity::model::id::{GuildId, UserId};
 use serenity::model::interactions::application_command::{
-    ApplicationCommand, ApplicationCommandInteraction, ApplicationCommandInteractionData,
+    ApplicationCommand, ApplicationCommandInteractionData,
     ApplicationCommandOptionType,
 };
 use serenity::model::interactions::Interaction;
