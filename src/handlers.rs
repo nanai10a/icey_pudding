@@ -83,7 +83,7 @@ impl Handler {
         &self,
         content: String,
         posted: UserId,
-        author: UserId,
+        author: String,
     ) -> anyhow::Result<Content> {
         let new_content = Content {
             id: uuid::Uuid::new_v4(),
