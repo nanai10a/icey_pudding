@@ -9,8 +9,7 @@ use serenity::http::Http;
 use serenity::model::channel::Message;
 use serenity::model::id::{GuildId, UserId};
 use serenity::model::interactions::application_command::{
-    ApplicationCommand, ApplicationCommandInteractionData,
-    ApplicationCommandOptionType,
+    ApplicationCommand, ApplicationCommandInteractionData, ApplicationCommandOptionType,
 };
 use serenity::model::interactions::Interaction;
 use serenity::model::prelude::User;
@@ -327,7 +326,13 @@ impl Conductor {
         Ok(MsgCommand::Command(cmd))
     }
 
-    pub async fn handle(&self, cmd: Command, user_id: UserId, user_name: impl Display, user_nick: Option<&str>) -> Response {
+    pub async fn handle(
+        &self,
+        cmd: Command,
+        user_id: UserId,
+        user_name: impl Display,
+        user_nick: Option<&str>,
+    ) -> Response {
         let from_user_shows = format!("from: {} ({})", user_name, user_nick.unwrap_or(""));
 
         let res: anyhow::Result<Response> = try {
@@ -497,7 +502,9 @@ impl EventHandler for Conductor {
 
         let nick_opt = nick_opt_string.as_deref();
 
-        let resp = self.handle(cmd, aci.user.id, aci.user.name.clone(), nick_opt).await;
+        let resp = self
+            .handle(cmd, aci.user.id, aci.user.name.clone(), nick_opt)
+            .await;
 
         let res = aci
             .create_interaction_response(&ctx, |cir| {
@@ -559,7 +566,12 @@ impl EventHandler for Conductor {
 
         let nick_opt = nick_opt_string.as_deref();
 
-        let Message { channel_id, guild_id, author, .. } = msg;
+        let Message {
+            channel_id,
+            guild_id,
+            author,
+            ..
+        } = msg;
         let User { id, name, .. } = author;
 
         let resp = self.handle(cmd, id, name, nick_opt).await;
@@ -836,86 +848,92 @@ pub fn create_clap_app() -> clap::App<'static, 'static> {
     use clap::{App, Arg, SubCommand};
     use command_strs::*;
 
-    App::new(PREFIX).name(NAME).about(ABOUT).version(VERSION).subcommands(vec![
-        SubCommand::with_name(register::NAME).about(register::DESC),
-        SubCommand::with_name(info::NAME).about(info::DESC),
-        SubCommand::with_name(change::NAME)
-            .about(change::DESC)
-            .args(&vec![
-                Arg::with_name(change::admin::NAME)
-                    .help(change::admin::DESC)
-                    .required(false)
-                    .takes_value(true)
-                    .value_name(change::admin::NAME),
-                Arg::with_name(change::sub_admin::NAME)
-                    .help(change::sub_admin::DESC)
-                    .required(false)
-                    .takes_value(true)
-                    .value_name(change::sub_admin::NAME),
-            ]),
-        SubCommand::with_name(bookmark::NAME)
-            .about(bookmark::DESC)
-            .arg(
-                Arg::with_name(bookmark::id::NAME)
-                    .help(bookmark::id::DESC)
+    App::new(PREFIX)
+        .name(NAME)
+        .about(ABOUT)
+        .version(VERSION)
+        .subcommands(vec![
+            SubCommand::with_name(register::NAME).about(register::DESC),
+            SubCommand::with_name(info::NAME).about(info::DESC),
+            SubCommand::with_name(change::NAME)
+                .about(change::DESC)
+                .args(&vec![
+                    Arg::with_name(change::admin::NAME)
+                        .help(change::admin::DESC)
+                        .required(false)
+                        .takes_value(true)
+                        .value_name(change::admin::NAME),
+                    Arg::with_name(change::sub_admin::NAME)
+                        .help(change::sub_admin::DESC)
+                        .required(false)
+                        .takes_value(true)
+                        .value_name(change::sub_admin::NAME),
+                ]),
+            SubCommand::with_name(bookmark::NAME)
+                .about(bookmark::DESC)
+                .arg(
+                    Arg::with_name(bookmark::id::NAME)
+                        .help(bookmark::id::DESC)
+                        .required(true)
+                        .takes_value(true)
+                        .value_name(bookmark::id::NAME),
+                ),
+            SubCommand::with_name(delete_me::NAME).about(delete_me::DESC),
+            SubCommand::with_name(post::NAME)
+                .about(post::DESC)
+                .args(&vec![
+                    Arg::with_name(post::author::NAME)
+                        .help(post::author::DESC)
+                        .required(true)
+                        .takes_value(true)
+                        .value_name(post::author::NAME),
+                    Arg::with_name(post::content::NAME)
+                        .help(post::content::DESC)
+                        .required(true)
+                        .takes_value(true)
+                        .value_name(post::content::NAME),
+                ]),
+            SubCommand::with_name(get::NAME).about(get::DESC).arg(
+                Arg::with_name(get::id::NAME)
+                    .help(get::id::DESC)
                     .required(true)
                     .takes_value(true)
-                    .value_name(bookmark::id::NAME),
+                    .value_name(get::id::NAME),
             ),
-        SubCommand::with_name(delete_me::NAME).about(delete_me::DESC),
-        SubCommand::with_name(post::NAME).about(post::DESC).args(&vec![
-            Arg::with_name(post::author::NAME)
-            .help(post::author::DESC)
-            .required(true)
-            .takes_value(true)
-            .value_name(post::author::NAME),
-            Arg::with_name(post::content::NAME)
-                .help(post::content::DESC)
-                .required(true)
-                .takes_value(true)
-                .value_name(post::content::NAME),
-        ]),
-        SubCommand::with_name(get::NAME).about(get::DESC).arg(
-            Arg::with_name(get::id::NAME)
-                .help(get::id::DESC)
-                .required(true)
-                .takes_value(true)
-                .value_name(get::id::NAME),
-        ),
-        SubCommand::with_name(edit::NAME)
-            .about(edit::DESC)
-            .args(&vec![
-                Arg::with_name(edit::id::NAME)
-                    .help(edit::id::DESC)
+            SubCommand::with_name(edit::NAME)
+                .about(edit::DESC)
+                .args(&vec![
+                    Arg::with_name(edit::id::NAME)
+                        .help(edit::id::DESC)
+                        .required(true)
+                        .takes_value(true)
+                        .value_name(edit::id::NAME),
+                    Arg::with_name(edit::content::NAME)
+                        .help(edit::content::DESC)
+                        .required(true)
+                        .takes_value(true)
+                        .value_name(edit::content::NAME),
+                ]),
+            SubCommand::with_name(like::NAME).about(like::DESC).arg(
+                Arg::with_name(like::id::NAME)
+                    .help(like::id::DESC)
                     .required(true)
                     .takes_value(true)
-                    .value_name(edit::id::NAME),
-                Arg::with_name(edit::content::NAME)
-                    .help(edit::content::DESC)
+                    .value_name(like::id::NAME),
+            ),
+            SubCommand::with_name(pin::NAME).about(pin::DESC).arg(
+                Arg::with_name(pin::id::NAME)
+                    .help(pin::id::DESC)
                     .required(true)
                     .takes_value(true)
-                    .value_name(edit::content::NAME),
-            ]),
-        SubCommand::with_name(like::NAME).about(like::DESC).arg(
-            Arg::with_name(like::id::NAME)
-                .help(like::id::DESC)
-                .required(true)
-                .takes_value(true)
-                .value_name(like::id::NAME),
-        ),
-        SubCommand::with_name(pin::NAME).about(pin::DESC).arg(
-            Arg::with_name(pin::id::NAME)
-                .help(pin::id::DESC)
-                .required(true)
-                .takes_value(true)
-                .value_name(pin::id::NAME),
-        ),
-        SubCommand::with_name(remove::NAME).about(remove::DESC).arg(
-            Arg::with_name(remove::id::NAME)
-                .help(remove::id::DESC)
-                .required(true)
-                .takes_value(true)
-                .value_name(remove::id::NAME),
-        ),
-    ])
+                    .value_name(pin::id::NAME),
+            ),
+            SubCommand::with_name(remove::NAME).about(remove::DESC).arg(
+                Arg::with_name(remove::id::NAME)
+                    .help(remove::id::DESC)
+                    .required(true)
+                    .takes_value(true)
+                    .value_name(remove::id::NAME),
+            ),
+        ])
 }
