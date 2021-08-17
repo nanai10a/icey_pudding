@@ -13,10 +13,11 @@ use serenity::model::interactions::application_command::{
     ApplicationCommandOptionType,
 };
 use serenity::model::interactions::Interaction;
+use serenity::model::prelude::User;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use crate::entities::{Content, User};
+use crate::entities::{self, Content};
 use crate::handlers::Handler;
 
 pub struct Conductor {
@@ -110,13 +111,13 @@ fn resp_from_user(
     title: impl Display,
     description: impl Display,
     rgb: (u8, u8, u8),
-    User {
+    entities::User {
         id,
         admin,
         sub_admin,
         posted,
         bookmark,
-    }: User,
+    }: entities::User,
 ) -> Response {
     Response {
         title: format!("{}", title),
@@ -326,24 +327,26 @@ impl Conductor {
         Ok(MsgCommand::Command(cmd))
     }
 
-    pub async fn handle(&self, cmd: Command, user_id: UserId) -> Response {
+    pub async fn handle(&self, cmd: Command, user_id: UserId, user_name: impl Display, user_nick: Option<&str>) -> Response {
+        let from_user_shows = format!("from: {} ({})", user_name, user_nick.unwrap_or(""));
+
         let res: anyhow::Result<Response> = try {
             let resp: Response = match cmd {
                 Command::UserRegister => resp_from_user(
                     "registered user",
-                    format!("from: [unimplemented]"),
+                    from_user_shows,
                     (0, 0, 0),
                     self.handler.create_user(user_id).await?,
                 ),
                 Command::UserRead => resp_from_user(
                     "showing user",
-                    format!("from: [unimplemented]"),
+                    from_user_shows,
                     (0, 0, 0),
                     self.handler.read_user(user_id).await?,
                 ),
                 Command::UserUpdate(new_admin, new_sub_admin) => resp_from_user(
                     "updated user",
-                    format!("from: [unimplemented]"),
+                    from_user_shows,
                     (0, 0, 0),
                     self.handler
                         .update_user(user_id, new_admin, new_sub_admin)
@@ -357,7 +360,7 @@ impl Conductor {
                     Response {
                         title: "bookmarked".to_string(),
                         rgb: (0, 0, 0),
-                        description: format!("from: [unimplemented]"),
+                        description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
                             ("bookmarked:".to_string(), format!("{}", bookmarked)),
@@ -376,7 +379,7 @@ impl Conductor {
                 },
                 Command::ContentPost(content, author) => resp_from_content(
                     "posted content",
-                    format!("from: [unimplemented]"),
+                    from_user_shows,
                     (0, 0, 0),
                     self.handler
                         .create_content_and_posted_update_user(content, user_id, author)
@@ -384,13 +387,13 @@ impl Conductor {
                 ),
                 Command::ContentRead(id) => resp_from_content(
                     "showing content",
-                    format!("from [unimplemented]"),
+                    from_user_shows,
                     (0, 0, 0),
                     self.handler.read_content(id).await?,
                 ),
                 Command::ContentUpdate(id, new_content) => resp_from_content(
                     "updated content",
-                    format!("from: [unimplemented]"),
+                    from_user_shows,
                     (0, 0, 0),
                     self.handler.update_content(id, new_content).await?,
                 ),
@@ -403,7 +406,7 @@ impl Conductor {
                     Response {
                         title: "liked".to_string(),
                         rgb: (0, 0, 0),
-                        description: format!("from: [unimplemented]"),
+                        description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
                             ("liked:".to_string(), format!("{}", liked.len())),
@@ -418,7 +421,7 @@ impl Conductor {
                     Response {
                         title: "pinned".to_string(),
                         rgb: (0, 0, 0),
-                        description: format!("from: [unimplemented]"),
+                        description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
                             ("pinned:".to_string(), format!("{}", pinned.len())),
@@ -487,10 +490,17 @@ impl EventHandler for Conductor {
             Err(e) => return eprintln!("{}", e),
         };
 
-        let resp = self.handle(cmd, aci.user.id).await;
+        let nick_opt_string = match aci.guild_id {
+            Some(gi) => aci.user.nick_in(&ctx, gi).await,
+            None => None,
+        };
+
+        let nick_opt = nick_opt_string.as_deref();
+
+        let resp = self.handle(cmd, aci.user.id, aci.user.name.clone(), nick_opt).await;
 
         let res = aci
-            .create_interaction_response(ctx.http, |cir| {
+            .create_interaction_response(&ctx, |cir| {
                 cir.interaction_response_data(|cird| {
                     cird.create_embed(|ce| build_embed_from_resp(ce, resp))
                 })
@@ -545,19 +555,25 @@ impl EventHandler for Conductor {
             },
         };
 
-        let resp = self.handle(cmd, msg.author.id).await;
+        let nick_opt_string = msg.author_nick(&ctx).await;
 
-        let res = msg
-            .channel_id
+        let nick_opt = nick_opt_string.as_deref();
+
+        let Message { channel_id, guild_id, author, .. } = msg;
+        let User { id, name, .. } = author;
+
+        let resp = self.handle(cmd, id, name, nick_opt).await;
+
+        let res = channel_id
             .send_message(ctx.http, |cm| {
                 cm.add_embed(|ce| build_embed_from_resp(ce, resp));
 
                 let CreateMessage(ref mut raw, ..) = cm;
 
                 let mr = dbg!(json!({
-                    "message_id": msg.id,
-                    "channel_id": msg.channel_id,
-                    "guild_id": match msg.guild_id {
+                    "message_id": id,
+                    "channel_id": channel_id,
+                    "guild_id": match guild_id {
                         Some(i) => Value::String(i.to_string()),
                         None => Value::Null
                     },
