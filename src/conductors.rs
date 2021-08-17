@@ -804,7 +804,7 @@ pub fn create_clap_app() -> clap::App<'static, 'static> {
     use clap::{App, Arg, SubCommand};
     use command_strs::*;
 
-    App::new(PREFIX).name(NAME).about(ABOUT).subcommands(vec![
+    App::new(PREFIX).name(NAME).about(ABOUT).version(VERSION).subcommands(vec![
         SubCommand::with_name(register::NAME).about(register::DESC),
         SubCommand::with_name(info::NAME).about(info::DESC),
         SubCommand::with_name(change::NAME)
