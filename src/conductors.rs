@@ -487,6 +487,24 @@ pub fn build_embed_from_resp(
         )
 }
 
+fn append_message_reference(
+    raw: &mut HashMap<&str, Value>,
+    id: MessageId,
+    channel_id: ChannelId,
+    guild_id: Option<GuildId>,
+) {
+    let mr = dbg!(json!({
+        "message_id": id,
+        "channel_id": channel_id,
+        "guild_id": match guild_id {
+            Some(i) => Value::Number(Number::from(i.0)),
+            None => Value::Null
+        },
+    }));
+
+    dbg!(raw.insert("message_reference", mr));
+}
+
 #[serenity::async_trait]
 impl EventHandler for Conductor {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
@@ -544,17 +562,7 @@ impl EventHandler for Conductor {
                         });
 
                         let CreateMessage(ref mut raw, ..) = cm;
-
-                        let mr = dbg!(json!({
-                            "message_id": msg.id,
-                            "channel_id": msg.channel_id,
-                            "guild_id": match msg.guild_id {
-                                Some(i) => Value::String(i.to_string()),
-                                None => Value::Null
-                            },
-                        }));
-
-                        dbg!(raw.insert("message_reference", mr));
+                        append_message_reference(raw, msg.id, msg.channel_id, msg.guild_id);
 
                         cm
                     })
@@ -572,31 +580,24 @@ impl EventHandler for Conductor {
         let nick_opt = nick_opt_string.as_deref();
 
         let Message {
+            id: message_id,
             channel_id,
-            guild_id,
+            guild_id: guild_id_opt,
             author,
             ..
         } = msg;
-        let User { id, name, .. } = author;
+        let User {
+            id: user_id, name, ..
+        } = author;
 
-        let resp = self.handle(cmd, id, name, nick_opt).await;
+        let resp = self.handle(cmd, user_id, name, nick_opt).await;
 
         let res = channel_id
             .send_message(ctx.http, |cm| {
                 cm.add_embed(|ce| build_embed_from_resp(ce, resp));
 
                 let CreateMessage(ref mut raw, ..) = cm;
-
-                let mr = dbg!(json!({
-                    "message_id": id,
-                    "channel_id": channel_id,
-                    "guild_id": match guild_id {
-                        Some(i) => Value::String(i.to_string()),
-                        None => Value::Null
-                    },
-                }));
-
-                dbg!(raw.insert("message_reference", mr));
+                append_message_reference(raw, message_id, channel_id, guild_id_opt);
 
                 cm
             })
