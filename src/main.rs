@@ -55,7 +55,7 @@ async fn async_main() {
 
     let mut c = match ClientBuilder::new(token)
         .application_id(application_id)
-        .intents(GatewayIntents::empty())
+        .intents(GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES)
         .event_handler(eh)
         .await
     {
