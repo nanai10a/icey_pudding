@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use anyhow::bail;
+use clap::ErrorKind;
 use serde_json::Value;
 use serenity::builder::CreateApplicationCommands;
 use serenity::client::{Context, EventHandler};
@@ -34,6 +35,11 @@ pub enum Command {
     Like(Uuid),
     Pin(Uuid),
     ContentDelete(Uuid),
+}
+
+pub enum MsgCommand {
+    Command(Command),
+    Showing(String),
 }
 
 pub struct Response {
@@ -80,6 +86,24 @@ macro_rules! extract_option {
             _ => Err(anyhow::anyhow!("cannot get value: `id`")),
         }
     }};
+}
+
+macro_rules! extract_clap_sams {
+    ($n:expr; in $a:expr) => {
+        match $a.subcommand_matches($n) {
+            Some(s) => s,
+            None => bail!("cannot get arg_matches: {}", $n),
+        }
+    };
+}
+
+macro_rules! extract_clap_arg {
+    ($n:expr; in $a:expr) => {
+        match $a.value_of($n) {
+            Some(s) => s,
+            None => bail!("cannot get arg: {}", $n),
+        }
+    };
 }
 
 fn resp_from_user(
@@ -191,7 +215,110 @@ impl Conductor {
         Ok(com)
     }
 
-    pub async fn parse_msg(&self, msg: &Message) -> anyhow::Result<Command> { unimplemented!() }
+    pub async fn parse_msg(&self, msg: &String) -> anyhow::Result<MsgCommand> {
+        let splitted = unimplemented!();
+
+        let ams = match create_clap_app().get_matches_from_safe(splitted) {
+            Ok(o) => o,
+            Err(e) =>
+                return match e.kind {
+                    ErrorKind::HelpDisplayed => Ok(MsgCommand::Showing(e.message)),
+                    ErrorKind::VersionDisplayed => Ok(MsgCommand::Showing(e.message)),
+                    _ => bail!("parsing error: {}", e),
+                },
+        };
+
+        use std::str::FromStr;
+
+        use command_strs::*;
+
+        let cmd = match match ams.subcommand_name() {
+            None => bail!("cannot get subcommand."),
+            Some(s) => s,
+        } {
+            // let name = extract_clap_arg!(register::name::NAME; in sams);
+            register::NAME => Command::UserRegister,
+            info::NAME => Command::UserRead,
+            change::NAME => {
+                let sams = extract_clap_sams!(change::NAME; in ams);
+                let admin_raw = sams.value_of(change::admin::NAME);
+                let sub_admin_raw = sams.value_of(change::sub_admin::NAME);
+
+                let admin = match admin_raw.map(|s| bool::from_str(s)) {
+                    Some(Ok(b)) => Some(b),
+                    None => None,
+                    Some(Err(e)) => bail!("{}", e),
+                };
+
+                let sub_admin = match sub_admin_raw.map(|s| bool::from_str(s)) {
+                    Some(Ok(b)) => Some(b),
+                    None => None,
+                    Some(Err(e)) => bail!("{}", e),
+                };
+
+                Command::UserUpdate(admin, sub_admin)
+            },
+            bookmark::NAME => {
+                let sams = extract_clap_sams!(bookmark::NAME; in ams);
+                let id_raw = extract_clap_arg!(bookmark::id::NAME; in sams);
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::Bookmark(id)
+            },
+            delete_me::NAME => Command::UserDelete,
+            post::NAME => {
+                let sams = extract_clap_sams!(post::NAME; in ams);
+                let content = extract_clap_arg!(post::content::NAME; in sams);
+
+                Command::ContentPost(content.to_string())
+            },
+            get::NAME => {
+                let sams = extract_clap_sams!(get::NAME; in ams);
+                let id_raw = extract_clap_arg!(get::id::NAME; in sams);
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::ContentRead(id)
+            },
+            edit::NAME => {
+                let sams = extract_clap_sams!(edit::NAME; in ams);
+                let id_raw = extract_clap_arg!(edit::id::NAME; in sams);
+                let content = extract_clap_arg!(edit::content::NAME; in sams);
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::ContentUpdate(id, content.to_string())
+            },
+            like::NAME => {
+                let sams = extract_clap_sams!(like::NAME; in ams);
+                let id_raw = extract_clap_arg!(like::id::NAME; in sams);
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::Like(id)
+            },
+            pin::NAME => {
+                let sams = extract_clap_sams!(pin::NAME; in ams);
+                let id_raw = extract_clap_arg!(pin::id::NAME; in sams);
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::Pin(id)
+            },
+            remove::NAME => {
+                let sams = extract_clap_sams!(remove::NAME; in ams);
+                let id_raw = extract_clap_arg!(remove::id::NAME; in sams);
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::ContentDelete(id)
+            },
+            _ => bail!("unrecognized subcommand."),
+        };
+
+        Ok(MsgCommand::Command(cmd))
+    }
 
     pub async fn handle_ia(&self, cmd: Command, user_id: UserId) -> Response {
         let res: anyhow::Result<Response> = try {
