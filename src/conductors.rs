@@ -29,7 +29,7 @@ pub enum Command {
     UserUpdate(Option<bool>, Option<bool>),
     Bookmark(Uuid),
     UserDelete,
-    ContentPost(String),
+    ContentPost(String, String),
     ContentRead(Uuid),
     ContentUpdate(Uuid, String),
     Like(Uuid),
@@ -139,6 +139,8 @@ fn resp_from_content(
     Content {
         id,
         content,
+        author,
+        posted,
         liked,
         bookmarked,
         pinned,
@@ -150,6 +152,8 @@ fn resp_from_content(
         description: format!("{}", description),
         fields: vec![
             ("id:".to_string(), format!("{}", id)),
+            ("author".to_string(), author),
+            ("posted".to_string(), format!("{}", posted)),
             ("content:".to_string(), content),
             ("liked:".to_string(), format!("{}", liked.len())),
             ("pinned:".to_string(), format!("{}", pinned.len())),
@@ -180,8 +184,9 @@ impl Conductor {
             "delete_me" => Command::UserDelete,
             "post" => {
                 let content = extract_option!(Value::String => ref id in acid)?;
+                let author = extract_option!(Value::String => ref author in acid)?;
 
-                Command::ContentPost(content.clone())
+                Command::ContentPost(content.clone(), author.clone())
             },
             "get" => {
                 let id = extract_option!(Value::String => ref id in acid)?;
@@ -270,8 +275,9 @@ impl Conductor {
             post::NAME => {
                 let sams = extract_clap_sams!(post::NAME; in ams);
                 let content = extract_clap_arg!(post::content::NAME; in sams);
+                let author = extract_clap_arg!(post::author::NAME; in sams);
 
-                Command::ContentPost(content.to_string())
+                Command::ContentPost(content.to_string(), author.to_string())
             },
             get::NAME => {
                 let sams = extract_clap_sams!(get::NAME; in ams);
@@ -368,12 +374,12 @@ impl Conductor {
                         fields: vec![],
                     }
                 },
-                Command::ContentPost(content) => resp_from_content(
+                Command::ContentPost(content, author) => resp_from_content(
                     "posted content",
                     format!("from: [unimplemented]"),
                     (0, 0, 0),
                     self.handler
-                        .create_content_and_posted_update_user(content, user_id)
+                        .create_content_and_posted_update_user(content, user_id, author)
                         .await?,
                 ),
                 Command::ContentRead(id) => resp_from_content(
@@ -639,6 +645,10 @@ mod command_strs {
         post {
             NAME: "post";
             DESC: "post content.";
+            author {
+                NAME: "author";
+                DESC: "who said conntent.";
+            }
             content {
                 NAME: "content";
                 DESC: "content's content.";
@@ -733,6 +743,12 @@ async fn application_commands_create_inner() -> Value {
         .create_application_command(|cac| {
             cac.name(post::NAME)
                 .description(post::DESC)
+                .create_option(|caco| {
+                    caco.name(post::author::NAME)
+                        .description(post::author::DESC)
+                        .required(true)
+                        .kind(ApplicationCommandOptionType::String)
+                })
                 .create_option(|caco| {
                     caco.name(post::content::NAME)
                         .description(post::content::DESC)
@@ -831,13 +847,18 @@ pub fn create_clap_app() -> clap::App<'static, 'static> {
                     .value_name(bookmark::id::NAME),
             ),
         SubCommand::with_name(delete_me::NAME).about(delete_me::DESC),
-        SubCommand::with_name(post::NAME).about(post::DESC).arg(
+        SubCommand::with_name(post::NAME).about(post::DESC).args(&vec![
+            Arg::with_name(post::author::NAME)
+            .help(post::author::DESC)
+            .required(true)
+            .takes_value(true)
+            .value_name(post::author::NAME),
             Arg::with_name(post::content::NAME)
                 .help(post::content::DESC)
                 .required(true)
                 .takes_value(true)
                 .value_name(post::content::NAME),
-        ),
+        ]),
         SubCommand::with_name(get::NAME).about(get::DESC).arg(
             Arg::with_name(get::id::NAME)
                 .help(get::id::DESC)
