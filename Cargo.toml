@@ -5,7 +5,7 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "1.7.1", features = ["full"] }
-serenity = { version = "0.10.8", features = ["unstable_discord_api"] }
+serenity = { version = "0.10.8", default-features = false, features = ["builder", "cache", "client", "gateway", "model", "http", "utils", "rustls_backend", "unstable_discord_api"] }
 anyhow = "1.0.41"
 uuid = { version = "0.8.2", features = ["v4"] }
 chrono = "0.4.19"
