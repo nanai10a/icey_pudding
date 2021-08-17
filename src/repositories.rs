@@ -72,11 +72,12 @@ impl Repository for InMemoryRepository<User> {
     }
 
     async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item> {
+        let matched = self.get_match(queries).await?;
+
         let mut guard = self.0.lock().await;
         let vec: &mut Vec<_> = guard.as_mut();
-
-        let matched = self.get_match(queries).await?;
         let res = try_remove_target_from_vec(vec, &matched, |v1, v2| v1.id == v2.id);
+        drop(guard);
 
         match res {
             Ok(o) => o,
@@ -87,13 +88,14 @@ impl Repository for InMemoryRepository<User> {
     }
 
     async fn remove_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>> {
+        let matches = self.get_matches(queries).await?;
+
         let mut guard = self.0.lock().await;
         let vec: &mut Vec<_> = guard.as_mut();
-
-        let matches = self.get_matches(queries).await?;
         let res = matches
             .iter()
             .try_for_each(|t| try_remove_target_from_vec(vec, t, |v1, v2| v1.id == v2.id));
+        drop(guard);
 
         match res {
             Ok(o) => o,
@@ -212,11 +214,12 @@ impl Repository for InMemoryRepository<Content> {
     }
 
     async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item> {
+        let matched = self.get_match(queries).await?;
+
         let mut guard = self.0.lock().await;
         let vec: &mut Vec<_> = guard.as_mut();
-
-        let matched = self.get_match(queries).await?;
         let res = try_remove_target_from_vec(vec, &matched, |v1, v2| v1.id == v2.id);
+        drop(guard);
 
         match res {
             Ok(o) => o,
@@ -227,13 +230,14 @@ impl Repository for InMemoryRepository<Content> {
     }
 
     async fn remove_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>> {
+        let matches = self.get_matches(queries).await?;
+        
         let mut guard = self.0.lock().await;
         let vec: &mut Vec<_> = guard.as_mut();
-
-        let matches = self.get_matches(queries).await?;
         let res = matches
             .iter()
             .try_for_each(|t| try_remove_target_from_vec(vec, t, |v1, v2| v1.id == v2.id));
+        drop(guard);
 
         match res {
             Ok(o) => o,
