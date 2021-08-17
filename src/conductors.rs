@@ -215,8 +215,8 @@ impl Conductor {
         Ok(com)
     }
 
-    pub async fn parse_msg(&self, msg: &String) -> anyhow::Result<MsgCommand> {
-        let splitted = unimplemented!();
+    pub async fn parse_msg(&self, msg: &str) -> anyhow::Result<MsgCommand> {
+        let splitted = shell_words::split(msg)?;
 
         let ams = match create_clap_app().get_matches_from_safe(splitted) {
             Ok(o) => o,
