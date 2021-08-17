@@ -1,0 +1,54 @@
+# extract from "https://github.com/chriskempson/base16-vim/blob/master/colors/base16-gruvbox-dark-hard.vim"
+
+{name}     {r  g  b} {sample} {assoiciation}
+
+register   d5 c4 a1  08       #a
+info       83 a5 98  05       #d
+change     b8 bb 26  03       #b
+bookmark   83 a5 98  05       #d
+delete_me  1d 20 21  01       #a
+post       fb f1 c7  16       #c
+get        fa bd 2f  04
+edit       8e c0 7c  07       #b
+like       d3 86 9b  06
+pin        fb 49 34  02
+remove     66 5c 54  09       #c
+
+[error]    fe 80 19
+
+example:
+<!-- example -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      .box {
+        width: 100%;
+        height: 100%;
+        display: flex;
+      }
+
+      .sample {
+        width: 10rem;
+        height: 10rem;
+
+        font-size: 3rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <div class="sample" style="background-color: #1d2021;">01 #a</div>
+      <div class="sample" style="background-color: #fb4934;">02</div>
+      <div class="sample" style="background-color: #b8bb26;">03 #b</div>
+      <div class="sample" style="background-color: #fabd2f;">04</div>
+      <div class="sample" style="background-color: #83a598;">05 #d</div>
+      <div class="sample" style="background-color: #d3869b;">06</div>
+      <div class="sample" style="background-color: #8ec07c;">07 #b</div>
+      <div class="sample" style="background-color: #d5c4a1;">08 #a</div>
+      <div class="sample" style="background-color: #665c54;">09 #c</div>
+      <div class="sample" style="background-color: #fbf1c7;">16 #c</div>
+    </div>
+  </body>
+</html>
+<!-- example_end -->
