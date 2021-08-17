@@ -2,8 +2,8 @@ use std::fmt::Display;
 
 use anyhow::bail;
 use clap::ErrorKind;
-use serde_json::Value;
-use serenity::builder::CreateApplicationCommands;
+use serde_json::{json, Value};
+use serenity::builder::{CreateApplicationCommands, CreateEmbed, CreateMessage};
 use serenity::client::{Context, EventHandler};
 use serenity::http::Http;
 use serenity::model::channel::Message;
@@ -320,7 +320,7 @@ impl Conductor {
         Ok(MsgCommand::Command(cmd))
     }
 
-    pub async fn handle_ia(&self, cmd: Command, user_id: UserId) -> Response {
+    pub async fn handle(&self, cmd: Command, user_id: UserId) -> Response {
         let res: anyhow::Result<Response> = try {
             let resp: Response = match cmd {
                 Command::UserRegister => resp_from_user(
@@ -444,8 +444,28 @@ impl Conductor {
             },
         }
     }
+}
 
-    pub async fn handle_msg(&self, msg: &Message) -> Response { unimplemented!() }
+pub fn build_embed_from_resp(
+    ce: &mut CreateEmbed,
+    Response {
+        title,
+        rgb,
+        description,
+        mut fields,
+    }: Response,
+) -> &mut CreateEmbed {
+    let (r, g, b) = rgb;
+
+    ce.title(title)
+        .colour(Colour::from_rgb(r, g, b))
+        .description(description)
+        .fields(
+            fields
+                .drain(..)
+                .map(|(s1, s2)| (s1, s2, false))
+                .collect::<Vec<_>>(),
+        )
 }
 
 #[serenity::async_trait]
@@ -461,28 +481,12 @@ impl EventHandler for Conductor {
             Err(e) => return eprintln!("{}", e),
         };
 
-        let Response {
-            title,
-            rgb,
-            description,
-            mut fields,
-        } = self.handle_ia(cmd, aci.user.id).await;
-        let (r, g, b) = rgb;
+        let resp = self.handle(cmd, aci.user.id).await;
 
         let res = aci
             .create_interaction_response(ctx.http, |cir| {
                 cir.interaction_response_data(|cird| {
-                    cird.create_embed(|ce| {
-                        ce.title(title)
-                            .colour(Colour::from_rgb(r, g, b))
-                            .description(description)
-                            .fields(
-                                fields
-                                    .drain(..)
-                                    .map(|(s1, s2)| (s1, s2, false))
-                                    .collect::<Vec<_>>(),
-                            )
-                    })
+                    cird.create_embed(|ce| build_embed_from_resp(ce, resp))
                 })
             })
             .await;
@@ -493,7 +497,77 @@ impl EventHandler for Conductor {
         };
     }
 
-    async fn message(&self, ctx: Context, msg: Message) { self.handle_msg(&msg).await; }
+    async fn message(&self, ctx: Context, msg: Message) {
+        let mcmd = match self.parse_msg(msg.content.as_str()).await {
+            Ok(o) => o,
+            Err(e) => return eprintln!("{}", e),
+        };
+
+        let cmd = match mcmd {
+            MsgCommand::Command(c) => c,
+            MsgCommand::Showing(s) => {
+                let res = msg
+                    .channel_id
+                    .send_message(ctx.http, |cm| {
+                        cm.add_embed(|ce| {
+                            ce.title("error occurred")
+                                .colour(Colour::RED)
+                                .description(format!("```{}```", s))
+                        });
+
+                        let CreateMessage(ref mut raw, ..) = cm;
+
+                        let mr = dbg!(json!({
+                            "message_id": msg.id,
+                            "channel_id": msg.channel_id,
+                            "guild_id": match msg.guild_id {
+                                Some(i) => Value::String(i.to_string()),
+                                None => Value::Null
+                            },
+                        }));
+
+                        dbg!(raw.insert("message_reference", mr));
+
+                        cm
+                    })
+                    .await;
+
+                return match res {
+                    Ok(_) => (),
+                    Err(e) => eprintln!("{}", e),
+                };
+            },
+        };
+
+        let resp = self.handle(cmd, msg.author.id).await;
+
+        let res = msg
+            .channel_id
+            .send_message(ctx.http, |cm| {
+                cm.add_embed(|ce| build_embed_from_resp(ce, resp));
+
+                let CreateMessage(ref mut raw, ..) = cm;
+
+                let mr = dbg!(json!({
+                    "message_id": msg.id,
+                    "channel_id": msg.channel_id,
+                    "guild_id": match msg.guild_id {
+                        Some(i) => Value::String(i.to_string()),
+                        None => Value::Null
+                    },
+                }));
+
+                dbg!(raw.insert("message_reference", mr));
+
+                cm
+            })
+            .await;
+
+        match res {
+            Ok(_) => (),
+            Err(e) => eprintln!("{}", e),
+        }
+    }
 }
 
 pub async fn application_command_create(
