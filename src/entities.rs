@@ -13,7 +13,7 @@ pub struct User {
 #[derive(Debug, Clone)]
 pub struct Content {
     pub id: Uuid,
-    pub author: String,
+    pub author: String, /* TODO: `Discordに存在する人物(UserID) || 何らかの人物(String)` */
     pub posted: UserId,
     pub content: String,
     pub liked: Vec<UserId>,
