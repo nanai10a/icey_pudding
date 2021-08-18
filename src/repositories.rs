@@ -3,33 +3,10 @@ use serenity::model::id::UserId;
 
 use crate::entities::{Content, User};
 
-#[serenity::async_trait]
-pub trait Repository {
-    type Item: Send + Sync;
-    type Query: Send + Sync;
+// FIXME: `Vec<_>`を`SmallVec<_>`に置換したくなってきた.
 
-    async fn save(&self, item: Self::Item) -> anyhow::Result<()>;
-    async fn get_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>>;
-    async fn get_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item>;
-    async fn remove_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>>;
-    async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item>;
-}
-
-pub trait Query<S> {
-    type Item: Send + Sync;
-    type Return: Send + Sync;
-
-    // TODO: `()`以外で何らかの情報を供給すべき？
-    // FIXME: `Vec<_>`を`SmallVec<_>`に置換したくなってきた.
-    fn filter(&self, src: S) -> anyhow::Result<Self::Return>;
-}
-
-impl<'a> Query<Vec<&'a User>> for UserQuery {
-    type Item = User;
-    type Return = Vec<&'a User>;
-
-    #[inline]
-    fn filter(&self, mut src: Vec<&'a User>) -> anyhow::Result<Self::Return> {
+impl UserQuery {
+    pub async fn filter(&self, mut src: Vec<&User>) -> anyhow::Result<Vec<&User>> {
         let mut c: Box<dyn FnMut(&'a User) -> bool> = match self {
             // FIXME: `User`変更時にQueryの変更をしていないので, 足りないfieldがある
             Self::Id(f_id) => box move |User { id, .. }| id == f_id,
@@ -59,8 +36,21 @@ pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
 impl<T> InMemoryRepository<T> {
     pub async fn new() -> Self { Self(Mutex::new(vec![])) }
 }
+
 #[serenity::async_trait]
-impl Repository for InMemoryRepository<User> {
+pub trait UserRepository {
+    type Item;
+    type Query;
+
+    async fn save(&self, item: Self::Item) -> anyhow::Result<()>;
+    async fn get_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>>;
+    async fn get_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item>;
+    async fn remove_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Query>;
+    async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>>;
+}
+
+#[serenity::async_trait]
+impl UserRepository for InMemoryRepository<User> {
     type Item = User;
     type Query = UserQuery;
 
@@ -159,7 +149,19 @@ pub enum UserQuery {
 }
 
 #[serenity::async_trait]
-impl Repository for InMemoryRepository<Content> {
+pub trait ContentRepository {
+    type Item;
+    type Query;
+
+    async fn save(&self, item: Self::Item) -> anyhow::Result<()>;
+    async fn get_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>>;
+    async fn get_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item>;
+    async fn remove_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Query>;
+    async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>>;
+}
+
+#[serenity::async_trait]
+impl ContentRepository for InMemoryRepository<Content> {
     type Item = Content;
     type Query = ContentQuery;
 
