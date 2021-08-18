@@ -15,21 +15,22 @@ pub trait Repository {
     async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item>;
 }
 
-#[serenity::async_trait]
-pub trait Query {
+pub trait Query<S> {
     type Item: Send + Sync;
+    type Return: Send + Sync;
 
     // TODO: `()`以外で何らかの情報を供給すべき？
     // FIXME: `Vec<_>`を`SmallVec<_>`に置換したくなってきた.
-    async fn filter(&self, src: &mut Vec<Self::Item>) -> anyhow::Result<()>;
+    fn filter(&self, src: S) -> anyhow::Result<Self::Return>;
 }
 
-#[serenity::async_trait]
-impl Query for UserQuery {
+impl<'a> Query<Vec<&'a User>> for UserQuery {
     type Item = User;
+    type Return = Vec<&'a User>;
 
-    async fn filter(&self, src: &mut Vec<Self::Item>) -> anyhow::Result<()> {
-        let mut c: Box<dyn FnMut(&mut User) -> bool> = match self {
+    #[inline]
+    fn filter(&self, mut src: Vec<&'a User>) -> anyhow::Result<Self::Return> {
+        let mut c: Box<dyn FnMut(&'a User) -> bool> = match self {
             // FIXME: `User`変更時にQueryの変更をしていないので, 足りないfieldがある
             Self::Id(f_id) => box move |User { id, .. }| id == f_id,
             Self::Admin(f_admin) => box move |User { admin, .. }| admin == f_admin,
@@ -47,9 +48,7 @@ impl Query for UserQuery {
             },
         };
 
-        src.drain_filter(|v| c.call_mut((v,)));
-
-        Ok(())
+        Ok(src.drain_filter(|v| c.call_mut((v,))).collect())
     }
 }
 
@@ -72,29 +71,11 @@ impl Repository for InMemoryRepository<User> {
 
     async fn get_matches(&self, mut queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>> {
         let locked = self.0.lock().await;
-        let mut vec = locked.iter().collect::<Vec<_>>();
+        let mut vec = locked.iter().collect();
 
-        queries.drain(..).for_each(|q| match q {
-            UserQuery::Id(i) => vec = vec.drain(..).filter(|v| v.id == i).collect(),
-            UserQuery::Admin(a) => {
-                vec = vec.drain(..).filter(|v| v.admin == a).collect();
-            },
-            UserQuery::SubAdmin(sa) => {
-                vec = vec.drain(..).filter(|v| v.sub_admin == sa).collect();
-            },
-            UserQuery::Posted(p) => {
-                vec = vec
-                    .drain(..)
-                    .filter(|v| p.iter().filter(|i| v.posted.contains(i)).count() == p.len())
-                    .collect();
-            },
-            UserQuery::Bookmark(b) => {
-                vec = vec
-                    .drain(..)
-                    .filter(|v| b.iter().filter(|i| v.bookmark.contains(i)).count() == b.len())
-                    .collect();
-            },
-        });
+        for q in queries.drain(..) {
+            vec = q.filter(vec)?;
+        }
 
         Ok(vec.drain(..).cloned().collect())
     }
