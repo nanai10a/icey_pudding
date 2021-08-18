@@ -15,6 +15,44 @@ pub trait Repository {
     async fn remove_match(&self, queries: Vec<Self::Query>) -> anyhow::Result<Self::Item>;
 }
 
+#[serenity::async_trait]
+pub trait Query {
+    type Item: Send + Sync;
+
+    // TODO: `()`以外で何らかの情報を供給すべき？
+    // FIXME: `Vec<_>`を`SmallVec<_>`に置換したくなってきた.
+    async fn filter(&self, src: &mut Vec<Self::Item>) -> anyhow::Result<()>;
+}
+
+#[serenity::async_trait]
+impl Query for UserQuery {
+    type Item = User;
+
+    async fn filter(&self, src: &mut Vec<Self::Item>) -> anyhow::Result<()> {
+        let mut c: Box<dyn FnMut(&mut User) -> bool> = match self {
+            // FIXME: `User`変更時にQueryの変更をしていないので, 足りないfieldがある
+            Self::Id(f_id) => box move |User { id, .. }| id == f_id,
+            Self::Admin(f_admin) => box move |User { admin, .. }| admin == f_admin,
+            Self::SubAdmin(f_sub_admin) =>
+                box move |User { sub_admin, .. }| sub_admin == f_sub_admin,
+            Self::Posted(f_posted) => box move |User { posted, .. }| {
+                f_posted.iter().filter(|elem| posted.contains(elem)).count() == posted.len()
+            },
+            Self::Bookmark(f_bookmark) => box move |User { bookmark, .. }| {
+                f_bookmark
+                    .iter()
+                    .filter(|elem| bookmark.contains(elem))
+                    .count()
+                    == bookmark.len()
+            },
+        };
+
+        src.drain_filter(|v| c.call_mut((v,)));
+
+        Ok(())
+    }
+}
+
 use tokio::sync::Mutex;
 
 pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
