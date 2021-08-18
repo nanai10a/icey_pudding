@@ -269,7 +269,7 @@ impl Repository for InMemoryRepository<Content> {
 
     async fn remove_matches(&self, queries: Vec<Self::Query>) -> anyhow::Result<Vec<Self::Item>> {
         let matches = self.get_matches(queries).await?;
-        
+
         let mut guard = self.0.lock().await;
         let vec: &mut Vec<_> = guard.as_mut();
         let res = matches

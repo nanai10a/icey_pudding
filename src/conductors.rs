@@ -226,8 +226,10 @@ impl Conductor {
     pub async fn parse_msg(&self, msg: &str) -> anyhow::Result<MsgCommand> {
         let splitted = shell_words::split(msg)?;
 
-        if let Some(n) = splitted.get(0){
-            if n != command_strs::PREFIX { bail!("not command, abort.") }
+        if let Some(n) = splitted.get(0) {
+            if n != command_strs::PREFIX {
+                bail!("not command, abort.")
+            }
         }
 
         let ams = match create_clap_app().get_matches_from_safe(splitted) {
@@ -866,7 +868,7 @@ async fn application_commands_create_inner() -> Value {
 }
 
 pub fn create_clap_app() -> clap::App<'static, 'static> {
-    use clap::{App, Arg, SubCommand, AppSettings};
+    use clap::{App, AppSettings, Arg, SubCommand};
     use command_strs::*;
 
     App::new(PREFIX)
