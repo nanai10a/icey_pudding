@@ -6,17 +6,19 @@ use crate::entities::{Content, User};
 // FIXME: `Vec<_>`を`SmallVec<_>`に置換したくなってきた.
 
 impl UserQuery {
-    pub async fn filter(&self, mut src: Vec<&User>) -> anyhow::Result<Vec<&User>> {
-        let mut c: Box<dyn FnMut(&'a User) -> bool> = match self {
+    type Target = User;
+
+    pub async fn filter(&self, mut src: Vec<&Self::Target>) -> anyhow::Result<Vec<&Self::Target>> {
+        let mut c: Box<dyn FnMut(&'a Self::Target) -> bool> = match self {
             // FIXME: `User`変更時にQueryの変更をしていないので, 足りないfieldがある
-            Self::Id(f_id) => box move |User { id, .. }| id == f_id,
-            Self::Admin(f_admin) => box move |User { admin, .. }| admin == f_admin,
+            Self::Id(f_id) => box move |Self::Target { id, .. }| id == f_id,
+            Self::Admin(f_admin) => box move |Self::Target { admin, .. }| admin == f_admin,
             Self::SubAdmin(f_sub_admin) =>
-                box move |User { sub_admin, .. }| sub_admin == f_sub_admin,
-            Self::Posted(f_posted) => box move |User { posted, .. }| {
+                box move |Self::Target { sub_admin, .. }| sub_admin == f_sub_admin,
+            Self::Posted(f_posted) => box move |Self::Target { posted, .. }| {
                 f_posted.iter().filter(|elem| posted.contains(elem)).count() == posted.len()
             },
-            Self::Bookmark(f_bookmark) => box move |User { bookmark, .. }| {
+            Self::Bookmark(f_bookmark) => box move |Self::Target { bookmark, .. }| {
                 f_bookmark
                     .iter()
                     .filter(|elem| bookmark.contains(elem))
@@ -174,51 +176,8 @@ impl ContentRepository for InMemoryRepository<Content> {
         let locked = self.0.lock().await;
         let mut vec = locked.iter().collect::<Vec<_>>();
 
-        let res = queries
-            .drain(..)
-            .try_for_each::<_, anyhow::Result<()>>(|q| {
-                match q {
-                    ContentQuery::Id(i) => vec = vec.drain(..).filter(|v| v.id == i).collect(),
-                    ContentQuery::Content(s) => {
-                        let r = regex::Regex::new(s.as_str())?;
-                        vec = vec
-                            .drain(..)
-                            .filter(|v| r.is_match(v.content.as_str()))
-                            .collect();
-                    },
-
-                    ContentQuery::Liked(l) => {
-                        vec = vec
-                            .drain(..)
-                            .filter(|v| l.iter().filter(|i| v.liked.contains(i)).count() == l.len())
-                            .collect();
-                    },
-                    ContentQuery::Bookmarked(b, c) => {
-                        vec = vec
-                            .drain(..)
-                            .filter(|v| match c {
-                                Comparison::Over => v.bookmarked >= b,
-                                Comparison::Eq => v.bookmarked == b,
-                                Comparison::Under => v.bookmarked <= b,
-                            })
-                            .collect();
-                    },
-                    ContentQuery::Pinned(p) => {
-                        vec = vec
-                            .drain(..)
-                            .filter(|v| {
-                                p.iter().filter(|i| v.pinned.contains(i)).count() == p.len()
-                            })
-                            .collect();
-                    },
-                }
-
-                Ok(())
-            });
-
-        match res {
-            Ok(o) => o,
-            Err(e) => bail!("{}", e),
+        for q in queries.drain(..) {
+            vec = q.filter(vec).await?;
         }
 
         Ok(vec.drain(..).cloned().collect())
@@ -281,4 +240,32 @@ pub enum Comparison {
     Over,
     Eq,
     Under,
+}
+
+impl ContentQuery {
+    type Target = Content;
+
+    pub async fn filter(&self, mut src: Vec<&Self::Target>) -> anyhow::Result<Vec<&Self::Target>> {
+        let mut c: Box<dyn FnMut(&'a Self::Target) -> bool> = match self {
+            Self::Id(f_id) => box move |Self::Target { id, .. }| id == f_id,
+            Self::Content(f_content) => {
+                let rx = regex::Regex::new(f_content)?;
+                box move |Self::Target { content, .. }| rx.is_match(content)
+            },
+            Self::Liked(f_liked) => box move |Self::Target { liked, .. }| {
+                f_liked.iter().filter(|elem| liked.contains(elem)).count() == liked.len()
+            },
+            Self::Bookmarked(f_bookmarked, comp) =>
+                box move |Self::Target { bookmarked, .. }| match comp {
+                    Comparison::Over => bookmarked >= f_bookmarked,
+                    Comparison::Eq => bookmarked == f_bookmarked,
+                    Comparison::Under => bookmarked <= f_bookmarked,
+                },
+            Self::Pinned(f_pinned) => box move |Self::Target { pinned, .. }| {
+                f_pinned.iter().filter(|elem| pinned.contains(elem)).count() == pinned.len()
+            },
+        };
+
+        Ok(src.drain_filter(|v| c.call_mut((v,))).collect())
+    }
 }
