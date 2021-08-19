@@ -3,8 +3,6 @@ use serenity::model::id::UserId;
 
 use crate::entities::{Content, User};
 
-// FIXME: `Vec<_>`を`SmallVec<_>`に置換したくなってきた.
-
 impl UserQuery {
     #[allow(clippy::needless_lifetimes)]
     pub async fn filter<'a>(&self, mut src: Vec<&'a User>) -> anyhow::Result<Vec<&'a User>> {
