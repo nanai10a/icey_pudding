@@ -215,6 +215,8 @@ impl ContentRepository for InMemoryRepository<Content> {
 
 pub enum ContentQuery {
     Id(Uuid),
+    Author(String),
+    Posted(UserId),
     Content(String),
     Liked(Vec<UserId>),
     Bookmarked(u32, Comparison),
@@ -232,6 +234,10 @@ impl ContentQuery {
     pub async fn filter<'a>(&self, mut src: Vec<&'a Content>) -> anyhow::Result<Vec<&'a Content>> {
         let mut c: Box<dyn FnMut(&'a Content) -> bool> = match self {
             Self::Id(f_id) => box move |Content { id, .. }| id == f_id,
+            Self::Author(f_author) => {
+                let r = regex::Regex::new(f_author)?;
+                box move |Content { author, ..}| r.is_match(author)},
+            Self::Posted(f_posted) => box move |Content { posted, ..}| posted == f_posted,
             Self::Content(f_content) => {
                 let rx = regex::Regex::new(f_content)?;
                 box move |Content { content, .. }| rx.is_match(content)
