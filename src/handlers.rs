@@ -2,11 +2,11 @@ use serenity::model::id::UserId;
 use uuid::Uuid;
 
 use crate::entities::{Content, User};
-use crate::repositories::{ContentQuery, Repository, UserQuery};
+use crate::repositories::{ContentQuery, ContentRepository, UserQuery, UserRepository};
 
 pub struct Handler {
-    pub user_repository: Box<dyn Repository<Item = User, Query = UserQuery> + Sync + Send>,
-    pub content_repository: Box<dyn Repository<Item = Content, Query = ContentQuery> + Sync + Send>,
+    pub user_repository: Box<dyn UserRepository + Send + Sync>,
+    pub content_repository: Box<dyn ContentRepository + Send + Sync>,
 }
 
 impl Handler {
