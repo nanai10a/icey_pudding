@@ -7,3 +7,5 @@ pub mod conductors;
 pub mod entities;
 pub mod handlers;
 pub mod repositories;
+
+// FIXME: Resultの多用が酷いのでpanic!を検討しましょう
