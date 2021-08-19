@@ -1,40 +1,9 @@
 use anyhow::bail;
 use serenity::model::id::UserId;
+use tokio::sync::Mutex;
+use uuid::Uuid;
 
 use crate::entities::{Content, User};
-
-impl UserQuery {
-    #[allow(clippy::needless_lifetimes)]
-    pub async fn filter<'a>(&self, mut src: Vec<&'a User>) -> anyhow::Result<Vec<&'a User>> {
-        let mut c: Box<dyn FnMut(&'a User) -> bool> = match self {
-            // FIXME: `User`変更時にQueryの変更をしていないので, 足りないfieldがある
-            Self::Id(f_id) => box move |User { id, .. }| id == f_id,
-            Self::Admin(f_admin) => box move |User { admin, .. }| admin == f_admin,
-            Self::SubAdmin(f_sub_admin) =>
-                box move |User { sub_admin, .. }| sub_admin == f_sub_admin,
-            Self::Posted(f_posted) => box move |User { posted, .. }| {
-                f_posted.iter().filter(|elem| posted.contains(elem)).count() == posted.len()
-            },
-            Self::Bookmark(f_bookmark) => box move |User { bookmark, .. }| {
-                f_bookmark
-                    .iter()
-                    .filter(|elem| bookmark.contains(elem))
-                    .count()
-                    == bookmark.len()
-            },
-        };
-
-        Ok(src.drain_filter(|v| c.call_mut((v,))).collect())
-    }
-}
-
-use tokio::sync::Mutex;
-
-pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
-
-impl<T> InMemoryRepository<T> {
-    pub async fn new() -> Self { Self(Mutex::new(vec![])) }
-}
 
 #[serenity::async_trait]
 pub trait UserRepository {
@@ -43,6 +12,21 @@ pub trait UserRepository {
     async fn get_match(&self, queries: Vec<UserQuery>) -> anyhow::Result<User>;
     async fn remove_match(&self, queries: Vec<UserQuery>) -> anyhow::Result<User>;
     async fn remove_matches(&self, queries: Vec<UserQuery>) -> anyhow::Result<Vec<User>>;
+}
+
+#[serenity::async_trait]
+pub trait ContentRepository {
+    async fn save(&self, item: Content) -> anyhow::Result<()>;
+    async fn get_matches(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Vec<Content>>;
+    async fn get_match(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Content>;
+    async fn remove_matches(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Vec<Content>>;
+    async fn remove_match(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Content>;
+}
+
+pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
+
+impl<T> InMemoryRepository<T> {
+    pub async fn new() -> Self { Self(Mutex::new(vec![])) }
 }
 
 #[serenity::async_trait]
@@ -108,48 +92,6 @@ impl UserRepository for InMemoryRepository<User> {
     }
 }
 
-fn try_remove_target_from_vec<T>(
-    vec: &mut Vec<T>,
-    target: &T,
-    compare: impl Fn(&T, &T) -> bool,
-) -> anyhow::Result<()> {
-    let mut indexes = vec
-        .iter()
-        .enumerate()
-        .filter_map(|(i, v)| match compare(target, v) {
-            true => Some(i),
-            false => None,
-        })
-        .collect::<Vec<_>>();
-
-    let index = match indexes.len() {
-        1 => indexes.remove(0),
-        _ => bail!("cannot get index: got {:?}", indexes),
-    };
-
-    vec.remove(index);
-    Ok(())
-}
-
-use uuid::Uuid;
-
-pub enum UserQuery {
-    Id(UserId),
-    Admin(bool),
-    SubAdmin(bool),
-    Posted(Vec<Uuid>),
-    Bookmark(Vec<Uuid>),
-}
-
-#[serenity::async_trait]
-pub trait ContentRepository {
-    async fn save(&self, item: Content) -> anyhow::Result<()>;
-    async fn get_matches(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Vec<Content>>;
-    async fn get_match(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Content>;
-    async fn remove_matches(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Vec<Content>>;
-    async fn remove_match(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Content>;
-}
-
 #[serenity::async_trait]
 impl ContentRepository for InMemoryRepository<Content> {
     async fn save(&self, item: Content) -> anyhow::Result<()> {
@@ -213,6 +155,61 @@ impl ContentRepository for InMemoryRepository<Content> {
     }
 }
 
+fn try_remove_target_from_vec<T>(
+    vec: &mut Vec<T>,
+    target: &T,
+    compare: impl Fn(&T, &T) -> bool,
+) -> anyhow::Result<()> {
+    let mut indexes = vec
+        .iter()
+        .enumerate()
+        .filter_map(|(i, v)| match compare(target, v) {
+            true => Some(i),
+            false => None,
+        })
+        .collect::<Vec<_>>();
+
+    let index = match indexes.len() {
+        1 => indexes.remove(0),
+        _ => bail!("cannot get index: got {:?}", indexes),
+    };
+
+    vec.remove(index);
+    Ok(())
+}
+
+pub enum UserQuery {
+    Id(UserId),
+    Admin(bool),
+    SubAdmin(bool),
+    Posted(Vec<Uuid>),
+    Bookmark(Vec<Uuid>),
+}
+
+impl UserQuery {
+    #[allow(clippy::needless_lifetimes)]
+    pub async fn filter<'a>(&self, mut src: Vec<&'a User>) -> anyhow::Result<Vec<&'a User>> {
+        let mut c: Box<dyn FnMut(&'a User) -> bool> = match self {
+            // FIXME: `User`変更時にQueryの変更をしていないので, 足りないfieldがある
+            Self::Id(f_id) => box move |User { id, .. }| id == f_id,
+            Self::Admin(f_admin) => box move |User { admin, .. }| admin == f_admin,
+            Self::SubAdmin(f_sub_admin) =>
+                box move |User { sub_admin, .. }| sub_admin == f_sub_admin,
+            Self::Posted(f_posted) => box move |User { posted, .. }| {
+                f_posted.iter().filter(|elem| posted.contains(elem)).count() == posted.len()
+            },
+            Self::Bookmark(f_bookmark) => box move |User { bookmark, .. }| {
+                f_bookmark
+                    .iter()
+                    .filter(|elem| bookmark.contains(elem))
+                    .count()
+                    == bookmark.len()
+            },
+        };
+
+        Ok(src.drain_filter(|v| c.call_mut((v,))).collect())
+    }
+}
 pub enum ContentQuery {
     Id(Uuid),
     Author(String),
@@ -236,8 +233,9 @@ impl ContentQuery {
             Self::Id(f_id) => box move |Content { id, .. }| id == f_id,
             Self::Author(f_author) => {
                 let r = regex::Regex::new(f_author)?;
-                box move |Content { author, ..}| r.is_match(author)},
-            Self::Posted(f_posted) => box move |Content { posted, ..}| posted == f_posted,
+                box move |Content { author, .. }| r.is_match(author)
+            },
+            Self::Posted(f_posted) => box move |Content { posted, .. }| posted == f_posted,
             Self::Content(f_content) => {
                 let rx = regex::Regex::new(f_content)?;
                 box move |Content { content, .. }| rx.is_match(content)
