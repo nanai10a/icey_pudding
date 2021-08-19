@@ -64,7 +64,11 @@ impl Handler {
         Ok(user)
     }
 
-    pub async fn bookmark_update_user(&self, user_id: UserId, content_id: Uuid) -> anyhow::Result<()> {
+    pub async fn bookmark_update_user(
+        &self,
+        user_id: UserId,
+        content_id: Uuid,
+    ) -> anyhow::Result<()> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?")
         }
@@ -102,7 +106,10 @@ impl Handler {
             bail!("cannot find user. not registered?")
         }
 
-        let mut posted_user = self.user_repository.remove_match(vec![UserQuery::Id(posted)]).await?;
+        let mut posted_user = self
+            .user_repository
+            .remove_match(vec![UserQuery::Id(posted)])
+            .await?;
 
         let new_content = Content {
             id: uuid::Uuid::new_v4(),
@@ -129,7 +136,11 @@ impl Handler {
         }
     }
 
-    pub async fn update_content(&self, content_id: Uuid, content: String) -> anyhow::Result<Content> {
+    pub async fn update_content(
+        &self,
+        content_id: Uuid,
+        content: String,
+    ) -> anyhow::Result<Content> {
         self.verify_content(content_id).await?;
 
         let mut current_content = self
@@ -146,11 +157,18 @@ impl Handler {
         Ok(current_content)
     }
 
-    pub async fn like_update_content(&self, content_id: Uuid, user_id: UserId) -> anyhow::Result<()> {
+    pub async fn like_update_content(
+        &self,
+        content_id: Uuid,
+        user_id: UserId,
+    ) -> anyhow::Result<()> {
         self.verify_user(user_id).await?;
         self.verify_content(content_id).await?;
 
-        let mut current_content = self.content_repository.remove_match(vec![ContentQuery::Id(content_id)]).await?;
+        let mut current_content = self
+            .content_repository
+            .remove_match(vec![ContentQuery::Id(content_id)])
+            .await?;
 
         current_content.liked.push(user_id);
 
@@ -159,7 +177,11 @@ impl Handler {
         Ok(())
     }
 
-    pub async fn pin_update_content(&self, content_id: Uuid, user_id: UserId) -> anyhow::Result<()> {
+    pub async fn pin_update_content(
+        &self,
+        content_id: Uuid,
+        user_id: UserId,
+    ) -> anyhow::Result<()> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?")
         }
@@ -168,7 +190,10 @@ impl Handler {
             bail!("cannot find content.")
         }
 
-        let mut current_content = self.content_repository.remove_match(vec![ContentQuery::Id(content_id)]).await?;
+        let mut current_content = self
+            .content_repository
+            .remove_match(vec![ContentQuery::Id(content_id)])
+            .await?;
 
         current_content.pinned.push(user_id);
 
