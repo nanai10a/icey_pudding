@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::{bail, Result};
 use serenity::model::id::UserId;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -7,20 +7,20 @@ use crate::entities::{Content, User};
 
 #[serenity::async_trait]
 pub trait UserRepository {
-    async fn save(&self, item: User) -> anyhow::Result<()>;
-    async fn get_matches(&self, queries: Vec<UserQuery>) -> anyhow::Result<Vec<User>>;
-    async fn get_match(&self, queries: Vec<UserQuery>) -> anyhow::Result<User>;
-    async fn remove_match(&self, queries: Vec<UserQuery>) -> anyhow::Result<User>;
-    async fn remove_matches(&self, queries: Vec<UserQuery>) -> anyhow::Result<Vec<User>>;
+    async fn save(&self, item: User) -> Result<()>;
+    async fn get_matches(&self, queries: Vec<UserQuery>) -> Result<Vec<User>>;
+    async fn get_match(&self, queries: Vec<UserQuery>) -> Result<User>;
+    async fn remove_match(&self, queries: Vec<UserQuery>) -> Result<User>;
+    async fn remove_matches(&self, queries: Vec<UserQuery>) -> Result<Vec<User>>;
 }
 
 #[serenity::async_trait]
 pub trait ContentRepository {
-    async fn save(&self, item: Content) -> anyhow::Result<()>;
-    async fn get_matches(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Vec<Content>>;
-    async fn get_match(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Content>;
-    async fn remove_matches(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Vec<Content>>;
-    async fn remove_match(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Content>;
+    async fn save(&self, item: Content) -> Result<()>;
+    async fn get_matches(&self, queries: Vec<ContentQuery>) -> Result<Vec<Content>>;
+    async fn get_match(&self, queries: Vec<ContentQuery>) -> Result<Content>;
+    async fn remove_matches(&self, queries: Vec<ContentQuery>) -> Result<Vec<Content>>;
+    async fn remove_match(&self, queries: Vec<ContentQuery>) -> Result<Content>;
 }
 
 pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
@@ -31,12 +31,12 @@ impl<T> InMemoryRepository<T> {
 
 #[serenity::async_trait]
 impl UserRepository for InMemoryRepository<User> {
-    async fn save(&self, item: User) -> anyhow::Result<()> {
+    async fn save(&self, item: User) -> Result<()> {
         self.0.lock().await.push(item);
         Ok(())
     }
 
-    async fn get_matches(&self, mut queries: Vec<UserQuery>) -> anyhow::Result<Vec<User>> {
+    async fn get_matches(&self, mut queries: Vec<UserQuery>) -> Result<Vec<User>> {
         let locked = self.0.lock().await;
         let mut vec = locked.iter().collect();
 
@@ -47,7 +47,7 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(vec.drain(..).cloned().collect())
     }
 
-    async fn get_match(&self, queries: Vec<UserQuery>) -> anyhow::Result<User> {
+    async fn get_match(&self, queries: Vec<UserQuery>) -> Result<User> {
         let mut matches = self.get_matches(queries).await?;
 
         if matches.len() != 1 {
@@ -57,7 +57,7 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(matches.remove(0))
     }
 
-    async fn remove_match(&self, queries: Vec<UserQuery>) -> anyhow::Result<User> {
+    async fn remove_match(&self, queries: Vec<UserQuery>) -> Result<User> {
         let matched = self.get_match(queries).await?;
 
         let mut guard = self.0.lock().await;
@@ -73,7 +73,7 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(matched)
     }
 
-    async fn remove_matches(&self, queries: Vec<UserQuery>) -> anyhow::Result<Vec<User>> {
+    async fn remove_matches(&self, queries: Vec<UserQuery>) -> Result<Vec<User>> {
         let matches = self.get_matches(queries).await?;
 
         let mut guard = self.0.lock().await;
@@ -94,12 +94,12 @@ impl UserRepository for InMemoryRepository<User> {
 
 #[serenity::async_trait]
 impl ContentRepository for InMemoryRepository<Content> {
-    async fn save(&self, item: Content) -> anyhow::Result<()> {
+    async fn save(&self, item: Content) -> Result<()> {
         self.0.lock().await.push(item);
         Ok(())
     }
 
-    async fn get_matches(&self, mut queries: Vec<ContentQuery>) -> anyhow::Result<Vec<Content>> {
+    async fn get_matches(&self, mut queries: Vec<ContentQuery>) -> Result<Vec<Content>> {
         let locked = self.0.lock().await;
         let mut vec = locked.iter().collect::<Vec<_>>();
 
@@ -110,7 +110,7 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(vec.drain(..).cloned().collect())
     }
 
-    async fn get_match(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Content> {
+    async fn get_match(&self, queries: Vec<ContentQuery>) -> Result<Content> {
         let mut matches = self.get_matches(queries).await?;
 
         if matches.len() != 1 {
@@ -120,7 +120,7 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(matches.remove(0))
     }
 
-    async fn remove_match(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Content> {
+    async fn remove_match(&self, queries: Vec<ContentQuery>) -> Result<Content> {
         let matched = self.get_match(queries).await?;
 
         let mut guard = self.0.lock().await;
@@ -136,7 +136,7 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(matched)
     }
 
-    async fn remove_matches(&self, queries: Vec<ContentQuery>) -> anyhow::Result<Vec<Content>> {
+    async fn remove_matches(&self, queries: Vec<ContentQuery>) -> Result<Vec<Content>> {
         let matches = self.get_matches(queries).await?;
 
         let mut guard = self.0.lock().await;
@@ -159,7 +159,7 @@ fn try_remove_target_from_vec<T>(
     vec: &mut Vec<T>,
     target: &T,
     compare: impl Fn(&T, &T) -> bool,
-) -> anyhow::Result<()> {
+) -> Result<()> {
     let mut indexes = vec
         .iter()
         .enumerate()
@@ -188,7 +188,7 @@ pub enum UserQuery {
 
 impl UserQuery {
     #[allow(clippy::needless_lifetimes)]
-    pub async fn filter<'a>(&self, mut src: Vec<&'a User>) -> anyhow::Result<Vec<&'a User>> {
+    pub async fn filter<'a>(&self, mut src: Vec<&'a User>) -> Result<Vec<&'a User>> {
         let mut c: Box<dyn FnMut(&'a User) -> bool> = match self {
             // FIXME: `User`変更時にQueryの変更をしていないので, 足りないfieldがある
             Self::Id(f_id) => box move |User { id, .. }| id == f_id,
@@ -228,7 +228,7 @@ pub enum Comparison {
 
 impl ContentQuery {
     #[allow(clippy::needless_lifetimes)]
-    pub async fn filter<'a>(&self, mut src: Vec<&'a Content>) -> anyhow::Result<Vec<&'a Content>> {
+    pub async fn filter<'a>(&self, mut src: Vec<&'a Content>) -> Result<Vec<&'a Content>> {
         let mut c: Box<dyn FnMut(&'a Content) -> bool> = match self {
             Self::Id(f_id) => box move |Content { id, .. }| id == f_id,
             Self::Author(f_author) => {
