@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Display;
 
-use anyhow::bail;
+use anyhow::{bail, Result};
 use serde_json::{json, Number, Value};
 use serenity::builder::{CreateApplicationCommands, CreateEmbed, CreateMessage};
 use serenity::client::{Context, EventHandler};
@@ -166,10 +166,7 @@ fn resp_from_content(
 }
 
 impl Conductor {
-    pub async fn parse_ia(
-        &self,
-        acid: &ApplicationCommandInteractionData,
-    ) -> anyhow::Result<Command> {
+    pub async fn parse_ia(&self, acid: &ApplicationCommandInteractionData) -> Result<Command> {
         let com = match acid.name.as_str() {
             "register" => Command::UserRegister,
             "info" => Command::UserRead,
@@ -223,7 +220,7 @@ impl Conductor {
         Ok(com)
     }
 
-    pub async fn parse_msg(&self, msg: &str) -> anyhow::Result<MsgCommand> {
+    pub async fn parse_msg(&self, msg: &str) -> Result<MsgCommand> {
         let splitted = shell_words::split(msg)?;
 
         if let Some(n) = splitted.get(0) {
@@ -341,7 +338,7 @@ impl Conductor {
 
         use command_colors::*;
 
-        let res: anyhow::Result<Response> = try {
+        let res: Result<Response> = try {
             let resp: Response = match cmd {
                 Command::UserRegister => resp_from_user(
                     "registered user",
@@ -614,7 +611,7 @@ impl EventHandler for Conductor {
 pub async fn application_command_create(
     http: impl AsRef<Http>,
     guild_id: Option<GuildId>,
-) -> anyhow::Result<Vec<ApplicationCommand>> {
+) -> Result<Vec<ApplicationCommand>> {
     let map = application_commands_create_inner().await;
 
     let ac = match guild_id {
