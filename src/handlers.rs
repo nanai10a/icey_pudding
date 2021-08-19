@@ -1,4 +1,4 @@
-use anyhow::bail;
+use anyhow::{bail, Result};
 use serenity::model::id::UserId;
 use uuid::Uuid;
 
@@ -11,7 +11,7 @@ pub struct Handler {
 }
 
 impl Handler {
-    pub async fn create_user(&self, user_id: UserId) -> anyhow::Result<User> {
+    pub async fn create_user(&self, user_id: UserId) -> Result<User> {
         if self.verify_user(user_id).await?.is_some() {
             bail!("already registered.");
         }
@@ -29,7 +29,7 @@ impl Handler {
         Ok(new_user)
     }
 
-    pub async fn read_user(&self, user_id: UserId) -> anyhow::Result<User> {
+    pub async fn read_user(&self, user_id: UserId) -> Result<User> {
         match self.verify_user(user_id).await? {
             Some(u) => Ok(u),
             None => bail!("cannot find user. not registered?"),
@@ -41,7 +41,7 @@ impl Handler {
         user_id: UserId,
         admin: Option<bool>,
         sub_admin: Option<bool>,
-    ) -> anyhow::Result<User> {
+    ) -> Result<User> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?")
         }
@@ -64,11 +64,7 @@ impl Handler {
         Ok(user)
     }
 
-    pub async fn bookmark_update_user(
-        &self,
-        user_id: UserId,
-        content_id: Uuid,
-    ) -> anyhow::Result<()> {
+    pub async fn bookmark_update_user(&self, user_id: UserId, content_id: Uuid) -> Result<()> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?")
         }
@@ -89,7 +85,7 @@ impl Handler {
         Ok(())
     }
 
-    pub async fn delete_user(&self, id: UserId) -> anyhow::Result<()> {
+    pub async fn delete_user(&self, id: UserId) -> Result<()> {
         self.user_repository
             .remove_match(vec![UserQuery::Id(id)])
             .await?;
@@ -101,7 +97,7 @@ impl Handler {
         content: String,
         posted: UserId,
         author: String,
-    ) -> anyhow::Result<Content> {
+    ) -> Result<Content> {
         if self.verify_user(posted).await?.is_none() {
             bail!("cannot find user. not registered?")
         }
@@ -129,18 +125,14 @@ impl Handler {
         Ok(new_content)
     }
 
-    pub async fn read_content(&self, content_id: Uuid) -> anyhow::Result<Content> {
+    pub async fn read_content(&self, content_id: Uuid) -> Result<Content> {
         match self.verify_content(content_id).await? {
             Some(c) => Ok(c),
             None => bail!("cannot find content."),
         }
     }
 
-    pub async fn update_content(
-        &self,
-        content_id: Uuid,
-        content: String,
-    ) -> anyhow::Result<Content> {
+    pub async fn update_content(&self, content_id: Uuid, content: String) -> Result<Content> {
         self.verify_content(content_id).await?;
 
         let mut current_content = self
@@ -157,11 +149,7 @@ impl Handler {
         Ok(current_content)
     }
 
-    pub async fn like_update_content(
-        &self,
-        content_id: Uuid,
-        user_id: UserId,
-    ) -> anyhow::Result<()> {
+    pub async fn like_update_content(&self, content_id: Uuid, user_id: UserId) -> Result<()> {
         self.verify_user(user_id).await?;
         self.verify_content(content_id).await?;
 
@@ -177,11 +165,7 @@ impl Handler {
         Ok(())
     }
 
-    pub async fn pin_update_content(
-        &self,
-        content_id: Uuid,
-        user_id: UserId,
-    ) -> anyhow::Result<()> {
+    pub async fn pin_update_content(&self, content_id: Uuid, user_id: UserId) -> Result<()> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?")
         }
@@ -202,7 +186,7 @@ impl Handler {
         Ok(())
     }
 
-    pub async fn delete_content(&self, content_id: Uuid) -> anyhow::Result<()> {
+    pub async fn delete_content(&self, content_id: Uuid) -> Result<()> {
         if self.verify_content(content_id).await?.is_none() {
             bail!("cannot find user. not registered?")
         };
@@ -213,7 +197,7 @@ impl Handler {
         Ok(())
     }
 
-    async fn verify_user(&self, user_id: UserId) -> anyhow::Result<Option<User>> {
+    async fn verify_user(&self, user_id: UserId) -> Result<Option<User>> {
         let mut matched = match self
             .user_repository
             .get_matches(vec![UserQuery::Id(user_id)])
@@ -230,7 +214,7 @@ impl Handler {
         }
     }
 
-    async fn verify_content(&self, content_id: Uuid) -> anyhow::Result<Option<Content>> {
+    async fn verify_content(&self, content_id: Uuid) -> Result<Option<Content>> {
         let mut matched = match self
             .content_repository
             .get_matches(vec![ContentQuery::Id(content_id)])
