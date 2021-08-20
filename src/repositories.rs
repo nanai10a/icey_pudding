@@ -4,7 +4,72 @@ use uuid::Uuid;
 
 use crate::entities::{Content, User};
 
+type StdResult<T, E> = ::std::result::Result<T, E>;
 type Result<T> = ::std::result::Result<T, RepositoryError>;
+
+#[serenity::async_trait]
+pub trait Repository<T> {
+    async fn save(&self, item: T) -> Result<()>;
+    async fn get_matches(
+        &self,
+        queries: Vec<&'static (dyn Query<T> + Sync + Send)>,
+    ) -> Result<Vec<T>>;
+    async fn get_match(&self, queries: Vec<&'static (dyn Query<T> + Sync + Send)>) -> Result<T>;
+    async fn remove_match(&self, queries: Vec<&'static (dyn Query<T> + Sync + Send)>) -> Result<T>;
+}
+
+#[serenity::async_trait]
+pub trait Query<T> {
+    async fn filter<'a>(&self, src: Vec<&'a T>) -> StdResult<Vec<&'a T>, anyhow::Error>;
+}
+
+pub trait Same {
+    fn is_same(&self, other: &Self) -> bool;
+}
+
+#[serenity::async_trait]
+impl<T: Send + Sync + Clone + Same> Repository<T> for InMemoryRepository<T> {
+    async fn save(&self, item: T) -> Result<()> {
+        self.0.lock().await.push(item);
+
+        Ok(())
+    }
+
+    async fn get_matches(
+        &self,
+        mut queries: Vec<&'static (dyn Query<T> + Sync + Send)>,
+    ) -> Result<Vec<T>> {
+        let guard = self.0.lock().await;
+        let mut vec = guard.iter().collect();
+
+        for q in queries.drain(..) {
+            vec = q.filter(vec).await.map_err(RepositoryError::Internal)?;
+        }
+
+        Ok(vec.drain(..).cloned().collect())
+    }
+
+    async fn get_match(&self, queries: Vec<&'static (dyn Query<T> + Sync + Send)>) -> Result<T> {
+        let mut matches = self.get_matches(queries).await?;
+
+        match matches.len() {
+            1 => Ok(matches.remove(0)),
+            _ => Err(RepositoryError::NoUnique {
+                matched: matches.len() as u32,
+            }),
+        }
+    }
+
+    async fn remove_match(&self, queries: Vec<&'static (dyn Query<T> + Sync + Send)>) -> Result<T> {
+        let matched = self.get_match(queries).await?;
+
+        let mut guard = self.0.lock().await;
+        let vec = guard.as_mut();
+
+        try_remove_target_from_vec(vec, |v| matched.is_same(v))
+            .map_err(|e| RepositoryError::NoUnique { matched: e as u32 })
+    }
+}
 
 #[serenity::async_trait]
 pub trait UserRepository {
