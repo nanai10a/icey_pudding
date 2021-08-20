@@ -71,110 +71,6 @@ impl<T: Send + Sync + Clone + Same> Repository<T> for InMemoryRepository<T> {
     }
 }
 
-#[serenity::async_trait]
-pub trait UserRepository {
-    async fn save(&self, item: User) -> Result<()>;
-    async fn get_matches(&self, queries: Vec<UserQuery>) -> Result<Vec<User>>;
-    async fn get_match(&self, queries: Vec<UserQuery>) -> Result<User>;
-    async fn remove_match(&self, queries: Vec<UserQuery>) -> Result<User>;
-}
-
-#[serenity::async_trait]
-pub trait ContentRepository {
-    async fn save(&self, item: Content) -> Result<()>;
-    async fn get_matches(&self, queries: Vec<ContentQuery>) -> Result<Vec<Content>>;
-    async fn get_match(&self, queries: Vec<ContentQuery>) -> Result<Content>;
-    async fn remove_match(&self, queries: Vec<ContentQuery>) -> Result<Content>;
-}
-
-pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
-
-impl<T> InMemoryRepository<T> {
-    pub async fn new() -> Self { Self(Mutex::new(vec![])) }
-}
-
-#[serenity::async_trait]
-impl UserRepository for InMemoryRepository<User> {
-    async fn save(&self, item: User) -> Result<()> {
-        self.0.lock().await.push(item);
-
-        Ok(())
-    }
-
-    async fn get_matches(&self, mut queries: Vec<UserQuery>) -> Result<Vec<User>> {
-        let guard = self.0.lock().await;
-        let mut vec = guard.iter().collect();
-
-        for q in queries.drain(..) {
-            vec = q.filter(vec).await.map_err(RepositoryError::Internal)?;
-        }
-
-        Ok(vec.drain(..).cloned().collect())
-    }
-
-    async fn get_match(&self, queries: Vec<UserQuery>) -> Result<User> {
-        let mut matches = self.get_matches(queries).await?;
-
-        match matches.len() {
-            1 => Ok(matches.remove(0)),
-            _ => Err(RepositoryError::NoUnique {
-                matched: matches.len() as u32,
-            }),
-        }
-    }
-
-    async fn remove_match(&self, queries: Vec<UserQuery>) -> Result<User> {
-        let matched = self.get_match(queries).await?;
-
-        let mut guard = self.0.lock().await;
-        let vec = guard.as_mut();
-
-        try_remove_target_from_vec(vec, |v| matched.id == v.id)
-            .map_err(|e| RepositoryError::NoUnique { matched: e as u32 })
-    }
-}
-
-#[serenity::async_trait]
-impl ContentRepository for InMemoryRepository<Content> {
-    async fn save(&self, item: Content) -> Result<()> {
-        self.0.lock().await.push(item);
-
-        Ok(())
-    }
-
-    async fn get_matches(&self, mut queries: Vec<ContentQuery>) -> Result<Vec<Content>> {
-        let guard = self.0.lock().await;
-        let mut vec = guard.iter().collect();
-
-        for q in queries.drain(..) {
-            vec = q.filter(vec).await.map_err(RepositoryError::Internal)?;
-        }
-
-        Ok(vec.drain(..).cloned().collect())
-    }
-
-    async fn get_match(&self, queries: Vec<ContentQuery>) -> Result<Content> {
-        let mut matches = self.get_matches(queries).await?;
-
-        match matches.len() {
-            1 => Ok(matches.remove(0)),
-            _ => Err(RepositoryError::NoUnique {
-                matched: matches.len() as u32,
-            }),
-        }
-    }
-
-    async fn remove_match(&self, queries: Vec<ContentQuery>) -> Result<Content> {
-        let matched = self.get_match(queries).await?;
-
-        let mut guard = self.0.lock().await;
-        let vec = guard.as_mut();
-
-        try_remove_target_from_vec(vec, |v| v.id == matched.id)
-            .map_err(|e| RepositoryError::NoUnique { matched: e as u32 })
-    }
-}
-
 #[derive(Debug)]
 pub enum RepositoryError {
     NotFound,
@@ -215,6 +111,12 @@ fn try_remove_target_from_vec<T>(
         1 => Ok(vec.remove(indexes.remove(0))),
         _ => Err(indexes.len()),
     }
+}
+
+pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
+
+impl<T> InMemoryRepository<T> {
+    pub async fn new() -> Self { Self(Mutex::new(vec![])) }
 }
 
 pub enum UserQuery {
