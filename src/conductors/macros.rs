@@ -1,3 +1,6 @@
+use anyhow::{bail, Result};
+use clap::ArgMatches;
+
 #[macro_export]
 macro_rules! extract_option {
     (opt $t:path => ref $v:ident in $d:ident) => {{
@@ -38,22 +41,18 @@ macro_rules! extract_option {
     }};
 }
 
-#[macro_export]
-macro_rules! extract_clap_sams {
-    ($n:expr; in $a:expr) => {
-        match $a.subcommand_matches($n) {
-            Some(s) => s,
-            None => bail!("cannot get arg_matches: {}", $n),
-        }
-    };
+#[inline]
+pub fn extract_clap_sams_fn<'a>(ams: &'a ArgMatches, name: &str) -> Result<&'a ArgMatches<'a>> {
+    match ams.subcommand_matches(name) {
+        Some(s) => Ok(s),
+        None => bail!("cannot get arg_matches: {}", name),
+    }
 }
 
-#[macro_export]
-macro_rules! extract_clap_arg {
-    ($n:expr; in $a:expr) => {
-        match $a.value_of($n) {
-            Some(s) => s,
-            None => bail!("cannot get arg: {}", $n),
-        }
-    };
+#[inline]
+pub fn extract_clap_arg_fn<'a>(ams: &'a ArgMatches, name: &str) -> Result<&'a str> {
+    match ams.value_of(name) {
+        Some(s) => Ok(s),
+        None => bail!("cannot get arg: {}", name),
+    }
 }
