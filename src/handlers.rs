@@ -43,7 +43,7 @@ impl Handler {
         sub_admin: Option<bool>,
     ) -> Result<User> {
         if self.verify_user(user_id).await?.is_none() {
-            bail!("cannot find user. not registered?")
+            bail!("cannot find user. not registered?");
         }
 
         let mut user = self
@@ -66,11 +66,11 @@ impl Handler {
 
     pub async fn bookmark_update_user(&self, user_id: UserId, content_id: Uuid) -> Result<()> {
         if self.verify_user(user_id).await?.is_none() {
-            bail!("cannot find user. not registered?")
+            bail!("cannot find user. not registered?");
         }
 
         if self.verify_content(content_id).await?.is_none() {
-            bail!("cannot find content.")
+            bail!("cannot find content.");
         }
 
         let mut user = self
@@ -85,9 +85,13 @@ impl Handler {
         Ok(())
     }
 
-    pub async fn delete_user(&self, id: UserId) -> Result<()> {
+    pub async fn delete_user(&self, user_id: UserId) -> Result<()> {
+        if self.verify_user(user_id).await?.is_none() {
+            bail!("cannot find user. not registered?");
+        }
+
         self.user_repository
-            .remove_match(vec![&UserQuery::Id(id)])
+            .remove_match(vec![&UserQuery::Id(user_id)])
             .await?;
         Ok(())
     }
@@ -99,7 +103,7 @@ impl Handler {
         author: String,
     ) -> Result<Content> {
         if self.verify_user(posted).await?.is_none() {
-            bail!("cannot find user. not registered?")
+            bail!("cannot find user. not registered?");
         }
 
         let mut posted_user = self
@@ -133,7 +137,9 @@ impl Handler {
     }
 
     pub async fn update_content(&self, content_id: Uuid, content: String) -> Result<Content> {
-        self.verify_content(content_id).await?;
+        if self.verify_content(content_id).await?.is_none() {
+            bail!("cannot find content.");
+        }
 
         let mut current_content = self
             .content_repository
@@ -150,8 +156,13 @@ impl Handler {
     }
 
     pub async fn like_update_content(&self, content_id: Uuid, user_id: UserId) -> Result<()> {
-        self.verify_user(user_id).await?;
-        self.verify_content(content_id).await?;
+        if self.verify_user(user_id).await?.is_none() {
+            bail!("cannot find user. not registered?");
+        }
+
+        if self.verify_content(content_id).await?.is_none() {
+            bail!("cannot find content.");
+        }
 
         let mut current_content = self
             .content_repository
@@ -188,8 +199,8 @@ impl Handler {
 
     pub async fn delete_content(&self, content_id: Uuid) -> Result<()> {
         if self.verify_content(content_id).await?.is_none() {
-            bail!("cannot find user. not registered?")
-        };
+            bail!("cannot find content.")
+        }
 
         self.content_repository
             .remove_match(vec![&ContentQuery::Id(content_id)])
