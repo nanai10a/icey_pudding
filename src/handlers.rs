@@ -3,11 +3,11 @@ use serenity::model::id::UserId;
 use uuid::Uuid;
 
 use crate::entities::{Content, User};
-use crate::repositories::{ContentQuery, ContentRepository, UserQuery, UserRepository};
+use crate::repositories::{Repository, UserQuery, ContentQuery};
 
 pub struct Handler {
-    pub user_repository: Box<dyn UserRepository + Send + Sync>,
-    pub content_repository: Box<dyn ContentRepository + Send + Sync>,
+    pub user_repository: Box<dyn Repository<User> + Send + Sync>,
+    pub content_repository: Box<dyn Repository<Content> + Send + Sync>,
 }
 
 impl Handler {
@@ -48,7 +48,7 @@ impl Handler {
 
         let mut user = self
             .user_repository
-            .remove_match(vec![UserQuery::Id(user_id)])
+            .remove_match(vec![&UserQuery::Id(user_id)])
             .await?;
 
         if let Some(b) = admin {
@@ -75,7 +75,7 @@ impl Handler {
 
         let mut user = self
             .user_repository
-            .remove_match(vec![UserQuery::Id(user_id)])
+            .remove_match(vec![&UserQuery::Id(user_id)])
             .await?;
 
         user.bookmark.push(content_id);
@@ -87,7 +87,7 @@ impl Handler {
 
     pub async fn delete_user(&self, id: UserId) -> Result<()> {
         self.user_repository
-            .remove_match(vec![UserQuery::Id(id)])
+            .remove_match(vec![&UserQuery::Id(id)])
             .await?;
         Ok(())
     }
@@ -104,7 +104,7 @@ impl Handler {
 
         let mut posted_user = self
             .user_repository
-            .remove_match(vec![UserQuery::Id(posted)])
+            .remove_match(vec![&UserQuery::Id(posted)])
             .await?;
 
         let new_content = Content {
@@ -137,7 +137,7 @@ impl Handler {
 
         let mut current_content = self
             .content_repository
-            .remove_match(vec![ContentQuery::Id(content_id)])
+            .remove_match(vec![&ContentQuery::Id(content_id)])
             .await?;
 
         current_content.content = content;
@@ -155,7 +155,7 @@ impl Handler {
 
         let mut current_content = self
             .content_repository
-            .remove_match(vec![ContentQuery::Id(content_id)])
+            .remove_match(vec![&ContentQuery::Id(content_id)])
             .await?;
 
         current_content.liked.push(user_id);
@@ -176,7 +176,7 @@ impl Handler {
 
         let mut current_content = self
             .content_repository
-            .remove_match(vec![ContentQuery::Id(content_id)])
+            .remove_match(vec![&ContentQuery::Id(content_id)])
             .await?;
 
         current_content.pinned.push(user_id);
@@ -192,7 +192,7 @@ impl Handler {
         };
 
         self.content_repository
-            .remove_match(vec![ContentQuery::Id(content_id)])
+            .remove_match(vec![&ContentQuery::Id(content_id)])
             .await?;
         Ok(())
     }
@@ -200,7 +200,7 @@ impl Handler {
     async fn verify_user(&self, user_id: UserId) -> Result<Option<User>> {
         let mut matched = match self
             .user_repository
-            .get_matches(vec![UserQuery::Id(user_id)])
+            .get_matches(vec![&UserQuery::Id(user_id)])
             .await
         {
             Ok(o) => o,
@@ -217,7 +217,7 @@ impl Handler {
     async fn verify_content(&self, content_id: Uuid) -> Result<Option<Content>> {
         let mut matched = match self
             .content_repository
-            .get_matches(vec![ContentQuery::Id(content_id)])
+            .get_matches(vec![&ContentQuery::Id(content_id)])
             .await
         {
             Ok(o) => o,
