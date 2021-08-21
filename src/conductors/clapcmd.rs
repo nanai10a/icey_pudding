@@ -1,6 +1,7 @@
-pub fn create_clap_app() -> clap::App<'static, 'static> {
-    use clap::{App, AppSettings, Arg, SubCommand};
+use anyhow::{bail, Result};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 
+pub fn create_clap_app() -> App<'static, 'static> {
     use super::command_strs::*;
 
     App::new(PREFIX)
@@ -92,4 +93,20 @@ pub fn create_clap_app() -> clap::App<'static, 'static> {
                     .value_name(remove::id::NAME),
             ),
         ])
+}
+
+#[inline]
+pub fn extract_clap_sams<'a>(ams: &'a ArgMatches, name: &str) -> Result<&'a ArgMatches<'a>> {
+    match ams.subcommand_matches(name) {
+        Some(s) => Ok(s),
+        None => bail!("cannot get arg_matches: {}", name),
+    }
+}
+
+#[inline]
+pub fn extract_clap_arg<'a>(ams: &'a ArgMatches, name: &str) -> Result<&'a str> {
+    match ams.value_of(name) {
+        Some(s) => Ok(s),
+        None => bail!("cannot get arg: {}", name),
+    }
 }

@@ -85,7 +85,7 @@ pub async fn parse_msg(msg: &str) -> Result<MsgCommand> {
 
     use command_strs::*;
 
-    use super::macros::{extract_clap_arg_fn, extract_clap_sams_fn};
+    use super::clapcmd::{extract_clap_arg, extract_clap_sams};
 
     let cmd = match match ams.subcommand_name() {
         None => bail!("cannot get subcommand."),
@@ -95,7 +95,7 @@ pub async fn parse_msg(msg: &str) -> Result<MsgCommand> {
         register::NAME => Command::UserRegister,
         info::NAME => Command::UserRead,
         change::NAME => {
-            let sams = extract_clap_sams_fn(&ams, change::NAME)?;
+            let sams = extract_clap_sams(&ams, change::NAME)?;
             let admin_raw = sams.value_of(change::admin::NAME);
             let sub_admin_raw = sams.value_of(change::sub_admin::NAME);
 
@@ -114,8 +114,8 @@ pub async fn parse_msg(msg: &str) -> Result<MsgCommand> {
             Command::UserUpdate(admin, sub_admin)
         },
         bookmark::NAME => {
-            let sams = extract_clap_sams_fn(&ams, bookmark::NAME)?;
-            let id_raw = extract_clap_arg_fn(sams, bookmark::id::NAME)?;
+            let sams = extract_clap_sams(&ams, bookmark::NAME)?;
+            let id_raw = extract_clap_arg(sams, bookmark::id::NAME)?;
 
             let id = Uuid::from_str(id_raw)?;
 
@@ -123,48 +123,48 @@ pub async fn parse_msg(msg: &str) -> Result<MsgCommand> {
         },
         delete_me::NAME => Command::UserDelete,
         post::NAME => {
-            let sams = extract_clap_sams_fn(&ams, post::NAME)?;
-            let content = extract_clap_arg_fn(sams, post::content::NAME)?;
-            let author = extract_clap_arg_fn(sams, post::author::NAME)?;
+            let sams = extract_clap_sams(&ams, post::NAME)?;
+            let content = extract_clap_arg(sams, post::content::NAME)?;
+            let author = extract_clap_arg(sams, post::author::NAME)?;
 
             Command::ContentPost(content.to_string(), author.to_string())
         },
         get::NAME => {
-            let sams = extract_clap_sams_fn(&ams, get::NAME)?;
-            let id_raw = extract_clap_arg_fn(sams, get::id::NAME)?;
+            let sams = extract_clap_sams(&ams, get::NAME)?;
+            let id_raw = extract_clap_arg(sams, get::id::NAME)?;
 
             let id = Uuid::from_str(id_raw)?;
 
             Command::ContentRead(id)
         },
         edit::NAME => {
-            let sams = extract_clap_sams_fn(&ams, edit::NAME)?;
-            let id_raw = extract_clap_arg_fn(sams, edit::id::NAME)?;
-            let content = extract_clap_arg_fn(sams, edit::content::NAME)?;
+            let sams = extract_clap_sams(&ams, edit::NAME)?;
+            let id_raw = extract_clap_arg(sams, edit::id::NAME)?;
+            let content = extract_clap_arg(sams, edit::content::NAME)?;
 
             let id = Uuid::from_str(id_raw)?;
 
             Command::ContentUpdate(id, content.to_string())
         },
         like::NAME => {
-            let sams = extract_clap_sams_fn(&ams, like::NAME)?;
-            let id_raw = extract_clap_arg_fn(sams, like::id::NAME)?;
+            let sams = extract_clap_sams(&ams, like::NAME)?;
+            let id_raw = extract_clap_arg(sams, like::id::NAME)?;
 
             let id = Uuid::from_str(id_raw)?;
 
             Command::Like(id)
         },
         pin::NAME => {
-            let sams = extract_clap_sams_fn(&ams, pin::NAME)?;
-            let id_raw = extract_clap_arg_fn(sams, pin::id::NAME)?;
+            let sams = extract_clap_sams(&ams, pin::NAME)?;
+            let id_raw = extract_clap_arg(sams, pin::id::NAME)?;
 
             let id = Uuid::from_str(id_raw)?;
 
             Command::Pin(id)
         },
         remove::NAME => {
-            let sams = extract_clap_sams_fn(&ams, remove::NAME)?;
-            let id_raw = extract_clap_arg_fn(sams, remove::id::NAME)?;
+            let sams = extract_clap_sams(&ams, remove::NAME)?;
+            let id_raw = extract_clap_arg(sams, remove::id::NAME)?;
 
             let id = Uuid::from_str(id_raw)?;
 
