@@ -361,9 +361,7 @@ impl Conductor {
                         .await?,
                 ),
                 Command::Bookmark(id) => {
-                    self.handler.read_content(id).await?;
                     self.handler.bookmark_update_user(user_id, id).await?;
-                    let Content { bookmarked, .. } = self.handler.read_content(id).await?;
 
                     Response {
                         title: "bookmarked".to_string(),
@@ -371,7 +369,10 @@ impl Conductor {
                         description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
-                            ("bookmarked:".to_string(), format!("{}", bookmarked)),
+                            (
+                                "bookmarked:".to_string(),
+                                format!("{}", self.handler.read_content(id).await?.bookmarked),
+                            ),
                         ],
                     }
                 },
@@ -407,9 +408,7 @@ impl Conductor {
                 ),
 
                 Command::Like(id) => {
-                    self.handler.read_content(id).await?;
                     self.handler.like_update_content(id, user_id).await?;
-                    let Content { liked, .. } = self.handler.read_content(id).await?;
 
                     Response {
                         title: "liked".to_string(),
@@ -417,12 +416,14 @@ impl Conductor {
                         description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
-                            ("liked:".to_string(), format!("{}", liked.len())),
+                            (
+                                "liked:".to_string(),
+                                format!("{}", self.handler.read_content(id).await?.liked.len()),
+                            ),
                         ],
                     }
                 },
                 Command::Pin(id) => {
-                    self.handler.read_content(id).await?;
                     self.handler.pin_update_content(id, user_id).await?;
                     let Content { pinned, .. } = self.handler.read_content(id).await?;
 
