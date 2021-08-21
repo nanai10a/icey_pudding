@@ -91,7 +91,6 @@ pub async fn parse_msg(msg: &str) -> Result<MsgCommand> {
         None => bail!("cannot get subcommand."),
         Some(s) => s,
     } {
-        // let name = extract_clap_arg!(register::name::NAME; in sams);
         register::NAME => Command::UserRegister,
         info::NAME => Command::UserRead,
         change::NAME => {
