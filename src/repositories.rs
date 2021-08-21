@@ -10,10 +10,7 @@ type Result<T> = ::std::result::Result<T, RepositoryError>;
 #[serenity::async_trait]
 pub trait Repository<T> {
     async fn save(&self, item: T) -> Result<()>;
-    async fn get_matches(
-        &self,
-        queries: Vec<&(dyn Query<T> + Sync + Send)>,
-    ) -> Result<Vec<T>>;
+    async fn get_matches(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<Vec<T>>;
     async fn get_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T>;
     async fn remove_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T>;
 }
@@ -35,10 +32,7 @@ impl<T: Send + Sync + Clone + Same> Repository<T> for InMemoryRepository<T> {
         Ok(())
     }
 
-    async fn get_matches(
-        &self,
-        mut queries: Vec<&(dyn Query<T> + Sync + Send)>,
-    ) -> Result<Vec<T>> {
+    async fn get_matches(&self, mut queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<Vec<T>> {
         let guard = self.0.lock().await;
         let mut vec = guard.iter().collect();
 
@@ -120,9 +114,7 @@ impl<T> InMemoryRepository<T> {
 }
 
 impl Same for User {
-    fn is_same(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
+    fn is_same(&self, other: &Self) -> bool { self.id == other.id }
 }
 
 pub enum UserQuery {
@@ -160,9 +152,7 @@ impl Query<User> for UserQuery {
 }
 
 impl Same for Content {
-    fn is_same(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
+    fn is_same(&self, other: &Self) -> bool { self.id == other.id }
 }
 
 pub enum ContentQuery {
