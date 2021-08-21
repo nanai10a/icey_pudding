@@ -33,7 +33,7 @@ macro_rules! extract_option {
 
         match opt.len() {
             1 => Ok(opt.remove(0)),
-            _ => Err(anyhow::anyhow!("cannot get value: `id`")),
+            _ => Err(anyhow::anyhow!("cannot get value: {}`", stringify!($v))),
         }
     }};
 }
