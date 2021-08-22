@@ -157,6 +157,7 @@ impl Same for Content {
 
 pub enum ContentQuery {
     Id(Uuid),
+    IdHead(u32),
     Author(String),
     Posted(UserId),
     Content(String),
@@ -177,6 +178,7 @@ impl Query<Content> for ContentQuery {
     async fn filter<'a>(&self, mut src: Vec<&'a Content>) -> anyhow::Result<Vec<&'a Content>> {
         let mut c: Box<dyn FnMut(&'a Content) -> bool> = match self {
             Self::Id(f_id) => box move |Content { id, .. }| id == f_id,
+            Self::IdHead(f_id_head) => box move |Content { id, .. }| id.as_fields().0 == *f_id_head,
             Self::Author(f_author) => {
                 let r = regex::Regex::new(f_author)?;
                 box move |Content { author, .. }| r.is_match(author)
