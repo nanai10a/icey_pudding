@@ -3,7 +3,7 @@ use serenity::model::id::UserId;
 use uuid::Uuid;
 
 use crate::entities::{Content, User};
-use crate::repositories::{ContentQuery, Repository, UserQuery};
+use crate::repositories::{ContentQuery, Query, Repository, UserQuery};
 
 pub struct Handler {
     pub user_repository: Box<dyn Repository<User> + Send + Sync>,
@@ -129,11 +129,9 @@ impl Handler {
         Ok(new_content)
     }
 
-    pub async fn read_content(&self, content_id: Uuid) -> Result<Content> {
-        match self.verify_content(content_id).await? {
-            Some(c) => Ok(c),
-            None => bail!("cannot find content."),
-        }
+    pub async fn read_content(&self, content_query: Vec<ContentQuery>) -> Result<Vec<Content>> {
+        crate::convert_query!(ref content_query);
+        Ok(self.content_repository.get_matches(content_query).await?)
     }
 
     pub async fn update_content(&self, content_id: Uuid, content: String) -> Result<Content> {
@@ -241,4 +239,15 @@ impl Handler {
             _ => bail!("matched: {} (internal error)", matched.len()),
         }
     }
+}
+
+#[macro_export]
+macro_rules! convert_query {
+    (ref $q:ident) => {
+        let $q = {
+            let mut convert = Vec::<&(dyn Query<_> + Sync + Send)>::new();
+            $q.iter().for_each(|q| convert.push(q));
+            convert
+        };
+    };
 }
