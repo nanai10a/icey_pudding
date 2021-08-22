@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use crate::entities::Content;
 use crate::handlers::Handler;
+use crate::repositories::ContentQuery;
 
 mod appcmd;
 mod clapcmd;
@@ -91,6 +92,16 @@ impl Conductor {
                 ),
                 Command::Bookmark(id) => {
                     self.handler.bookmark_update_user(user_id, id).await?;
+                    let mut matchces = self
+                        .handler
+                        .read_content(vec![ContentQuery::Id(id)])
+                        .await?;
+                    if matchces.len() != 1 {
+                        Err(anyhow::anyhow!(
+                            "sorry, error occurred (on updated content fetch)"
+                        ))?;
+                    }
+                    let Content { bookmarked, .. } = matchces.remove(0);
 
                     Response {
                         title: "bookmarked".to_string(),
@@ -98,10 +109,7 @@ impl Conductor {
                         description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
-                            (
-                                "bookmarked:".to_string(),
-                                format!("{}", self.handler.read_content(id).await?.bookmarked),
-                            ),
+                            ("bookmarked:".to_string(), format!("{}", bookmarked)),
                         ],
                     }
                 },
@@ -123,12 +131,19 @@ impl Conductor {
                         .create_content_and_posted_update_user(content, user_id, author)
                         .await?,
                 ),
-                Command::ContentRead(id) => helper::resp_from_content(
-                    "showing content",
-                    from_user_shows,
-                    GET,
-                    self.handler.read_content(id).await?,
-                ),
+                Command::ContentRead(id) =>
+                    helper::resp_from_content("showing content", from_user_shows, GET, {
+                        let mut matchces = self
+                            .handler
+                            .read_content(vec![ContentQuery::Id(id)])
+                            .await?;
+                        if matchces.len() != 1 {
+                            Err(anyhow::anyhow!(
+                                "sorry, error occurred (on updated content fetch)"
+                            ))?;
+                        }
+                        matchces.remove(0)
+                    }),
                 Command::ContentUpdate(id, new_content) => helper::resp_from_content(
                     "updated content",
                     from_user_shows,
@@ -138,6 +153,16 @@ impl Conductor {
 
                 Command::Like(id) => {
                     self.handler.like_update_content(id, user_id).await?;
+                    let mut matchces = self
+                        .handler
+                        .read_content(vec![ContentQuery::Id(id)])
+                        .await?;
+                    if matchces.len() != 1 {
+                        Err(anyhow::anyhow!(
+                            "sorry, error occurred (on updated content fetch)"
+                        ))?;
+                    }
+                    let Content { liked, .. } = matchces.remove(0);
 
                     Response {
                         title: "liked".to_string(),
@@ -145,16 +170,21 @@ impl Conductor {
                         description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", id)),
-                            (
-                                "liked:".to_string(),
-                                format!("{}", self.handler.read_content(id).await?.liked.len()),
-                            ),
+                            ("liked:".to_string(), format!("{}", liked.len())),
                         ],
                     }
                 },
                 Command::Pin(id) => {
-                    self.handler.pin_update_content(id, user_id).await?;
-                    let Content { pinned, .. } = self.handler.read_content(id).await?;
+                    let mut matchces = self
+                        .handler
+                        .read_content(vec![ContentQuery::Id(id)])
+                        .await?;
+                    if matchces.len() != 1 {
+                        Err(anyhow::anyhow!(
+                            "sorry, error occurred (on updated content fetch)"
+                        ))?;
+                    }
+                    let Content { pinned, .. } = matchces.remove(0);
 
                     Response {
                         title: "pinned".to_string(),
