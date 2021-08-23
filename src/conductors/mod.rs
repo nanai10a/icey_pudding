@@ -293,8 +293,8 @@ impl EventHandler for Conductor {
 
     async fn message(&self, ctx: Context, msg: Message) {
         let mcmd = match helper::parse_msg(msg.content.as_str()).await {
-            Ok(o) => o,
-            Err(e) => return eprintln!("err: {}", e),
+            Some(o) => o,
+            None => return,
         };
 
         let cmd = match mcmd {

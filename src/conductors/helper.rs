@@ -71,141 +71,146 @@ pub async fn parse_ia(acid: &ApplicationCommandInteractionData) -> Result<Comman
     Ok(com)
 }
 
-pub async fn parse_msg(msg: &str) -> Result<MsgCommand> {
-    let splitted = shell_words::split(msg)?;
+pub async fn parse_msg(msg: &str) -> Option<MsgCommand> {
+    let res: Result<_> = try {
+        let splitted = shell_words::split(msg)?;
 
-    if let Some(n) = splitted.get(0) {
-        if n != command_strs::PREFIX {
-            bail!("not command, abort.")
+        if let Some(n) = splitted.get(0) {
+            if n != command_strs::PREFIX {
+                return None;
+            }
         }
-    }
 
-    let ams = match clapcmd::create_clap_app().get_matches_from_safe(splitted) {
+        let ams = match clapcmd::create_clap_app().get_matches_from_safe(splitted) {
+            Ok(o) => o,
+            Err(e) => return Some(MsgCommand::Showing(e.message)),
+        };
+
+        use command_strs::*;
+
+        use super::clapcmd::{extract_clap_arg, extract_clap_sams};
+
+        let cmd = match match ams.subcommand_name() {
+            None => return None,
+            Some(s) => s,
+        } {
+            register::NAME => Command::UserRegister,
+            info::NAME => Command::UserRead,
+            change::NAME => {
+                let sams = extract_clap_sams(&ams, change::NAME).unwrap();
+                let admin_raw = sams.value_of(change::admin::NAME);
+                let sub_admin_raw = sams.value_of(change::sub_admin::NAME);
+
+                let admin = match admin_raw {
+                    Some(s) => Some(bool::from_str(s)?),
+                    None => None,
+                };
+
+                let sub_admin = match sub_admin_raw {
+                    Some(s) => Some(bool::from_str(s)?),
+                    None => None,
+                };
+
+                Command::UserUpdate(admin, sub_admin)
+            },
+            bookmark::NAME => {
+                let sams = extract_clap_sams(&ams, bookmark::NAME).unwrap();
+                let id_raw = extract_clap_arg(sams, bookmark::id::NAME).unwrap();
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::Bookmark(id)
+            },
+            delete_me::NAME => Command::UserDelete,
+            post::NAME => {
+                let sams = extract_clap_sams(&ams, post::NAME).unwrap();
+                let content = extract_clap_arg(sams, post::content::NAME).unwrap();
+                let author = extract_clap_arg(sams, post::author::NAME).unwrap();
+
+                Command::ContentPost(content.to_string(), author.to_string())
+            },
+            get::NAME => {
+                let sams = extract_clap_sams(&ams, get::NAME).unwrap();
+
+                let mut queries = vec![];
+
+                if let Ok(o) = extract_clap_arg(sams, get::id::NAME) {
+                    queries.push(ContentQuery::Id(Uuid::from_str(o)?));
+                }
+                if let Ok(o) = extract_clap_arg(sams, get::author::NAME) {
+                    queries.push(ContentQuery::Author(o.to_string()));
+                }
+                if let Ok(o) = extract_clap_arg(sams, get::posted::NAME) {
+                    queries.push(ContentQuery::Posted(UserId(o.parse()?)));
+                }
+                if let Ok(o) = extract_clap_arg(sams, get::content::NAME) {
+                    queries.push(ContentQuery::Content(o.to_string()));
+                }
+                if let Ok(o) = extract_clap_arg(sams, get::liked::NAME) {
+                    let tur = range_syntax_parser(o.to_string())?;
+                    queries.push(ContentQuery::LikedNum(tur.0, tur.1));
+                }
+                if let Ok(o) = extract_clap_arg(sams, get::bookmarked::NAME) {
+                    let tur = range_syntax_parser(o.to_string())?;
+                    queries.push(ContentQuery::Bookmarked(tur.0, tur.1));
+                }
+                if let Ok(o) = extract_clap_arg(sams, get::pinned::NAME) {
+                    let tur = range_syntax_parser(o.to_string())?;
+                    queries.push(ContentQuery::PinnedNum(tur.0, tur.1));
+                }
+                let page = match extract_clap_arg(sams, get::page::NAME) {
+                    Ok(o) => o.parse()?,
+                    Err(e) => {
+                        dbg!(e);
+                        1
+                    },
+                };
+
+                Command::ContentRead(queries, page)
+            },
+            edit::NAME => {
+                let sams = extract_clap_sams(&ams, edit::NAME).unwrap();
+                let id_raw = extract_clap_arg(sams, edit::id::NAME).unwrap();
+                let content = extract_clap_arg(sams, edit::content::NAME).unwrap();
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::ContentUpdate(id, content.to_string())
+            },
+            like::NAME => {
+                let sams = extract_clap_sams(&ams, like::NAME).unwrap();
+                let id_raw = extract_clap_arg(sams, like::id::NAME).unwrap();
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::Like(id)
+            },
+            pin::NAME => {
+                let sams = extract_clap_sams(&ams, pin::NAME).unwrap();
+                let id_raw = extract_clap_arg(sams, pin::id::NAME).unwrap();
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::Pin(id)
+            },
+            remove::NAME => {
+                let sams = extract_clap_sams(&ams, remove::NAME).unwrap();
+                let id_raw = extract_clap_arg(sams, remove::id::NAME).unwrap();
+
+                let id = Uuid::from_str(id_raw)?;
+
+                Command::ContentDelete(id)
+            },
+            _ => panic!("unrecognized subcommand. (impl error)"),
+        };
+
+        Some(MsgCommand::Command(cmd))
+    };
+
+    match res {
         Ok(o) => o,
-        Err(e) => return Ok(MsgCommand::Showing(e.message)),
-    };
-
-    use command_strs::*;
-
-    use super::clapcmd::{extract_clap_arg, extract_clap_sams};
-
-    let cmd = match match ams.subcommand_name() {
-        None => bail!("cannot get subcommand."),
-        Some(s) => s,
-    } {
-        register::NAME => Command::UserRegister,
-        info::NAME => Command::UserRead,
-        change::NAME => {
-            let sams = extract_clap_sams(&ams, change::NAME)?;
-            let admin_raw = sams.value_of(change::admin::NAME);
-            let sub_admin_raw = sams.value_of(change::sub_admin::NAME);
-
-            let admin = match admin_raw.map(|s| bool::from_str(s)) {
-                Some(Ok(b)) => Some(b),
-                None => None,
-                Some(Err(e)) => bail!("{}", e),
-            };
-
-            let sub_admin = match sub_admin_raw.map(|s| bool::from_str(s)) {
-                Some(Ok(b)) => Some(b),
-                None => None,
-                Some(Err(e)) => bail!("{}", e),
-            };
-
-            Command::UserUpdate(admin, sub_admin)
-        },
-        bookmark::NAME => {
-            let sams = extract_clap_sams(&ams, bookmark::NAME)?;
-            let id_raw = extract_clap_arg(sams, bookmark::id::NAME)?;
-
-            let id = Uuid::from_str(id_raw)?;
-
-            Command::Bookmark(id)
-        },
-        delete_me::NAME => Command::UserDelete,
-        post::NAME => {
-            let sams = extract_clap_sams(&ams, post::NAME)?;
-            let content = extract_clap_arg(sams, post::content::NAME)?;
-            let author = extract_clap_arg(sams, post::author::NAME)?;
-
-            Command::ContentPost(content.to_string(), author.to_string())
-        },
-        get::NAME => {
-            let sams = extract_clap_sams(&ams, get::NAME)?;
-
-            let mut queries = vec![];
-
-            if let Ok(o) = extract_clap_arg(sams, get::id::NAME) {
-                queries.push(ContentQuery::Id(Uuid::from_str(o)?));
-            }
-            if let Ok(o) = extract_clap_arg(sams, get::author::NAME) {
-                queries.push(ContentQuery::Author(o.to_string()));
-            }
-            if let Ok(o) = extract_clap_arg(sams, get::posted::NAME) {
-                queries.push(ContentQuery::Posted(UserId(o.parse()?)));
-            }
-            if let Ok(o) = extract_clap_arg(sams, get::content::NAME) {
-                queries.push(ContentQuery::Content(o.to_string()));
-            }
-            if let Ok(o) = extract_clap_arg(sams, get::liked::NAME) {
-                let tur = range_syntax_parser(o.to_string())?;
-                queries.push(ContentQuery::LikedNum(tur.0, tur.1));
-            }
-            if let Ok(o) = extract_clap_arg(sams, get::bookmarked::NAME) {
-                let tur = range_syntax_parser(o.to_string())?;
-                queries.push(ContentQuery::Bookmarked(tur.0, tur.1));
-            }
-            if let Ok(o) = extract_clap_arg(sams, get::pinned::NAME) {
-                let tur = range_syntax_parser(o.to_string())?;
-                queries.push(ContentQuery::PinnedNum(tur.0, tur.1));
-            }
-            let page = match extract_clap_arg(sams, get::page::NAME) {
-                Ok(o) => o.parse()?,
-                Err(e) => {
-                    dbg!(e);
-                    1
-                },
-            };
-
-            Command::ContentRead(queries, page)
-        },
-        edit::NAME => {
-            let sams = extract_clap_sams(&ams, edit::NAME)?;
-            let id_raw = extract_clap_arg(sams, edit::id::NAME)?;
-            let content = extract_clap_arg(sams, edit::content::NAME)?;
-
-            let id = Uuid::from_str(id_raw)?;
-
-            Command::ContentUpdate(id, content.to_string())
-        },
-        like::NAME => {
-            let sams = extract_clap_sams(&ams, like::NAME)?;
-            let id_raw = extract_clap_arg(sams, like::id::NAME)?;
-
-            let id = Uuid::from_str(id_raw)?;
-
-            Command::Like(id)
-        },
-        pin::NAME => {
-            let sams = extract_clap_sams(&ams, pin::NAME)?;
-            let id_raw = extract_clap_arg(sams, pin::id::NAME)?;
-
-            let id = Uuid::from_str(id_raw)?;
-
-            Command::Pin(id)
-        },
-        remove::NAME => {
-            let sams = extract_clap_sams(&ams, remove::NAME)?;
-            let id_raw = extract_clap_arg(sams, remove::id::NAME)?;
-
-            let id = Uuid::from_str(id_raw)?;
-
-            Command::ContentDelete(id)
-        },
-        _ => bail!("unrecognized subcommand."),
-    };
-
-    Ok(MsgCommand::Command(cmd))
+        Err(e) => Some(MsgCommand::Showing(e.to_string())),
+    }
 }
 
 pub fn resp_from_user(
