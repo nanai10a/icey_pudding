@@ -232,6 +232,7 @@ impl Conductor {
                     }]
                 },
                 Command::Pin { content_id } => {
+                    self.handler.pin_update_content(content_id, user_id).await?;
                     let mut matchces = self
                         .handler
                         .read_content(vec![ContentQuery::Id(content_id)])
