@@ -88,6 +88,13 @@ pub fn create_clap_app() -> App<'static, 'static> {
                         .help(get::pinned::DESC)
                         .takes_value(true)
                         .value_name(get::pinned::NAME),
+                    Arg::with_name(get::page::NAME)
+                        .long(get::page::NAME)
+                        .short(get::page::S_NAME)
+                        .help(get::page::DESC)
+                        .takes_value(true)
+                        .required(true)
+                        .value_name(get::page::NAME),
                 ]),
             SubCommand::with_name(edit::NAME)
                 .about(edit::DESC)
