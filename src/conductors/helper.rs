@@ -284,16 +284,16 @@ pub fn append_message_reference(
     channel_id: ChannelId,
     guild_id: Option<GuildId>,
 ) {
-    let mr = dbg!(json!({
+    let mr = json!({
         "message_id": id,
         "channel_id": channel_id,
         "guild_id": match guild_id {
-            Some(i) => Value::Number(Number::from(i.0)),
+            Some(GuildId(i)) => Value::Number(Number::from(i)),
             None => Value::Null
         },
-    }));
+    });
 
-    dbg!(raw.insert("message_reference", mr));
+    raw.insert("message_reference", mr);
 }
 
 /// parser of "range" notation like of rust's (but, limited).
@@ -339,8 +339,6 @@ pub fn range_syntax_parser(mut src: String) -> Result<(u32, Comparison)> {
                 t
             },
         };
-
-        dbg!((i, c));
 
         match c {
             ' ' => (),
