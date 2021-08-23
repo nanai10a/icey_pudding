@@ -21,49 +21,59 @@ pub async fn parse_ia(acid: &ApplicationCommandInteractionData) -> Result<Comman
         "register" => Command::UserRegister,
         "info" => Command::UserRead,
         "change" => {
-            let admin = extract_option!(opt Value::Bool => ref admin in acid)?;
-            let sub_admin = extract_option!(opt Value::Bool => ref sub_admin in acid)?;
+            let admin = extract_option!(opt Value::Bool => ref admin in acid)?.copied();
+            let sub_admin = extract_option!(opt Value::Bool => ref sub_admin in acid)?.copied();
 
-            Command::UserUpdate(admin.copied(), sub_admin.copied())
+            Command::UserUpdate { admin, sub_admin }
         },
         "bookmark" => {
-            let id = extract_option!(Value::String => ref id in acid)?;
+            let content_id =
+                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
 
-            Command::Bookmark(Uuid::parse_str(id.as_str())?)
+            Command::Bookmark { content_id }
         },
         "delete_me" => Command::UserDelete,
         "post" => {
-            let content = extract_option!(Value::String => ref id in acid)?;
-            let author = extract_option!(Value::String => ref author in acid)?;
+            let content = extract_option!(Value::String => ref id in acid)?.clone();
+            let author = extract_option!(Value::String => ref author in acid)?.clone();
 
-            Command::ContentPost(content.clone(), author.clone())
+            Command::ContentPost { content, author }
         },
         "get" => {
             // FIXME: clap版のcommandに追従していない.
-            let id = extract_option!(Value::String => ref id in acid)?;
+            let queries = vec![ContentQuery::Id(Uuid::parse_str(
+                extract_option!(Value::String => ref id in acid)?.as_str(),
+            )?)];
 
-            Command::ContentRead(vec![ContentQuery::Id(Uuid::parse_str(id.as_str())?)], 1)
+            Command::ContentRead { queries, page: 1 }
         },
         "edit" => {
-            let id = extract_option!(Value::String => ref id in acid)?;
-            let content = extract_option!(Value::String => ref content in acid)?;
+            let content_id =
+                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
+            let new_content = extract_option!(Value::String => ref content in acid)?.clone();
 
-            Command::ContentUpdate(Uuid::parse_str(id.as_str())?, content.clone())
+            Command::ContentUpdate {
+                content_id,
+                new_content,
+            }
         },
         "like" => {
-            let id = extract_option!(Value::String => ref id in acid)?;
+            let content_id =
+                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
 
-            Command::Like(Uuid::parse_str(id.as_str())?)
+            Command::Like { content_id }
         },
         "pin" => {
-            let id = extract_option!(Value::String => ref id in acid)?;
+            let content_id =
+                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
 
-            Command::Pin(Uuid::parse_str(id.as_str())?)
+            Command::Pin { content_id }
         },
         "remove" => {
-            let id = extract_option!(Value::String => ref id in acid)?;
+            let content_id =
+                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
 
-            Command::ContentDelete(Uuid::parse_str(id.as_str())?)
+            Command::ContentDelete { content_id }
         },
         _ => bail!("unrecognized application_command name."),
     };
@@ -111,23 +121,27 @@ pub async fn parse_msg(msg: &str) -> Option<MsgCommand> {
                     None => None,
                 };
 
-                Command::UserUpdate(admin, sub_admin)
+                Command::UserUpdate { admin, sub_admin }
             },
             bookmark::NAME => {
                 let sams = extract_clap_sams(&ams, bookmark::NAME).unwrap();
-                let id_raw = extract_clap_arg(sams, bookmark::id::NAME).unwrap();
+                let content_id_raw = extract_clap_arg(sams, bookmark::id::NAME).unwrap();
 
-                let id = Uuid::from_str(id_raw)?;
+                let content_id = Uuid::from_str(content_id_raw)?;
 
-                Command::Bookmark(id)
+                Command::Bookmark { content_id }
             },
             delete_me::NAME => Command::UserDelete,
             post::NAME => {
                 let sams = extract_clap_sams(&ams, post::NAME).unwrap();
-                let content = extract_clap_arg(sams, post::content::NAME).unwrap();
-                let author = extract_clap_arg(sams, post::author::NAME).unwrap();
+                let content = extract_clap_arg(sams, post::content::NAME)
+                    .unwrap()
+                    .to_string();
+                let author = extract_clap_arg(sams, post::author::NAME)
+                    .unwrap()
+                    .to_string();
 
-                Command::ContentPost(content.to_string(), author.to_string())
+                Command::ContentPost { content, author }
             },
             get::NAME => {
                 let sams = extract_clap_sams(&ams, get::NAME).unwrap();
@@ -166,40 +180,37 @@ pub async fn parse_msg(msg: &str) -> Option<MsgCommand> {
                     },
                 };
 
-                Command::ContentRead(queries, page)
+                Command::ContentRead { queries, page }
             },
             edit::NAME => {
                 let sams = extract_clap_sams(&ams, edit::NAME).unwrap();
-                let id_raw = extract_clap_arg(sams, edit::id::NAME).unwrap();
-                let content = extract_clap_arg(sams, edit::content::NAME).unwrap();
+                let content_id = Uuid::from_str(extract_clap_arg(sams, edit::id::NAME).unwrap())?;
+                let new_content = extract_clap_arg(sams, edit::content::NAME)
+                    .unwrap()
+                    .to_string();
 
-                let id = Uuid::from_str(id_raw)?;
-
-                Command::ContentUpdate(id, content.to_string())
+                Command::ContentUpdate {
+                    content_id,
+                    new_content,
+                }
             },
             like::NAME => {
                 let sams = extract_clap_sams(&ams, like::NAME).unwrap();
-                let id_raw = extract_clap_arg(sams, like::id::NAME).unwrap();
+                let content_id = Uuid::from_str(extract_clap_arg(sams, like::id::NAME).unwrap())?;
 
-                let id = Uuid::from_str(id_raw)?;
-
-                Command::Like(id)
+                Command::Like { content_id }
             },
             pin::NAME => {
                 let sams = extract_clap_sams(&ams, pin::NAME).unwrap();
-                let id_raw = extract_clap_arg(sams, pin::id::NAME).unwrap();
+                let content_id = Uuid::from_str(extract_clap_arg(sams, pin::id::NAME).unwrap())?;
 
-                let id = Uuid::from_str(id_raw)?;
-
-                Command::Pin(id)
+                Command::Pin { content_id }
             },
             remove::NAME => {
                 let sams = extract_clap_sams(&ams, remove::NAME).unwrap();
-                let id_raw = extract_clap_arg(sams, remove::id::NAME).unwrap();
+                let content_id = Uuid::from_str(extract_clap_arg(sams, remove::id::NAME).unwrap())?;
 
-                let id = Uuid::from_str(id_raw)?;
-
-                Command::ContentDelete(id)
+                Command::ContentDelete { content_id }
             },
             _ => panic!("unrecognized subcommand. (impl error)"),
         };
