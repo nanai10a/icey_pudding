@@ -39,9 +39,10 @@ pub async fn parse_ia(acid: &ApplicationCommandInteractionData) -> Result<Comman
             Command::ContentPost(content.clone(), author.clone())
         },
         "get" => {
+            // FIXME: clap版のcommandに追従していない.
             let id = extract_option!(Value::String => ref id in acid)?;
 
-            Command::ContentRead(vec![ContentQuery::Id(Uuid::parse_str(id.as_str())?)])
+            Command::ContentRead(vec![ContentQuery::Id(Uuid::parse_str(id.as_str())?)], 1)
         },
         "edit" => {
             let id = extract_option!(Value::String => ref id in acid)?;
@@ -158,8 +159,15 @@ pub async fn parse_msg(msg: &str) -> Result<MsgCommand> {
                 let tur = range_syntax_parser(o.to_string())?;
                 queries.push(ContentQuery::PinnedNum(tur.0, tur.1));
             }
+            let page = match extract_clap_arg(sams, get::page::NAME) {
+                Ok(o) => o.parse()?,
+                Err(e) => {
+                    dbg!(e);
+                    1
+                },
+            };
 
-            Command::ContentRead(queries)
+            Command::ContentRead(queries, page)
         },
         edit::NAME => {
             let sams = extract_clap_sams(&ams, edit::NAME)?;

@@ -87,6 +87,11 @@ consts::consts! {
             NAME: "pinned";
             DESC: "pinned num.";
         }
+        page {
+            NAME: "page";
+            DESC: "showing page num.";
+            S_NAME: "p";
+        }
     }
 
     edit {

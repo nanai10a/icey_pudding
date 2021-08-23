@@ -35,7 +35,7 @@ pub enum Command {
     Bookmark(Uuid),
     UserDelete,
     ContentPost(String, String),
-    ContentRead(Vec<ContentQuery>),
+    ContentRead(Vec<ContentQuery>, u32),
     ContentUpdate(Uuid, String),
     Like(Uuid),
     Pin(Uuid),
@@ -63,33 +63,33 @@ impl Conductor {
         user_id: UserId,
         user_name: impl Display,
         user_nick: Option<&str>,
-    ) -> Response {
+    ) -> Vec<Response> {
         let from_user_shows = format!("from: {} ({})", user_name, user_nick.unwrap_or(""));
 
         use command_colors::*;
 
-        let res: Result<Response> = try {
-            let resp: Response = match cmd {
-                Command::UserRegister => helper::resp_from_user(
+        let res: Result<Vec<Response>> = try {
+            let resp: Vec<Response> = match cmd {
+                Command::UserRegister => vec![helper::resp_from_user(
                     "registered user",
                     from_user_shows,
                     REGISTER,
                     self.handler.create_user(user_id).await?,
-                ),
-                Command::UserRead => helper::resp_from_user(
+                )],
+                Command::UserRead => vec![helper::resp_from_user(
                     "showing user",
                     from_user_shows,
                     INFO,
                     self.handler.read_user(user_id).await?,
-                ),
-                Command::UserUpdate(new_admin, new_sub_admin) => helper::resp_from_user(
+                )],
+                Command::UserUpdate(new_admin, new_sub_admin) => vec![helper::resp_from_user(
                     "updated user",
                     from_user_shows,
                     CHANGE,
                     self.handler
                         .update_user(user_id, new_admin, new_sub_admin)
                         .await?,
-                ),
+                )],
                 Command::Bookmark(id) => {
                     self.handler.bookmark_update_user(user_id, id).await?;
                     let mut matchces = self
@@ -103,7 +103,7 @@ impl Conductor {
                     }
                     let Content { bookmarked, .. } = matchces.remove(0);
 
-                    Response {
+                    vec![Response {
                         title: "bookmarked".to_string(),
                         rgb: BOOKMARK,
                         description: from_user_shows,
@@ -111,42 +111,72 @@ impl Conductor {
                             ("id:".to_string(), format!("{}", id)),
                             ("bookmarked:".to_string(), format!("{}", bookmarked)),
                         ],
-                    }
+                    }]
                 },
                 Command::UserDelete => {
                     self.handler.delete_user(user_id).await?;
 
-                    Response {
+                    vec![Response {
                         title: "deleted user".to_string(),
                         rgb: DELETE_ME,
                         description: "see you!".to_string(),
                         fields: vec![],
-                    }
+                    }]
                 },
-                Command::ContentPost(content, author) => helper::resp_from_content(
+                Command::ContentPost(content, author) => vec![helper::resp_from_content(
                     "posted content",
                     from_user_shows,
                     POST,
                     self.handler
                         .create_content_and_posted_update_user(content, user_id, author)
                         .await?,
-                ),
-                Command::ContentRead(queries) =>
-                    helper::resp_from_content("showing content", from_user_shows, GET, {
-                        let mut matchces = self.handler.read_content(queries).await?;
-                        if matchces.len() != 1 {
-                            Err(anyhow::anyhow!(
-                                "sorry, error occurred (on updated content fetch)"
-                            ))?;
-                        }
-                        matchces.remove(0)
-                    }),
-                Command::ContentUpdate(id, new_content) => helper::resp_from_content(
+                )],
+                Command::ContentRead(queries, page) => {
+                    // 一度に表示するcontentsは5つ.
+                    const ITEMS: usize = 5;
+
+                    let mut matchces = self.handler.read_content(queries).await?;
+                    match matchces.len() {
+                        0 => vec![Response {
+                            title: "try showing contents, but...".to_string(),
+                            description: "not found. (match: 0)".to_string(),
+                            rgb: ERROR,
+                            fields: vec![],
+                        }],
+                        len => matchces
+                            .drain({
+                                let all_range = ..len;
+                                let range = (ITEMS * (page as usize - 1))
+                                    ..(ITEMS + ITEMS * (page as usize - 1));
+
+                                if !all_range.contains(&range.start) {
+                                    Err(anyhow::anyhow!("out of bounds. (total: 0..{})", len))?;
+                                }
+
+                                if !all_range.contains(&range.end) {
+                                    range.start..len
+                                } else {
+                                    range
+                                }
+                            })
+                            .enumerate()
+                            .map(|(i, v)| {
+                                helper::resp_from_content(
+                                    format!("showing contents: {} | {}", i, page),
+                                    from_user_shows.clone(),
+                                    GET,
+                                    v,
+                                )
+                            })
+                            .collect(),
+                    }
+                },
+                Command::ContentUpdate(id, new_content) => vec![helper::resp_from_content(
                     "updated content",
                     from_user_shows,
                     EDIT,
                     self.handler.update_content(id, new_content).await?,
-                ),
+                )],
 
                 Command::Like(id) => {
                     self.handler.like_update_content(id, user_id).await?;
@@ -161,7 +191,7 @@ impl Conductor {
                     }
                     let Content { liked, .. } = matchces.remove(0);
 
-                    Response {
+                    vec![Response {
                         title: "liked".to_string(),
                         rgb: LIKE,
                         description: from_user_shows,
@@ -169,7 +199,7 @@ impl Conductor {
                             ("id:".to_string(), format!("{}", id)),
                             ("liked:".to_string(), format!("{}", liked.len())),
                         ],
-                    }
+                    }]
                 },
                 Command::Pin(id) => {
                     let mut matchces = self
@@ -183,7 +213,7 @@ impl Conductor {
                     }
                     let Content { pinned, .. } = matchces.remove(0);
 
-                    Response {
+                    vec![Response {
                         title: "pinned".to_string(),
                         rgb: PIN,
                         description: from_user_shows,
@@ -191,17 +221,17 @@ impl Conductor {
                             ("id:".to_string(), format!("{}", id)),
                             ("pinned:".to_string(), format!("{}", pinned.len())),
                         ],
-                    }
+                    }]
                 },
                 Command::ContentDelete(id) => {
                     self.handler.delete_content(id).await?;
 
-                    Response {
+                    vec![Response {
                         title: "deleted content".to_string(),
                         description: "i'm sad...".to_string(),
                         rgb: REMOVE,
                         fields: vec![("id:".to_string(), format!("{}", id))],
-                    }
+                    }]
                 },
             };
 
@@ -210,12 +240,12 @@ impl Conductor {
 
         match res {
             Ok(r) => r,
-            Err(e) => Response {
+            Err(e) => vec![Response {
                 title: "error occurred".to_string(),
                 rgb: ERROR,
                 description: format!("{}", e),
                 fields: vec![],
-            },
+            }],
         }
     }
 }
@@ -240,14 +270,17 @@ impl EventHandler for Conductor {
 
         let nick_opt = nick_opt_string.as_deref();
 
-        let resp = self
+        let mut resps = self
             .handle(cmd, aci.user.id, aci.user.name.clone(), nick_opt)
             .await;
 
         let res = aci
             .create_interaction_response(&ctx, |cir| {
                 cir.interaction_response_data(|cird| {
-                    cird.create_embed(|ce| helper::build_embed_from_resp(ce, resp))
+                    resps.drain(..).for_each(|resp| {
+                        cird.create_embed(|ce| helper::build_embed_from_resp(ce, resp));
+                    });
+                    cird
                 })
             })
             .await;
@@ -305,11 +338,13 @@ impl EventHandler for Conductor {
             id: user_id, name, ..
         } = author;
 
-        let resp = self.handle(cmd, user_id, name, nick_opt).await;
+        let mut resps = self.handle(cmd, user_id, name, nick_opt).await;
 
         let res = channel_id
             .send_message(ctx.http, |cm| {
-                cm.add_embed(|ce| helper::build_embed_from_resp(ce, resp));
+                resps.drain(..).for_each(|resp| {
+                    cm.add_embed(|ce| helper::build_embed_from_resp(ce, resp));
+                });
 
                 let CreateMessage(ref mut raw, ..) = cm;
                 helper::append_message_reference(raw, message_id, channel_id, guild_id_opt);
