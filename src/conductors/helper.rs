@@ -273,7 +273,7 @@ pub fn build_embed_from_resp(
         .fields(
             fields
                 .drain(..)
-                .map(|(s1, s2)| (s1, s2, false))
+                .map(|(s1, s2)| (s1, s2, true))
                 .collect::<Vec<_>>(),
         )
 }
