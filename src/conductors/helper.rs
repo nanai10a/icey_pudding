@@ -5,13 +5,14 @@ use std::str::FromStr;
 use anyhow::{bail, Result};
 use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
-use serenity::model::id::{ChannelId, GuildId, MessageId};
+use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
 use serenity::model::interactions::application_command::ApplicationCommandInteractionData;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
 use super::{clapcmd, command_strs, Command, MsgCommand, Response};
 use crate::entities::{Content, User};
+use crate::repositories::{Comparison, ContentQuery};
 
 pub async fn parse_ia(acid: &ApplicationCommandInteractionData) -> Result<Command> {
     use crate::extract_option;
@@ -40,7 +41,7 @@ pub async fn parse_ia(acid: &ApplicationCommandInteractionData) -> Result<Comman
         "get" => {
             let id = extract_option!(Value::String => ref id in acid)?;
 
-            Command::ContentRead(Uuid::parse_str(id.as_str())?)
+            Command::ContentRead(vec![ContentQuery::Id(Uuid::parse_str(id.as_str())?)])
         },
         "edit" => {
             let id = extract_option!(Value::String => ref id in acid)?;
@@ -130,11 +131,35 @@ pub async fn parse_msg(msg: &str) -> Result<MsgCommand> {
         },
         get::NAME => {
             let sams = extract_clap_sams(&ams, get::NAME)?;
-            let id_raw = extract_clap_arg(sams, get::id::NAME)?;
 
-            let id = Uuid::from_str(id_raw)?;
+            let mut queries = vec![];
 
-            Command::ContentRead(id)
+            if let Ok(o) = extract_clap_arg(sams, get::id::NAME) {
+                queries.push(ContentQuery::Id(Uuid::from_str(o)?));
+            }
+            if let Ok(o) = extract_clap_arg(sams, get::author::NAME) {
+                queries.push(ContentQuery::Author(o.to_string()));
+            }
+            if let Ok(o) = extract_clap_arg(sams, get::posted::NAME) {
+                queries.push(ContentQuery::Posted(UserId(o.parse()?)));
+            }
+            if let Ok(o) = extract_clap_arg(sams, get::content::NAME) {
+                queries.push(ContentQuery::Content(o.to_string()));
+            }
+            if let Ok(o) = extract_clap_arg(sams, get::liked::NAME) {
+                let tur = range_syntax_parser(o.to_string())?;
+                queries.push(ContentQuery::LikedNum(tur.0, tur.1));
+            }
+            if let Ok(o) = extract_clap_arg(sams, get::bookmarked::NAME) {
+                let tur = range_syntax_parser(o.to_string())?;
+                queries.push(ContentQuery::Bookmarked(tur.0, tur.1));
+            }
+            if let Ok(o) = extract_clap_arg(sams, get::pinned::NAME) {
+                let tur = range_syntax_parser(o.to_string())?;
+                queries.push(ContentQuery::PinnedNum(tur.0, tur.1));
+            }
+
+            Command::ContentRead(queries)
         },
         edit::NAME => {
             let sams = extract_clap_sams(&ams, edit::NAME)?;
@@ -269,4 +294,151 @@ pub fn append_message_reference(
     }));
 
     dbg!(raw.insert("message_reference", mr));
+}
+
+/// parser of "range" notation like of rust's (but, limited).
+///
+/// 3 notations are available:
+///
+/// - `[num]..`
+///   - `target >= [num]`
+///   - [`Over`]
+/// - `[num]`
+///   - `target == [num]`
+///   - [`Eq`]
+/// - `..=[num]`
+///   - `target <= [num]`
+///   - [`Under`]
+///
+/// and, the following differences are acceptable:
+///
+/// - spaces before and after.
+/// - spaces between `[num]` and *range token* (e.g. `..=`)
+///
+/// [`Over`]: crate::repositories::Comparison::Over
+/// [`Eq`]: crate::repositories::Comparison::Eq
+/// [`Under`]: crate::repositories::Comparison::Under
+pub fn range_syntax_parser(mut src: String) -> Result<(u32, Comparison)> {
+    let mut iter = src.drain(..).enumerate();
+
+    let mut parsing_num = false;
+    let mut parsing_range = false;
+    let mut before_char = None;
+
+    let mut comp = Comparison::Eq;
+    let mut num_raw = String::new();
+
+    loop {
+        let (i, c) = match before_char {
+            None => match iter.next() {
+                Some(t) => t,
+                None => break,
+            },
+            Some(t) => {
+                before_char = None;
+                t
+            },
+        };
+
+        dbg!((i, c));
+
+        match c {
+            ' ' => (),
+            '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
+                if parsing_num {
+                    bail!("no expected char: '{}' (pos: {})", c, i);
+                }
+                parsing_num = true;
+
+                num_raw.push(c);
+
+                before_char = loop {
+                    let (i, c) = match iter.next() {
+                        None => break None,
+                        Some(t) => t,
+                    };
+
+                    match c {
+                        '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' =>
+                            num_raw.push(c),
+                        _ => break Some((i, c)),
+                    }
+                };
+            },
+            '.' => {
+                if parsing_range {
+                    bail!("no expected char: '{}' (pos: {})", c, i);
+                }
+                parsing_range = true;
+
+                let (i, c) = match before_char {
+                    None => match iter.next() {
+                        Some(t) => t,
+                        None => break,
+                    },
+                    Some(t) => {
+                        before_char = None;
+                        t
+                    },
+                };
+
+                match c {
+                    '.' => (),
+                    _ => bail!("no expected char: '{}' (pos: {})", c, i),
+                }
+
+                let (i, c) = match iter.next() {
+                    None => {
+                        comp = Comparison::Over;
+                        break;
+                    },
+                    Some(t) => t,
+                };
+
+                match (c == '=', parsing_num) {
+                    (true, false) => comp = Comparison::Under,
+                    (false, true) => comp = Comparison::Over,
+                    _ => bail!("no expected char: '{}', (pos: {})", c, i),
+                }
+            },
+            _ => bail!("no expected char: '{}' (pos: {})", c, i),
+        }
+    }
+
+    let num = num_raw.parse()?;
+
+    Ok((num, comp))
+}
+
+#[test]
+fn parsing_test() {
+    use Comparison::*;
+
+    assert_eq!(range_syntax_parser("2..".to_string()).unwrap(), (2, Over));
+
+    assert_eq!(range_syntax_parser("010".to_string()).unwrap(), (10, Eq));
+
+    assert_eq!(range_syntax_parser("..=5".to_string()).unwrap(), (5, Under));
+
+    assert!(range_syntax_parser("..5".to_string()).is_err());
+
+    assert!(range_syntax_parser("3..=".to_string()).is_err());
+
+    assert!(range_syntax_parser("..=5f".to_string()).is_err());
+
+    assert!(range_syntax_parser(".a.2".to_string()).is_err());
+
+    assert!(range_syntax_parser("not expected".to_string()).is_err());
+
+    assert_eq!(
+        range_syntax_parser("  ..=   100".to_string()).unwrap(),
+        (100, Under)
+    );
+
+    assert!(range_syntax_parser(" . . = 100".to_string()).is_err());
+
+    assert_eq!(
+        range_syntax_parser("  100    ..".to_string()).unwrap(),
+        (100, Over)
+    );
 }
