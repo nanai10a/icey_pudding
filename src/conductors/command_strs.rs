@@ -63,6 +63,30 @@ consts::consts! {
             NAME: "id";
             DESC: "content's id.";
         }
+        author {
+            NAME: "author";
+            DESC: "author name.";
+        }
+        posted {
+            NAME: "posted";
+            DESC: "posted id.";
+        }
+        content {
+            NAME: "content";
+            DESC: "content.";
+        }
+        liked {
+            NAME: "liked";
+            DESC: "liked num.";
+        }
+        bookmarked {
+            NAME: "bookmarked";
+            DESC: "bookmarked num.";
+        }
+        pinned {
+            NAME: "pinned";
+            DESC: "pinned num.";
+        }
     }
 
     edit {

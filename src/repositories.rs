@@ -117,6 +117,7 @@ impl Same for User {
     fn is_same(&self, other: &Self) -> bool { self.id == other.id }
 }
 
+#[derive(Debug, Clone)]
 pub enum UserQuery {
     Id(UserId),
     Admin(bool),
@@ -155,6 +156,7 @@ impl Same for Content {
     fn is_same(&self, other: &Self) -> bool { self.id == other.id }
 }
 
+#[derive(Debug, Clone)]
 pub enum ContentQuery {
     Id(Uuid),
     IdHead(u32),
@@ -162,10 +164,13 @@ pub enum ContentQuery {
     Posted(UserId),
     Content(String),
     Liked(Vec<UserId>),
+    LikedNum(u32, Comparison),
     Bookmarked(u32, Comparison),
     Pinned(Vec<UserId>),
+    PinnedNum(u32, Comparison),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Comparison {
     Over,
     Eq,
@@ -191,6 +196,11 @@ impl Query<Content> for ContentQuery {
             Self::Liked(f_liked) => box move |Content { liked, .. }| {
                 f_liked.iter().filter(|elem| liked.contains(elem)).count() == liked.len()
             },
+            Self::LikedNum(f_liked_num, comp) => box move |Content { liked, .. }| match comp {
+                Comparison::Over => liked.len() as u32 >= *f_liked_num,
+                Comparison::Eq => liked.len() as u32 == *f_liked_num,
+                Comparison::Under => liked.len() as u32 <= *f_liked_num,
+            },
             Self::Bookmarked(f_bookmarked, comp) =>
                 box move |Content { bookmarked, .. }| match comp {
                     Comparison::Over => bookmarked >= f_bookmarked,
@@ -199,6 +209,11 @@ impl Query<Content> for ContentQuery {
                 },
             Self::Pinned(f_pinned) => box move |Content { pinned, .. }| {
                 f_pinned.iter().filter(|elem| pinned.contains(elem)).count() == pinned.len()
+            },
+            Self::PinnedNum(f_pinned_num, comp) => box move |Content { pinned, .. }| match comp {
+                Comparison::Over => pinned.len() as u32 >= *f_pinned_num,
+                Comparison::Eq => pinned.len() as u32 == *f_pinned_num,
+                Comparison::Under => pinned.len() as u32 <= *f_pinned_num,
             },
         };
 

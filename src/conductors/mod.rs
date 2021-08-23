@@ -35,7 +35,7 @@ pub enum Command {
     Bookmark(Uuid),
     UserDelete,
     ContentPost(String, String),
-    ContentRead(Uuid),
+    ContentRead(Vec<ContentQuery>),
     ContentUpdate(Uuid, String),
     Like(Uuid),
     Pin(Uuid),
@@ -131,12 +131,9 @@ impl Conductor {
                         .create_content_and_posted_update_user(content, user_id, author)
                         .await?,
                 ),
-                Command::ContentRead(id) =>
+                Command::ContentRead(queries) =>
                     helper::resp_from_content("showing content", from_user_shows, GET, {
-                        let mut matchces = self
-                            .handler
-                            .read_content(vec![ContentQuery::Id(id)])
-                            .await?;
+                        let mut matchces = self.handler.read_content(queries).await?;
                         if matchces.len() != 1 {
                             Err(anyhow::anyhow!(
                                 "sorry, error occurred (on updated content fetch)"

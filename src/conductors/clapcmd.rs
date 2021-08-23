@@ -50,13 +50,45 @@ pub fn create_clap_app() -> App<'static, 'static> {
                         .takes_value(true)
                         .value_name(post::content::NAME),
                 ]),
-            SubCommand::with_name(get::NAME).about(get::DESC).arg(
-                Arg::with_name(get::id::NAME)
-                    .help(get::id::DESC)
-                    .required(true)
-                    .takes_value(true)
-                    .value_name(get::id::NAME),
-            ),
+            SubCommand::with_name(get::NAME)
+                .about(get::DESC)
+                .args(&vec![
+                    Arg::with_name(get::id::NAME)
+                        .long(get::id::NAME)
+                        .help(get::id::DESC)
+                        .takes_value(true)
+                        .value_name(get::id::NAME),
+                    Arg::with_name(get::author::NAME)
+                        .long(get::author::NAME)
+                        .help(get::author::DESC)
+                        .takes_value(true)
+                        .value_name(get::author::NAME),
+                    Arg::with_name(get::posted::NAME)
+                        .long(get::posted::NAME)
+                        .help(get::posted::DESC)
+                        .takes_value(true)
+                        .value_name(get::posted::NAME),
+                    Arg::with_name(get::content::NAME)
+                        .long(get::content::NAME)
+                        .help(get::content::DESC)
+                        .takes_value(true)
+                        .value_name(get::content::NAME),
+                    Arg::with_name(get::liked::NAME)
+                        .long(get::liked::NAME)
+                        .help(get::liked::DESC)
+                        .takes_value(true)
+                        .value_name(get::liked::NAME),
+                    Arg::with_name(get::bookmarked::NAME)
+                        .long(get::bookmarked::NAME)
+                        .help(get::bookmarked::DESC)
+                        .takes_value(true)
+                        .value_name(get::bookmarked::NAME),
+                    Arg::with_name(get::pinned::NAME)
+                        .long(get::pinned::NAME)
+                        .help(get::pinned::DESC)
+                        .takes_value(true)
+                        .value_name(get::pinned::NAME),
+                ]),
             SubCommand::with_name(edit::NAME)
                 .about(edit::DESC)
                 .args(&vec![
