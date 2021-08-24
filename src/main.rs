@@ -36,20 +36,22 @@ async fn async_main() {
     };
 
     match application_command_create(&c.cache_and_http.http, None).await {
-        Ok(o) => println!("successfully post application_cmd to global: {:?}", o),
-        Err(e) => eprintln!("cannot post application_cmd to global: {}", e),
+        Ok(o) => {
+            dbg!(o);
+        },
+        Err(e) => {
+            dbg!(e);
+        },
     }
 
     if let Some(guild_id) = app_post_to {
         match application_command_create(&c.cache_and_http.http, Some(GuildId(guild_id))).await {
-            Ok(o) => println!(
-                "successfully post application_cmd to guild (id: {}): {:?}",
-                guild_id, o
-            ),
-            Err(e) => eprintln!(
-                "cannot post application_cmd to guild (id: {}): {}",
-                guild_id, e
-            ),
+            Ok(o) => {
+                dbg!(o);
+            },
+            Err(e) => {
+                dbg!(e);
+            },
         }
     }
 
