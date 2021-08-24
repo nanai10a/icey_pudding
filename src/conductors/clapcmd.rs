@@ -28,13 +28,17 @@ pub fn create_clap_app() -> App<'static, 'static> {
                 ]),
             SubCommand::with_name(bookmark::NAME)
                 .about(bookmark::DESC)
-                .arg(
+                .args(&vec![
                     Arg::with_name(bookmark::id::NAME)
                         .help(bookmark::id::DESC)
                         .required(true)
                         .takes_value(true)
                         .value_name(bookmark::id::NAME),
-                ),
+                    Arg::with_name(bookmark::undo::NAME)
+                        .long(bookmark::undo::NAME)
+                        .help(bookmark::undo::NAME)
+                        .value_name(bookmark::undo::NAME),
+                ]),
             SubCommand::with_name(delete_me::NAME).about(delete_me::DESC),
             SubCommand::with_name(post::NAME)
                 .about(post::DESC)
@@ -110,20 +114,32 @@ pub fn create_clap_app() -> App<'static, 'static> {
                         .takes_value(true)
                         .value_name(edit::content::NAME),
                 ]),
-            SubCommand::with_name(like::NAME).about(like::DESC).arg(
-                Arg::with_name(like::id::NAME)
-                    .help(like::id::DESC)
-                    .required(true)
-                    .takes_value(true)
-                    .value_name(like::id::NAME),
-            ),
-            SubCommand::with_name(pin::NAME).about(pin::DESC).arg(
-                Arg::with_name(pin::id::NAME)
-                    .help(pin::id::DESC)
-                    .required(true)
-                    .takes_value(true)
-                    .value_name(pin::id::NAME),
-            ),
+            SubCommand::with_name(like::NAME)
+                .about(like::DESC)
+                .args(&vec![
+                    Arg::with_name(like::id::NAME)
+                        .help(like::id::DESC)
+                        .required(true)
+                        .takes_value(true)
+                        .value_name(like::id::NAME),
+                    Arg::with_name(like::undo::NAME)
+                        .long(like::undo::NAME)
+                        .help(like::undo::NAME)
+                        .value_name(like::undo::NAME),
+                ]),
+            SubCommand::with_name(pin::NAME)
+                .about(pin::DESC)
+                .args(&vec![
+                    Arg::with_name(pin::id::NAME)
+                        .help(pin::id::DESC)
+                        .required(true)
+                        .takes_value(true)
+                        .value_name(pin::id::NAME),
+                    Arg::with_name(pin::undo::NAME)
+                        .long(pin::undo::NAME)
+                        .help(pin::undo::NAME)
+                        .value_name(pin::undo::NAME),
+                ]),
             SubCommand::with_name(remove::NAME).about(remove::DESC).arg(
                 Arg::with_name(remove::id::NAME)
                     .help(remove::id::DESC)

@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use anyhow::{bail, Result};
 use serenity::model::id::UserId;
 use uuid::Uuid;
@@ -20,8 +22,8 @@ impl Handler {
             id: user_id,
             admin: false,
             sub_admin: false,
-            posted: vec![],
-            bookmark: vec![],
+            posted: HashSet::new(),
+            bookmark: HashSet::new(),
         };
 
         self.user_repository.save(new_user.clone()).await?;
@@ -64,7 +66,12 @@ impl Handler {
         Ok(user)
     }
 
-    pub async fn bookmark_update_user(&self, user_id: UserId, content_id: Uuid) -> Result<()> {
+    pub async fn bookmark_update_user(
+        &self,
+        user_id: UserId,
+        content_id: Uuid,
+        undo: bool,
+    ) -> Result<()> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?");
         }
@@ -82,13 +89,27 @@ impl Handler {
             .remove_match(vec![&ContentQuery::Id(content_id)])
             .await?;
 
-        user.bookmark.push(content_id);
-        content.bookmarked += 1;
+        let res = match undo {
+            false => match user.bookmark.insert(content_id) {
+                false => Err(anyhow::anyhow!("already bookmarked.")),
+                true => {
+                    content.bookmarked += 1;
+                    Ok(())
+                },
+            },
+            true => match user.bookmark.remove(&content_id) {
+                false => Err(anyhow::anyhow!("not bookmarked.")),
+                true => {
+                    content.bookmarked -= 1;
+                    Ok(())
+                },
+            },
+        };
 
         self.user_repository.save(user).await?;
         self.content_repository.save(content).await?;
 
-        Ok(())
+        res
     }
 
     pub async fn delete_user(&self, user_id: UserId) -> Result<()> {
@@ -122,12 +143,14 @@ impl Handler {
             content,
             author,
             posted,
-            liked: vec![],
+            liked: HashSet::new(),
             bookmarked: 0,
-            pinned: vec![],
+            pinned: HashSet::new(),
         };
 
-        posted_user.posted.push(new_content.id);
+        if !posted_user.posted.insert(new_content.id) {
+            panic!("content_id duplicated!");
+        }
 
         self.content_repository.save(new_content.clone()).await?;
         self.user_repository.save(posted_user).await?;
@@ -159,7 +182,12 @@ impl Handler {
         Ok(current_content)
     }
 
-    pub async fn like_update_content(&self, content_id: Uuid, user_id: UserId) -> Result<()> {
+    pub async fn like_update_content(
+        &self,
+        content_id: Uuid,
+        user_id: UserId,
+        undo: bool,
+    ) -> Result<()> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?");
         }
@@ -173,14 +201,28 @@ impl Handler {
             .remove_match(vec![&ContentQuery::Id(content_id)])
             .await?;
 
-        current_content.liked.push(user_id);
+        let res = match undo {
+            false => match current_content.liked.insert(user_id) {
+                false => Err(anyhow::anyhow!("already liked.")),
+                true => Ok(()),
+            },
+            true => match current_content.liked.remove(&user_id) {
+                false => Err(anyhow::anyhow!("not liked.")),
+                true => Ok(()),
+            },
+        };
 
         self.content_repository.save(current_content).await?;
 
-        Ok(())
+        res
     }
 
-    pub async fn pin_update_content(&self, content_id: Uuid, user_id: UserId) -> Result<()> {
+    pub async fn pin_update_content(
+        &self,
+        content_id: Uuid,
+        user_id: UserId,
+        undo: bool,
+    ) -> Result<()> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?")
         }
@@ -194,11 +236,20 @@ impl Handler {
             .remove_match(vec![&ContentQuery::Id(content_id)])
             .await?;
 
-        current_content.pinned.push(user_id);
+        let res = match undo {
+            false => match current_content.pinned.insert(user_id) {
+                false => Err(anyhow::anyhow!("already pinned.")),
+                true => Ok(()),
+            },
+            true => match current_content.pinned.remove(&user_id) {
+                false => Err(anyhow::anyhow!("not pinned.")),
+                true => Ok(()),
+            },
+        };
 
         self.content_repository.save(current_content).await?;
 
-        Ok(())
+        res
     }
 
     pub async fn delete_content(&self, content_id: Uuid) -> Result<()> {

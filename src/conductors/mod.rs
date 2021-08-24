@@ -37,6 +37,7 @@ pub enum Command {
     },
     Bookmark {
         content_id: Uuid,
+        undo: bool,
     },
     UserDelete,
     ContentPost {
@@ -53,9 +54,11 @@ pub enum Command {
     },
     Like {
         content_id: Uuid,
+        undo: bool,
     },
     Pin {
         content_id: Uuid,
+        undo: bool,
     },
     ContentDelete {
         content_id: Uuid,
@@ -113,9 +116,9 @@ impl Conductor {
                         .update_user(user_id, new_admin, new_sub_admin)
                         .await?,
                 )],
-                Command::Bookmark { content_id } => {
+                Command::Bookmark { content_id, undo } => {
                     self.handler
-                        .bookmark_update_user(user_id, content_id)
+                        .bookmark_update_user(user_id, content_id, undo)
                         .await?;
                     let mut matchces = self
                         .handler
@@ -206,9 +209,9 @@ impl Conductor {
                     self.handler.update_content(content_id, new_content).await?,
                 )],
 
-                Command::Like { content_id } => {
+                Command::Like { content_id, undo } => {
                     self.handler
-                        .like_update_content(content_id, user_id)
+                        .like_update_content(content_id, user_id, undo)
                         .await?;
                     let mut matchces = self
                         .handler
@@ -231,8 +234,10 @@ impl Conductor {
                         ],
                     }]
                 },
-                Command::Pin { content_id } => {
-                    self.handler.pin_update_content(content_id, user_id).await?;
+                Command::Pin { content_id, undo } => {
+                    self.handler
+                        .pin_update_content(content_id, user_id, undo)
+                        .await?;
                     let mut matchces = self
                         .handler
                         .read_content(vec![ContentQuery::Id(content_id)])

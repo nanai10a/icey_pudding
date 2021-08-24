@@ -88,7 +88,7 @@ impl ::std::fmt::Display for RepositoryError {
 
 impl ::std::error::Error for RepositoryError {}
 
-fn try_remove_target_from_vec<T>(
+pub fn try_remove_target_from_vec<T>(
     vec: &mut Vec<T>,
     is_target: impl Fn(&T) -> bool,
 ) -> ::std::result::Result<T, usize> {
