@@ -17,13 +17,9 @@ pub fn create_clap_app() -> App<'static, 'static> {
                 .args(&vec![
                     Arg::with_name(change::admin::NAME)
                         .help(change::admin::DESC)
-                        .required(false)
-                        .takes_value(true)
                         .value_name(change::admin::NAME),
                     Arg::with_name(change::sub_admin::NAME)
                         .help(change::sub_admin::DESC)
-                        .required(false)
-                        .takes_value(true)
                         .value_name(change::sub_admin::NAME),
                 ]),
             SubCommand::with_name(bookmark::NAME)
@@ -31,13 +27,11 @@ pub fn create_clap_app() -> App<'static, 'static> {
                 .args(&vec![
                     Arg::with_name(bookmark::id::NAME)
                         .help(bookmark::id::DESC)
-                        .required(true)
-                        .takes_value(true)
-                        .value_name(bookmark::id::NAME),
+                        .value_name(bookmark::id::NAME)
+                        .required(true),
                     Arg::with_name(bookmark::undo::NAME)
                         .long(bookmark::undo::NAME)
-                        .help(bookmark::undo::NAME)
-                        .value_name(bookmark::undo::NAME),
+                        .help(bookmark::undo::DESC),
                 ]),
             SubCommand::with_name(delete_me::NAME).about(delete_me::DESC),
             SubCommand::with_name(post::NAME)
@@ -45,106 +39,86 @@ pub fn create_clap_app() -> App<'static, 'static> {
                 .args(&vec![
                     Arg::with_name(post::author::NAME)
                         .help(post::author::DESC)
-                        .required(true)
-                        .takes_value(true)
-                        .value_name(post::author::NAME),
+                        .value_name(post::author::NAME)
+                        .required(true),
                     Arg::with_name(post::content::NAME)
                         .help(post::content::DESC)
-                        .required(true)
-                        .takes_value(true)
-                        .value_name(post::content::NAME),
+                        .value_name(post::content::NAME)
+                        .required(true),
                 ]),
             SubCommand::with_name(get::NAME)
                 .about(get::DESC)
                 .args(&vec![
+                    Arg::with_name(get::page::NAME)
+                        .help(get::page::DESC)
+                        .value_name(get::page::NAME)
+                        .required(true),
                     Arg::with_name(get::id::NAME)
                         .long(get::id::NAME)
                         .help(get::id::DESC)
-                        .takes_value(true)
                         .value_name(get::id::NAME),
                     Arg::with_name(get::author::NAME)
                         .long(get::author::NAME)
                         .help(get::author::DESC)
-                        .takes_value(true)
                         .value_name(get::author::NAME),
                     Arg::with_name(get::posted::NAME)
                         .long(get::posted::NAME)
                         .help(get::posted::DESC)
-                        .takes_value(true)
                         .value_name(get::posted::NAME),
                     Arg::with_name(get::content::NAME)
                         .long(get::content::NAME)
                         .help(get::content::DESC)
-                        .takes_value(true)
                         .value_name(get::content::NAME),
                     Arg::with_name(get::liked::NAME)
                         .long(get::liked::NAME)
                         .help(get::liked::DESC)
-                        .takes_value(true)
                         .value_name(get::liked::NAME),
                     Arg::with_name(get::bookmarked::NAME)
                         .long(get::bookmarked::NAME)
                         .help(get::bookmarked::DESC)
-                        .takes_value(true)
                         .value_name(get::bookmarked::NAME),
                     Arg::with_name(get::pinned::NAME)
                         .long(get::pinned::NAME)
                         .help(get::pinned::DESC)
-                        .takes_value(true)
                         .value_name(get::pinned::NAME),
-                    Arg::with_name(get::page::NAME)
-                        .long(get::page::NAME)
-                        .short(get::page::S_NAME)
-                        .help(get::page::DESC)
-                        .takes_value(true)
-                        .required(true)
-                        .value_name(get::page::NAME),
                 ]),
             SubCommand::with_name(edit::NAME)
                 .about(edit::DESC)
                 .args(&vec![
                     Arg::with_name(edit::id::NAME)
                         .help(edit::id::DESC)
-                        .required(true)
-                        .takes_value(true)
-                        .value_name(edit::id::NAME),
+                        .value_name(edit::id::NAME)
+                        .required(true),
                     Arg::with_name(edit::content::NAME)
                         .help(edit::content::DESC)
-                        .required(true)
-                        .takes_value(true)
-                        .value_name(edit::content::NAME),
+                        .value_name(edit::content::NAME)
+                        .required(true),
                 ]),
             SubCommand::with_name(like::NAME)
                 .about(like::DESC)
                 .args(&vec![
                     Arg::with_name(like::id::NAME)
                         .help(like::id::DESC)
-                        .required(true)
-                        .takes_value(true)
-                        .value_name(like::id::NAME),
+                        .value_name(like::id::NAME)
+                        .required(true),
                     Arg::with_name(like::undo::NAME)
                         .long(like::undo::NAME)
-                        .help(like::undo::NAME)
-                        .value_name(like::undo::NAME),
+                        .help(like::undo::DESC),
                 ]),
             SubCommand::with_name(pin::NAME)
                 .about(pin::DESC)
                 .args(&vec![
                     Arg::with_name(pin::id::NAME)
                         .help(pin::id::DESC)
-                        .required(true)
-                        .takes_value(true)
-                        .value_name(pin::id::NAME),
+                        .value_name(pin::id::NAME)
+                        .required(true),
                     Arg::with_name(pin::undo::NAME)
                         .long(pin::undo::NAME)
-                        .help(pin::undo::NAME)
-                        .value_name(pin::undo::NAME),
+                        .help(pin::undo::DESC),
                 ]),
             SubCommand::with_name(remove::NAME).about(remove::DESC).arg(
                 Arg::with_name(remove::id::NAME)
                     .help(remove::id::DESC)
-                    .required(true)
-                    .takes_value(true)
                     .value_name(remove::id::NAME),
             ),
         ])
