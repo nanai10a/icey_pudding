@@ -1,3 +1,4 @@
+use mongodb::Collection;
 use serenity::model::id::UserId;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -111,6 +112,12 @@ pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
 
 impl<T> InMemoryRepository<T> {
     pub async fn new() -> Self { Self(Mutex::new(vec![])) }
+}
+
+pub struct MongoRepository<T>(Collection<T>);
+
+impl<T> MongoRepository<T> {
+    pub async fn new(coll: Collection<T>) -> Self { Self(coll) }
 }
 
 impl Same for User {
