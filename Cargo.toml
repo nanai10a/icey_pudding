@@ -7,7 +7,7 @@ edition = "2018"
 tokio = { version = "1.7.1", features = ["full"] }
 serenity = { version = "0.10.8", default-features = false, features = ["builder", "cache", "client", "gateway", "model", "http", "utils", "rustls_backend", "unstable_discord_api"] }
 anyhow = "1.0.41"
-uuid = { version = "0.8.2", features = ["v4"] }
+uuid = { version = "0.8.2", features = ["v4", "serde"] }
 chrono = "0.4.19"
 regex = "1.5.4"
 serde_json = "1.0.64"
