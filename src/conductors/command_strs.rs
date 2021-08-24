@@ -63,6 +63,10 @@ consts::consts! {
     get {
         NAME: "get";
         DESC: "get content.";
+        page {
+            NAME: "page";
+            DESC: "showing page num.";
+        }
         id {
             NAME: "id";
             DESC: "content's id.";
@@ -90,11 +94,6 @@ consts::consts! {
         pinned {
             NAME: "pinned";
             DESC: "pinned num.";
-        }
-        page {
-            NAME: "page";
-            DESC: "showing page num.";
-            S_NAME: "p";
         }
     }
 
