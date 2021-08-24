@@ -77,10 +77,16 @@ impl Handler {
             .user_repository
             .remove_match(vec![&UserQuery::Id(user_id)])
             .await?;
+        let mut content = self
+            .content_repository
+            .remove_match(vec![&ContentQuery::Id(content_id)])
+            .await?;
 
         user.bookmark.push(content_id);
+        content.bookmarked += 1;
 
         self.user_repository.save(user).await?;
+        self.content_repository.save(content).await?;
 
         Ok(())
     }
