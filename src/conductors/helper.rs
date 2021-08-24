@@ -30,7 +30,10 @@ pub async fn parse_ia(acid: &ApplicationCommandInteractionData) -> Result<Comman
             let content_id =
                 Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
 
-            Command::Bookmark { content_id }
+            Command::Bookmark {
+                content_id,
+                undo: false,
+            }
         },
         "delete_me" => Command::UserDelete,
         "post" => {
@@ -61,13 +64,19 @@ pub async fn parse_ia(acid: &ApplicationCommandInteractionData) -> Result<Comman
             let content_id =
                 Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
 
-            Command::Like { content_id }
+            Command::Like {
+                content_id,
+                undo: false,
+            }
         },
         "pin" => {
             let content_id =
                 Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
 
-            Command::Pin { content_id }
+            Command::Pin {
+                content_id,
+                undo: false,
+            }
         },
         "remove" => {
             let content_id =
@@ -125,11 +134,11 @@ pub async fn parse_msg(msg: &str) -> Option<MsgCommand> {
             },
             bookmark::NAME => {
                 let sams = extract_clap_sams(&ams, bookmark::NAME).unwrap();
-                let content_id_raw = extract_clap_arg(sams, bookmark::id::NAME).unwrap();
+                let content_id =
+                    Uuid::from_str(extract_clap_arg(sams, bookmark::id::NAME).unwrap())?;
+                let undo = sams.values_of(bookmark::undo::NAME).is_some();
 
-                let content_id = Uuid::from_str(content_id_raw)?;
-
-                Command::Bookmark { content_id }
+                Command::Bookmark { content_id, undo }
             },
             delete_me::NAME => Command::UserDelete,
             post::NAME => {
@@ -197,14 +206,16 @@ pub async fn parse_msg(msg: &str) -> Option<MsgCommand> {
             like::NAME => {
                 let sams = extract_clap_sams(&ams, like::NAME).unwrap();
                 let content_id = Uuid::from_str(extract_clap_arg(sams, like::id::NAME).unwrap())?;
+                let undo = sams.values_of(like::undo::NAME).is_some();
 
-                Command::Like { content_id }
+                Command::Like { content_id, undo }
             },
             pin::NAME => {
                 let sams = extract_clap_sams(&ams, pin::NAME).unwrap();
                 let content_id = Uuid::from_str(extract_clap_arg(sams, pin::id::NAME).unwrap())?;
+                let undo = sams.values_of(pin::undo::NAME).is_some();
 
-                Command::Pin { content_id }
+                Command::Pin { content_id, undo }
             },
             remove::NAME => {
                 let sams = extract_clap_sams(&ams, remove::NAME).unwrap();

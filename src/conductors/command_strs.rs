@@ -36,6 +36,10 @@ consts::consts! {
             NAME: "id";
             DESC: "content's id.";
         }
+        undo {
+            NAME: "undo";
+            DESC: "is `un-bookmark`?";
+        }
     }
 
     delete_me {
@@ -114,6 +118,10 @@ consts::consts! {
             NAME: "id";
             DESC: "content's id.";
         }
+        undo {
+            NAME: "undo";
+            DESC: "is `un-like`?";
+        }
     }
 
     pin {
@@ -122,6 +130,10 @@ consts::consts! {
         id {
             NAME: "id";
             DESC: "content's id.";
+        }
+        undo {
+            NAME: "undo";
+            DESC: "is `un-pin`?";
         }
     }
 
