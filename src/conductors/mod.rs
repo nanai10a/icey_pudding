@@ -250,7 +250,7 @@ impl Conductor {
         match res {
             Ok(r) => r,
             Err(e) => vec![Response {
-                title: "error occurred".to_string(),
+                title: "response".to_string(),
                 rgb: ERROR,
                 description: format!("{}", e),
                 fields: vec![],
@@ -313,7 +313,7 @@ impl EventHandler for Conductor {
                     .channel_id
                     .send_message(ctx.http, |cm| {
                         cm.add_embed(|ce| {
-                            ce.title("error occurred")
+                            ce.title("response")
                                 .colour(Colour::RED)
                                 .description(format!("```{}```", s))
                         });
