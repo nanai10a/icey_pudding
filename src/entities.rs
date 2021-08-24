@@ -1,9 +1,10 @@
 use std::collections::HashSet;
 
+use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: UserId,
     pub admin: bool,
@@ -12,7 +13,7 @@ pub struct User {
     pub bookmark: HashSet<Uuid>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Content {
     pub id: Uuid,
     pub author: String, /* TODO: `Discordに存在する人物(UserID) || 何らかの人物(String)` */
