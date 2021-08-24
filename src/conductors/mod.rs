@@ -117,19 +117,10 @@ impl Conductor {
                         .await?,
                 )],
                 Command::Bookmark { content_id, undo } => {
-                    self.handler
+                    let (_, Content { bookmarked, .. }) = self
+                        .handler
                         .bookmark_update_user(user_id, content_id, undo)
                         .await?;
-                    let mut matchces = self
-                        .handler
-                        .read_content(vec![ContentQuery::Id(content_id)])
-                        .await?;
-                    if matchces.len() != 1 {
-                        Err(anyhow::anyhow!(
-                            "sorry, error occurred (on updated content fetch)"
-                        ))?;
-                    }
-                    let Content { bookmarked, .. } = matchces.remove(0);
 
                     vec![Response {
                         title: "bookmarked".to_string(),
@@ -210,19 +201,10 @@ impl Conductor {
                 )],
 
                 Command::Like { content_id, undo } => {
-                    self.handler
+                    let Content { liked, .. } = self
+                        .handler
                         .like_update_content(content_id, user_id, undo)
                         .await?;
-                    let mut matchces = self
-                        .handler
-                        .read_content(vec![ContentQuery::Id(content_id)])
-                        .await?;
-                    if matchces.len() != 1 {
-                        Err(anyhow::anyhow!(
-                            "sorry, error occurred (on updated content fetch)"
-                        ))?;
-                    }
-                    let Content { liked, .. } = matchces.remove(0);
 
                     vec![Response {
                         title: "liked".to_string(),
@@ -235,19 +217,10 @@ impl Conductor {
                     }]
                 },
                 Command::Pin { content_id, undo } => {
-                    self.handler
+                    let Content { pinned, .. } = self
+                        .handler
                         .pin_update_content(content_id, user_id, undo)
                         .await?;
-                    let mut matchces = self
-                        .handler
-                        .read_content(vec![ContentQuery::Id(content_id)])
-                        .await?;
-                    if matchces.len() != 1 {
-                        Err(anyhow::anyhow!(
-                            "sorry, error occurred (on updated content fetch)"
-                        ))?;
-                    }
-                    let Content { pinned, .. } = matchces.remove(0);
 
                     vec![Response {
                         title: "pinned".to_string(),
