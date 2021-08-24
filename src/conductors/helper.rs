@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::io::Cursor;
 use std::str::FromStr;
 
 use anyhow::{bail, Result};
+use clap::ErrorKind;
 use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
 use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
@@ -102,7 +104,17 @@ pub async fn parse_msg(msg: &str) -> Option<MsgCommand> {
 
         let ams = match clapcmd::create_clap_app().get_matches_from_safe(splitted) {
             Ok(o) => o,
-            Err(e) => return Some(MsgCommand::Showing(e.message)),
+            Err(e) => match e.kind {
+                ErrorKind::VersionDisplayed =>
+                    return Some(MsgCommand::Showing({
+                        let mut buf = Cursor::new(vec![]);
+                        clapcmd::create_clap_app()
+                            .write_long_version(&mut buf)
+                            .unwrap();
+                        String::from_utf8(buf.into_inner()).unwrap()
+                    })),
+                _ => return Some(MsgCommand::Showing(e.message)),
+            },
         };
 
         use command_strs::*;
