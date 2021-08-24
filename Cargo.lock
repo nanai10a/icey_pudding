@@ -619,6 +619,7 @@ dependencies = [
  "consts",
  "mongodb",
  "regex",
+ "serde",
  "serde_json",
  "serenity",
  "shell-words",
