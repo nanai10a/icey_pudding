@@ -71,7 +71,7 @@ impl Handler {
         user_id: UserId,
         content_id: Uuid,
         undo: bool,
-    ) -> Result<()> {
+    ) -> Result<(User, Content)> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?");
         }
@@ -94,14 +94,14 @@ impl Handler {
                 false => Err(anyhow::anyhow!("already bookmarked.")),
                 true => {
                     content.bookmarked += 1;
-                    Ok(())
+                    Ok((user.clone(), content.clone()))
                 },
             },
             true => match user.bookmark.remove(&content_id) {
                 false => Err(anyhow::anyhow!("not bookmarked.")),
                 true => {
                     content.bookmarked -= 1;
-                    Ok(())
+                    Ok((user.clone(), content.clone()))
                 },
             },
         };
@@ -187,7 +187,7 @@ impl Handler {
         content_id: Uuid,
         user_id: UserId,
         undo: bool,
-    ) -> Result<()> {
+    ) -> Result<Content> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?");
         }
@@ -204,11 +204,11 @@ impl Handler {
         let res = match undo {
             false => match current_content.liked.insert(user_id) {
                 false => Err(anyhow::anyhow!("already liked.")),
-                true => Ok(()),
+                true => Ok(current_content.clone()),
             },
             true => match current_content.liked.remove(&user_id) {
                 false => Err(anyhow::anyhow!("not liked.")),
-                true => Ok(()),
+                true => Ok(current_content.clone()),
             },
         };
 
@@ -222,7 +222,7 @@ impl Handler {
         content_id: Uuid,
         user_id: UserId,
         undo: bool,
-    ) -> Result<()> {
+    ) -> Result<Content> {
         if self.verify_user(user_id).await?.is_none() {
             bail!("cannot find user. not registered?")
         }
@@ -239,11 +239,11 @@ impl Handler {
         let res = match undo {
             false => match current_content.pinned.insert(user_id) {
                 false => Err(anyhow::anyhow!("already pinned.")),
-                true => Ok(()),
+                true => Ok(current_content.clone()),
             },
             true => match current_content.pinned.remove(&user_id) {
                 false => Err(anyhow::anyhow!("not pinned.")),
-                true => Ok(()),
+                true => Ok(current_content.clone()),
             },
         };
 
