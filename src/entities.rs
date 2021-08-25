@@ -14,10 +14,15 @@ pub struct User {
 #[derive(Debug, Clone)]
 pub struct Content {
     pub id: Uuid,
-    pub author: String, /* TODO: `Discordに存在する人物(UserID) || 何らかの人物(String)` */
+    pub author: Author,
     pub posted: u64,
     pub content: String,
     pub liked: HashSet<u64>,
     pub bookmarked: u32,
     pub pinned: HashSet<u64>,
+}
+
+pub enum Author {
+    User(u64),
+    Virtual(String),
 }
