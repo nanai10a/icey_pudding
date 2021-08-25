@@ -15,6 +15,11 @@ pub trait Repository<T> {
     async fn save(&self, item: T) -> Result<()>;
     async fn get_matches(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<Vec<T>>;
     async fn get_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T>;
+    async fn edit_match(
+        &self,
+        queries: Vec<&(dyn Query<T> + Sync + Send)>,
+        mutation: Box<dyn Mutation<T> + Sync + Send>,
+    ) -> Result<T>;
     async fn remove_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T>;
 }
 
@@ -25,6 +30,11 @@ pub trait Query<T> {
 
 pub trait Same {
     fn is_same(&self, other: &Self) -> bool;
+}
+
+pub trait Mutation<T> {
+    fn apply(self, target: &mut T);
+    fn apply_boxed(self: Box<Self>, target: &mut T);
 }
 
 #[serenity::async_trait]
@@ -55,6 +65,33 @@ impl<T: Send + Sync + Clone + Same> Repository<T> for InMemoryRepository<T> {
                 matched: matches.len() as u32,
             }),
         }
+    }
+
+    async fn edit_match(
+        &self,
+        queries: Vec<&(dyn Query<T> + Sync + Send)>,
+        mutation: Box<dyn Mutation<T> + Sync + Send>,
+    ) -> Result<T> {
+        let target = self.get_match(queries).await?;
+
+        let mut guard = self.0.lock().await;
+        let mut indexes: Vec<_> = guard
+            .iter()
+            .enumerate()
+            .filter_map(|(i, v)| match v.is_same(&target) {
+                true => Some(i),
+                false => None,
+            })
+            .collect();
+        debug_assert_eq!(indexes.len(), 1);
+        let index = indexes.remove(0);
+        drop(target);
+
+        let target = guard.get_mut(index).unwrap();
+
+        mutation.apply_boxed(target);
+
+        Ok(target.clone())
     }
 
     async fn remove_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T> {
@@ -228,4 +265,20 @@ impl Query<Content> for ContentQuery {
 
         Ok(src.drain_filter(|v| c.call_mut((v,))).collect())
     }
+}
+
+pub struct UserMutation;
+
+impl Mutation<User> for UserMutation {
+    fn apply(self, target: &mut User) { unimplemented!() }
+
+    fn apply_boxed(self: Box<Self>, target: &mut User) { (*self).apply(target) }
+}
+
+pub struct ContentMutation;
+
+impl Mutation<Content> for ContentMutation {
+    fn apply(self, target: &mut Content) { unimplemented!() }
+
+    fn apply_boxed(self: Box<Self>, target: &mut Content) { (*self).apply(target) }
 }
