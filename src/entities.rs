@@ -18,7 +18,6 @@ pub struct Content {
     pub posted: u64,
     pub content: String,
     pub liked: HashSet<u64>,
-    pub bookmarked: u32,
     pub pinned: HashSet<u64>,
 }
 
