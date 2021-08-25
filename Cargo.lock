@@ -614,6 +614,7 @@ name = "icey_pudding"
 version = "0.1.0-alpha.1"
 dependencies = [
  "anyhow",
+ "async-trait",
  "chrono",
  "clap",
  "consts",
