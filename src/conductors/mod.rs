@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use anyhow::Result;
+use async_trait::async_trait;
 use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
 use serenity::model::channel::Message;
@@ -259,7 +260,7 @@ impl Conductor {
     }
 }
 
-#[serenity::async_trait]
+#[async_trait]
 impl EventHandler for Conductor {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         let aci = match interaction {

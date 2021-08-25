@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use async_trait::async_trait;
 use mongodb::Collection;
 use serenity::model::id::UserId;
 use tokio::sync::Mutex;
@@ -14,7 +15,7 @@ pub trait Same {
     fn is_same(&self, other: &Self) -> bool;
 }
 
-#[serenity::async_trait]
+#[async_trait]
 impl<T: Send + Sync + Clone + Same> Repository<T> for InMemoryRepository<T> {
     async fn save(&self, item: T) -> Result<()> {
         self.0.lock().await.push(item);
@@ -149,7 +150,7 @@ pub enum UserQuery {
     Bookmark(HashSet<Uuid>),
 }
 
-#[serenity::async_trait]
+#[async_trait]
 impl Query<User> for UserQuery {
     #[allow(clippy::needless_lifetimes)]
     async fn filter<'a>(&self, mut src: Vec<&'a User>) -> anyhow::Result<Vec<&'a User>> {
@@ -200,7 +201,7 @@ pub enum Comparison {
     Under,
 }
 
-#[serenity::async_trait]
+#[async_trait]
 impl Query<Content> for ContentQuery {
     #[allow(clippy::needless_lifetimes)]
     async fn filter<'a>(&self, mut src: Vec<&'a Content>) -> anyhow::Result<Vec<&'a Content>> {
