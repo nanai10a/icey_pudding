@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use mongodb::Collection;
 use serenity::model::id::UserId;
 use tokio::sync::Mutex;
@@ -129,8 +131,8 @@ pub enum UserQuery {
     Id(UserId),
     Admin(bool),
     SubAdmin(bool),
-    Posted(Vec<Uuid>),
-    Bookmark(Vec<Uuid>),
+    Posted(HashSet<Uuid>),
+    Bookmark(HashSet<Uuid>),
 }
 
 #[serenity::async_trait]
@@ -170,10 +172,10 @@ pub enum ContentQuery {
     Author(String),
     Posted(UserId),
     Content(String),
-    Liked(Vec<UserId>),
+    Liked(HashSet<UserId>),
     LikedNum(u32, Comparison),
     Bookmarked(u32, Comparison),
-    Pinned(Vec<UserId>),
+    Pinned(HashSet<UserId>),
     PinnedNum(u32, Comparison),
 }
 
