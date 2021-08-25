@@ -10,31 +10,8 @@ use crate::entities::{Content, User};
 type StdResult<T, E> = ::std::result::Result<T, E>;
 type Result<T> = ::std::result::Result<T, RepositoryError>;
 
-#[serenity::async_trait]
-pub trait Repository<T> {
-    async fn save(&self, item: T) -> Result<()>;
-    async fn get_matches(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<Vec<T>>;
-    async fn get_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T>;
-    async fn edit_match(
-        &self,
-        queries: Vec<&(dyn Query<T> + Sync + Send)>,
-        mutation: Box<dyn Mutation<T> + Sync + Send>,
-    ) -> Result<T>;
-    async fn remove_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T>;
-}
-
-#[serenity::async_trait]
-pub trait Query<T> {
-    async fn filter<'a>(&self, src: Vec<&'a T>) -> StdResult<Vec<&'a T>, anyhow::Error>;
-}
-
 pub trait Same {
     fn is_same(&self, other: &Self) -> bool;
-}
-
-pub trait Mutation<T> {
-    fn apply(self, target: &mut T);
-    fn apply_boxed(self: Box<Self>, target: &mut T);
 }
 
 #[serenity::async_trait]
