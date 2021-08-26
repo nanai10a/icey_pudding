@@ -265,7 +265,11 @@ impl Query<Content> for ContentQuery {
     }
 }
 
-pub struct UserMutation;
+#[derive(Debug, Clone, Default)]
+pub struct UserMutation {
+    pub admin: Option<bool>,
+    pub sub_admin: Option<bool>,
+}
 
 impl Mutation<User> for UserMutation {
     fn apply(self, target: &mut User) { unimplemented!() }
@@ -273,7 +277,11 @@ impl Mutation<User> for UserMutation {
     fn apply_boxed(self: Box<Self>, target: &mut User) { (*self).apply(target) }
 }
 
-pub struct ContentMutation;
+#[derive(Debug, Clone, Default)]
+pub struct ContentMutation {
+    pub author: Option<Author>,
+    pub content: Option<String>,
+}
 
 impl Mutation<Content> for ContentMutation {
     fn apply(self, target: &mut Content) { unimplemented!() }
