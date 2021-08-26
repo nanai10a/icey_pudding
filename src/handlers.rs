@@ -1,23 +1,44 @@
 use std::collections::HashSet;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Error, Result};
 use serenity::model::id::UserId;
 use uuid::Uuid;
 
-use crate::entities::{Content, User};
-use crate::repositories::{ContentQuery, Query, Repository, UserQuery};
+use crate::entities::{Author, Content, User};
+use crate::repositories::{
+    ContentMutation, ContentQuery, ContentRepository, RepositoryError, UserMutation, UserQuery,
+    UserRepository,
+};
 
 pub struct Handler {
-    pub user_repository: Box<dyn Repository<User> + Send + Sync>,
-    pub content_repository: Box<dyn Repository<Content> + Send + Sync>,
+    pub user_repository: Box<dyn UserRepository + Sync + Send>,
+    pub content_repository: Box<dyn ContentRepository + Sync + Send>,
 }
 
-impl Handler {
-    pub async fn create_user(&self, user_id: UserId) -> Result<User> {
-        if self.verify_user(user_id).await?.is_some() {
-            bail!("already registered.");
-        }
+#[inline]
+fn user_err_fmt(e: RepositoryError) -> Error {
+    use anyhow::anyhow;
 
+    match e {
+        RepositoryError::NotFound => anyhow!("cannot find user. not registered?"),
+        e => anyhow!("repository error: {}", e),
+    }
+}
+
+#[inline]
+fn content_err_fmt(e: RepositoryError) -> Error {
+    use anyhow::anyhow;
+
+    match e {
+        RepositoryError::NotFound => anyhow!("cannot find content."),
+        e => anyhow!("repository error: {}", e),
+    }
+}
+
+// FIXME: `v2`の接尾辞を削除
+// FIXME: `UserId`をu64に置換する.
+impl Handler {
+    pub async fn create_user(&self, UserId(user_id): UserId) -> Result<User> {
         let new_user = User {
             id: user_id,
             admin: false,
@@ -26,285 +47,257 @@ impl Handler {
             bookmark: HashSet::new(),
         };
 
-        self.user_repository.save(new_user.clone()).await?;
+        let can_insert = self.user_repository.insert(new_user.clone()).await?;
+
+        if !can_insert {
+            bail!("already registered.");
+        }
 
         Ok(new_user)
     }
 
-    pub async fn read_user(&self, user_id: UserId) -> Result<User> {
-        match self.verify_user(user_id).await? {
-            Some(u) => Ok(u),
-            None => bail!("cannot find user. not registered?"),
-        }
+    pub async fn read_user(&self, UserId(user_id): UserId) -> Result<User> {
+        self.user_repository
+            .find(user_id)
+            .await
+            .map_err(user_err_fmt)
     }
 
+    pub async fn read_users(&self, query: UserQuery) -> Result<Vec<User>> {
+        self.user_repository
+            .finds(query)
+            .await
+            .map_err(user_err_fmt)
+    }
+
+    #[deprecated]
     pub async fn update_user(
         &self,
-        user_id: UserId,
+        UserId(user_id): UserId,
         admin: Option<bool>,
         sub_admin: Option<bool>,
     ) -> Result<User> {
-        if self.verify_user(user_id).await?.is_none() {
-            bail!("cannot find user. not registered?");
-        }
+        self.update_user_v2(user_id, UserMutation { admin, sub_admin })
+            .await
+    }
 
-        let mut user = self
-            .user_repository
-            .remove_match(vec![&UserQuery::Id(user_id)])
-            .await?;
-
-        if let Some(b) = admin {
-            user.admin = b;
-        }
-
-        if let Some(b) = sub_admin {
-            user.sub_admin = b;
-        }
-
-        self.user_repository.save(user.clone()).await?;
-
-        Ok(user)
+    pub async fn update_user_v2(&self, user_id: u64, mutation: UserMutation) -> Result<User> {
+        self.user_repository
+            .update(user_id, mutation)
+            .await
+            .map_err(user_err_fmt)
     }
 
     pub async fn bookmark_update_user(
         &self,
-        user_id: UserId,
+        UserId(user_id): UserId,
         content_id: Uuid,
         undo: bool,
     ) -> Result<(User, Content)> {
-        if self.verify_user(user_id).await?.is_none() {
-            bail!("cannot find user. not registered?");
+        let can_insert = match undo {
+            false =>
+                self.user_repository
+                    .insert_bookmarked(user_id, content_id)
+                    .await,
+            true =>
+                self.user_repository
+                    .delete_bookmarked(user_id, content_id)
+                    .await,
+        }
+        .map_err(user_err_fmt)?;
+
+        match (undo, can_insert) {
+            (false, false) => bail!("already bookmarked."),
+            (true, false) => bail!("didn't bookmarked."),
+            (_, true) => (),
         }
 
-        if self.verify_content(content_id).await?.is_none() {
-            bail!("cannot find content.");
-        }
-
-        let mut user = self
+        let user = self
             .user_repository
-            .remove_match(vec![&UserQuery::Id(user_id)])
-            .await?;
-        let mut content = self
+            .find(user_id)
+            .await
+            .map_err(user_err_fmt)?;
+        let content = self
             .content_repository
-            .remove_match(vec![&ContentQuery::Id(content_id)])
-            .await?;
+            .find(content_id)
+            .await
+            .map_err(content_err_fmt)?;
 
-        let res = match undo {
-            false => match user.bookmark.insert(content_id) {
-                false => Err(anyhow::anyhow!("already bookmarked.")),
-                true => {
-                    content.bookmarked += 1;
-                    Ok((user.clone(), content.clone()))
-                },
-            },
-            true => match user.bookmark.remove(&content_id) {
-                false => Err(anyhow::anyhow!("not bookmarked.")),
-                true => {
-                    content.bookmarked -= 1;
-                    Ok((user.clone(), content.clone()))
-                },
-            },
-        };
-
-        self.user_repository.save(user).await?;
-        self.content_repository.save(content).await?;
-
-        res
+        Ok((user, content))
     }
 
-    pub async fn delete_user(&self, user_id: UserId) -> Result<()> {
-        if self.verify_user(user_id).await?.is_none() {
-            bail!("cannot find user. not registered?");
-        }
-
-        self.user_repository
-            .remove_match(vec![&UserQuery::Id(user_id)])
-            .await?;
+    #[deprecated]
+    pub async fn delete_user(&self, UserId(user_id): UserId) -> Result<()> {
+        self.delete_user_v2(user_id).await?;
         Ok(())
     }
 
+    pub async fn delete_user_v2(&self, user_id: u64) -> Result<User> {
+        self.user_repository
+            .delete(user_id)
+            .await
+            .map_err(user_err_fmt)
+    }
+
+    // FIXME: `author`を`Author`に置換する.
+    // FIXME: クソ長いこの命名, 丁寧だけど伝わりづらいのでやめましょう. (into black
+    // boxed)
     pub async fn create_content_and_posted_update_user(
         &self,
         content: String,
-        posted: UserId,
+        UserId(posted): UserId,
         author: String,
     ) -> Result<Content> {
-        if self.verify_user(posted).await?.is_none() {
+        let user_is_exists = !self
+            .user_repository
+            .is_exists(posted)
+            .await
+            .map_err(user_err_fmt)?;
+        if !user_is_exists {
             bail!("cannot find user. not registered?");
         }
-
-        let mut posted_user = self
-            .user_repository
-            .remove_match(vec![&UserQuery::Id(posted)])
-            .await?;
 
         let new_content = Content {
             id: uuid::Uuid::new_v4(),
             content,
-            author,
+            author: Author::Virtual(author),
             posted,
             liked: HashSet::new(),
-            bookmarked: 0,
             pinned: HashSet::new(),
         };
 
-        if !posted_user.posted.insert(new_content.id) {
+        let user_posted_can_insert = self
+            .user_repository
+            .insert_posted(posted, new_content.id)
+            .await
+            .map_err(user_err_fmt)?;
+        if !user_posted_can_insert {
             panic!("content_id duplicated!");
         }
 
-        self.content_repository.save(new_content.clone()).await?;
-        self.user_repository.save(posted_user).await?;
+        let content_can_insert = self
+            .content_repository
+            .insert(new_content.clone())
+            .await
+            .map_err(content_err_fmt)?;
+
+        if !content_can_insert {
+            panic!("content_id duplicated!");
+        }
 
         Ok(new_content)
     }
 
-    pub async fn read_content(&self, content_query: Vec<ContentQuery>) -> Result<Vec<Content>> {
-        crate::convert_query!(ref content_query);
-        Ok(self.content_repository.get_matches(content_query).await?)
+    // FIXME:過去のquery-systemは廃止されました.
+    #[deprecated]
+    pub async fn read_content(&self, _: Vec<ContentQuery>) -> Result<Vec<Content>> {
+        unimplemented!()
     }
 
-    pub async fn update_content(&self, content_id: Uuid, content: String) -> Result<Content> {
-        if self.verify_content(content_id).await?.is_none() {
-            bail!("cannot find content.");
-        }
-
-        let mut current_content = self
-            .content_repository
-            .remove_match(vec![&ContentQuery::Id(content_id)])
-            .await?;
-
-        current_content.content = content;
-
+    pub async fn read_content_v2(&self, content_id: Uuid) -> Result<Content> {
         self.content_repository
-            .save(current_content.clone())
-            .await?;
+            .find(content_id)
+            .await
+            .map_err(content_err_fmt)
+    }
 
-        Ok(current_content)
+    pub async fn read_contents_v2(&self, query: ContentQuery) -> Result<Vec<Content>> {
+        self.content_repository
+            .finds(query)
+            .await
+            .map_err(content_err_fmt)
+    }
+
+    #[deprecated]
+    pub async fn update_content(&self, content_id: Uuid, content: String) -> Result<Content> {
+        self.update_content_v2(content_id, ContentMutation {
+            content: Some(content),
+            ..Default::default()
+        })
+        .await
+    }
+
+    pub async fn update_content_v2(
+        &self,
+        content_id: Uuid,
+        mutation: ContentMutation,
+    ) -> Result<Content> {
+        self.content_repository
+            .update(content_id, mutation)
+            .await
+            .map_err(content_err_fmt)
     }
 
     pub async fn like_update_content(
         &self,
         content_id: Uuid,
-        user_id: UserId,
+        UserId(user_id): UserId,
         undo: bool,
     ) -> Result<Content> {
-        if self.verify_user(user_id).await?.is_none() {
-            bail!("cannot find user. not registered?");
+        let can_insert = match undo {
+            false =>
+                self.content_repository
+                    .insert_liked(content_id, user_id)
+                    .await,
+            true =>
+                self.content_repository
+                    .delete_liked(content_id, user_id)
+                    .await,
+        }
+        .map_err(content_err_fmt)?;
+
+        match (undo, can_insert) {
+            (false, false) => bail!("already liked."),
+            (true, false) => bail!("didn't liked."),
+            (_, true) => (),
         }
 
-        if self.verify_content(content_id).await?.is_none() {
-            bail!("cannot find content.");
-        }
-
-        let mut current_content = self
-            .content_repository
-            .remove_match(vec![&ContentQuery::Id(content_id)])
-            .await?;
-
-        let res = match undo {
-            false => match current_content.liked.insert(user_id) {
-                false => Err(anyhow::anyhow!("already liked.")),
-                true => Ok(current_content.clone()),
-            },
-            true => match current_content.liked.remove(&user_id) {
-                false => Err(anyhow::anyhow!("not liked.")),
-                true => Ok(current_content.clone()),
-            },
-        };
-
-        self.content_repository.save(current_content).await?;
-
-        res
+        self.content_repository
+            .find(content_id)
+            .await
+            .map_err(content_err_fmt)
     }
 
     pub async fn pin_update_content(
         &self,
         content_id: Uuid,
-        user_id: UserId,
+        UserId(user_id): UserId,
         undo: bool,
     ) -> Result<Content> {
-        if self.verify_user(user_id).await?.is_none() {
-            bail!("cannot find user. not registered?")
+        let can_insert = match undo {
+            false =>
+                self.content_repository
+                    .insert_pinned(content_id, user_id)
+                    .await,
+            true =>
+                self.content_repository
+                    .delete_pinned(content_id, user_id)
+                    .await,
         }
+        .map_err(content_err_fmt)?;
 
-        if self.verify_content(content_id).await?.is_none() {
-            bail!("cannot find content.")
-        }
-
-        let mut current_content = self
-            .content_repository
-            .remove_match(vec![&ContentQuery::Id(content_id)])
-            .await?;
-
-        let res = match undo {
-            false => match current_content.pinned.insert(user_id) {
-                false => Err(anyhow::anyhow!("already pinned.")),
-                true => Ok(current_content.clone()),
-            },
-            true => match current_content.pinned.remove(&user_id) {
-                false => Err(anyhow::anyhow!("not pinned.")),
-                true => Ok(current_content.clone()),
-            },
-        };
-
-        self.content_repository.save(current_content).await?;
-
-        res
-    }
-
-    pub async fn delete_content(&self, content_id: Uuid) -> Result<()> {
-        if self.verify_content(content_id).await?.is_none() {
-            bail!("cannot find content.")
+        match (undo, can_insert) {
+            (false, false) => bail!("already pinned."),
+            (true, false) => bail!("didn't pinned."),
+            (_, true) => (),
         }
 
         self.content_repository
-            .remove_match(vec![&ContentQuery::Id(content_id)])
-            .await?;
+            .find(content_id)
+            .await
+            .map_err(content_err_fmt)
+    }
+
+    #[deprecated]
+    pub async fn delete_content(&self, content_id: Uuid) -> Result<()> {
+        self.delete_content_v2(content_id).await?;
         Ok(())
     }
 
-    async fn verify_user(&self, user_id: UserId) -> Result<Option<User>> {
-        let mut matched = match self
-            .user_repository
-            .get_matches(vec![&UserQuery::Id(user_id)])
+    pub async fn delete_content_v2(&self, content_id: Uuid) -> Result<Content> {
+        self.content_repository
+            .delete(content_id)
             .await
-        {
-            Ok(o) => o,
-            Err(e) => bail!("repository error: {}", e),
-        };
-
-        match matched.len() {
-            0 => Ok(None),
-            1 => Ok(Some(matched.remove(0))),
-            _ => bail!("matched: {} (internal error)", matched.len()),
-        }
+            .map_err(content_err_fmt)
     }
-
-    async fn verify_content(&self, content_id: Uuid) -> Result<Option<Content>> {
-        let mut matched = match self
-            .content_repository
-            .get_matches(vec![&ContentQuery::Id(content_id)])
-            .await
-        {
-            Ok(o) => o,
-            Err(e) => bail!("repository error: {}", e),
-        };
-
-        match matched.len() {
-            0 => Ok(None),
-            1 => Ok(Some(matched.remove(0))),
-            _ => bail!("matched: {} (internal error)", matched.len()),
-        }
-    }
-}
-
-#[macro_export]
-macro_rules! convert_query {
-    (ref $q:ident) => {
-        let $q = {
-            let mut convert = Vec::<&(dyn Query<_> + Sync + Send)>::new();
-            $q.iter().for_each(|q| convert.push(q));
-            convert
-        };
-    };
 }
