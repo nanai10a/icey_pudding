@@ -22,6 +22,10 @@ pub struct Content {
 }
 
 pub enum Author {
-    User(u64),
+    User {
+        id: u64,
+        name: String,
+        nick: Option<String>,
+    },
     Virtual(String),
 }
