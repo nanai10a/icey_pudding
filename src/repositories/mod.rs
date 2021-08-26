@@ -11,7 +11,7 @@ type StdResult<T, E> = ::std::result::Result<T, E>;
 type Result<T> = ::std::result::Result<T, RepositoryError>;
 
 #[async_trait]
-pub trait UserRepository: Send + Sync + Clone {
+pub trait UserRepository {
     async fn insert(&self, item: User) -> Result<()>;
     async fn is_exists(&self, id: u64) -> Result<bool>;
     async fn find(&self, id: u64) -> Result<User>;
@@ -22,7 +22,7 @@ pub trait UserRepository: Send + Sync + Clone {
 }
 
 #[async_trait]
-pub trait ContentRepository: Send + Sync + Clone {
+pub trait ContentRepository {
     async fn insert(&self, item: Content) -> Result<()>;
     async fn is_exists(&self, id: Uuid) -> Result<bool>;
     async fn find(&self, id: Uuid) -> Result<Content>;
