@@ -11,12 +11,8 @@ pub mod mock;
 type StdResult<T, E> = ::std::result::Result<T, E>;
 type Result<T> = ::std::result::Result<T, RepositoryError>;
 
-pub trait Same {
-    fn is_same(&self, other: &Self) -> bool;
-}
-
 #[async_trait]
-pub trait UserRepository: Send + Sync + Clone + Same {
+pub trait UserRepository: Send + Sync + Clone {
     async fn insert(&self, item: User) -> Result<()>;
     async fn is_exists(&self, id: u64) -> Result<bool>;
     async fn find(&self, id: u64) -> Result<User>;
@@ -27,7 +23,7 @@ pub trait UserRepository: Send + Sync + Clone + Same {
 }
 
 #[async_trait]
-pub trait ContentRepository: Send + Sync + Clone + Same {
+pub trait ContentRepository: Send + Sync + Clone {
     async fn insert(&self, item: Content) -> Result<()>;
     async fn is_exists(&self, id: Uuid) -> Result<bool>;
     async fn find(&self, id: Uuid) -> Result<Content>;
