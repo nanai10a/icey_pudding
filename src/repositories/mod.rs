@@ -41,7 +41,7 @@ pub trait ContentRepository {
     async fn find(&self, id: Uuid) -> Result<Content>;
     async fn finds(&self, query: ContentQuery) -> Result<Vec<Content>>;
 
-    async fn update(&self, mutation: ContentMutation) -> Result<Content>;
+    async fn update(&self, id: Uuid, mutation: ContentMutation) -> Result<Content>;
 
     async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool>;
     async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool>;
