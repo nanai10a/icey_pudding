@@ -34,7 +34,7 @@ pub trait ContentRepository {
     async fn delete(&self, id: Uuid) -> Result<Content>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum RepositoryError {
     NotFound,
     NoUnique { matched: u32 },
