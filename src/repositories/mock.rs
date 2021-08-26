@@ -2,17 +2,17 @@ use async_trait::async_trait;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use super::{RepositoryError, Result, UserMutation, UserRepository};
-use crate::entities::User;
+use super::{ContentRepository, RepositoryError, Result, UserMutation, UserRepository};
+use crate::entities::{Content, User};
 
 pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
 
 #[async_trait]
 impl UserRepository for InMemoryRepository<User> {
-    async fn insert(&self, item: User) -> Result<()> {
+    async fn insert(&self, item: User) -> Result<bool> {
         self.0.lock().await.push(item);
 
-        Ok(())
+        Ok(unimplemented!())
     }
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
@@ -36,24 +36,8 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let item = self.find(id).await?;
-
-        match item.posted.iter().filter(|v| *v == content_id).count() {
-            0 => Ok(false),
-            1 => Ok(true),
-            i => Err(RepositoryError::NoUnique { matched: i }),
-        }
-    }
-
-    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let item = self.find(id).await?;
-
-        match item.bookmark.iter().filter(|v| *v == content_id).count() {
-            0 => Ok(false),
-            1 => Ok(true),
-            i => Err(RepositoryError::NoUnique { matched: i }),
-        }
+    async fn finds(&self, query: super::UserQuery) -> Result<Vec<User>> {
+        unimplemented!()
     }
 
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
@@ -74,6 +58,42 @@ impl UserRepository for InMemoryRepository<User> {
         }
 
         Ok(item.clone())
+    }
+
+    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        let item = self.find(id).await?;
+
+        match item.posted.iter().filter(|v| *v == content_id).count() {
+            0 => Ok(false),
+            1 => Ok(true),
+            i => Err(RepositoryError::NoUnique { matched: i }),
+        }
+    }
+
+    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        let item = self.find(id).await?;
+
+        match item.bookmark.iter().filter(|v| *v == content_id).count() {
+            0 => Ok(false),
+            1 => Ok(true),
+            i => Err(RepositoryError::NoUnique { matched: i }),
+        }
+    }
+
+    async fn insert_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn delete_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        unimplemented!()
     }
 
     async fn delete(&self, id: u64) -> Result<User> {
