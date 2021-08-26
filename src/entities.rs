@@ -7,8 +7,8 @@ pub struct User {
     pub id: u64,
     pub admin: bool,
     pub sub_admin: bool,
-    pub posted: HashSet<u64>,
-    pub bookmark: HashSet<u64>,
+    pub posted: HashSet<Uuid>,
+    pub bookmark: HashSet<Uuid>,
 }
 
 #[derive(Debug, Clone)]
