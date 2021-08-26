@@ -18,21 +18,27 @@ pub trait Same {
 }
 
 #[async_trait]
-pub trait UserRepository : Send + Sync + Clone + Same {
+pub trait UserRepository: Send + Sync + Clone + Same {
     async fn insert(&self, item: User) -> Result<()>;
-    async fn is_exists(&self, user_id: u64) -> Result<bool>;
-    async fn find(&self, user_id: u64) -> Result<User>;
-    async fn update(&self, mutation: UserMutation) -> Result<User>;
-    async fn delete(&self, user_id: u64) -> Result<User>;
+    async fn is_exists(&self, id: u64) -> Result<bool>;
+    async fn find(&self, id: u64) -> Result<User>;
+    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn update(&self, id: u64, mutation: UserMutation) -> Result<User>;
+    async fn delete(&self, id: u64) -> Result<User>;
 }
 
 #[async_trait]
 pub trait ContentRepository: Send + Sync + Clone + Same {
     async fn insert(&self, item: Content) -> Result<()>;
-    async fn is_exists(&self, content_id: Uuid) -> Result<bool>;
-    async fn find(&self, content_id: Uuid) -> Result<Content>;
+    async fn is_exists(&self, id: Uuid) -> Result<bool>;
+    async fn find(&self, id: Uuid) -> Result<Content>;
+    async fn find_author(&self, regex: Regex) -> Result<Vec<Content>>;
+    async fn find_content(&self, regex: Regex) -> Result<Vec<Content>>;
+    async fn is_liked(&self, user_id: u64) -> Result<bool>;
+    async fn is_pinned(&self, user_id: u64) -> Result<bool>;
     async fn update(&self, mutation: ContentMutation) -> Result<Content>;
-    async fn delete(&self, content_id: Uuid) -> Result<Content>;
+    async fn delete(&self, id: Uuid) -> Result<Content>;
 }
 
 #[async_trait]
