@@ -21,6 +21,7 @@ pub struct Content {
     pub pinned: HashSet<u64>,
 }
 
+#[derive(Debug, Clone)]
 pub enum Author {
     User {
         id: u64,
