@@ -36,9 +36,7 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn finds(&self, query: super::UserQuery) -> Result<Vec<User>> {
-        unimplemented!()
-    }
+    async fn finds(&self, query: super::UserQuery) -> Result<Vec<User>> { unimplemented!() }
 
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
         let guard = self.0.lock().await;
@@ -70,13 +68,9 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
 
-    async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
 
     async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let item = self.find(id).await?;
@@ -117,51 +111,27 @@ impl UserRepository for InMemoryRepository<User> {
 
 #[async_trait]
 impl ContentRepository for InMemoryRepository<Content> {
-    async fn insert(&self, item: Content) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn insert(&self, item: Content) -> Result<bool> { unimplemented!() }
 
-    async fn is_exists(&self, id: Uuid) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn is_exists(&self, id: Uuid) -> Result<bool> { unimplemented!() }
 
-    async fn find(&self, id: Uuid) -> Result<Content> {
-        unimplemented!()
-    }
+    async fn find(&self, id: Uuid) -> Result<Content> { unimplemented!() }
 
-    async fn finds(&self, query: super::ContentQuery) -> Result<Vec<Content>> {
-        unimplemented!()
-    }
+    async fn finds(&self, query: super::ContentQuery) -> Result<Vec<Content>> { unimplemented!() }
 
-    async fn update(&self, mutation: super::ContentMutation) -> Result<Content> {
-        unimplemented!()
-    }
+    async fn update(&self, mutation: super::ContentMutation) -> Result<Content> { unimplemented!() }
 
-    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
 
-    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
 
-    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
 
-    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
 
-    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
 
-    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        unimplemented!()
-    }
+    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
 
-    async fn delete(&self, id: Uuid) -> Result<Content> {
-        unimplemented!()
-    }
+    async fn delete(&self, id: Uuid) -> Result<Content> { unimplemented!() }
 }

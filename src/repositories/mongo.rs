@@ -15,7 +15,8 @@ impl MongoUserRepository {
 
     #[inline]
     fn bookmarked_coll(&self, id: u64) -> Collection<Uuid> {
-        self.db.collection(format!("user:{}#bookmarked", id).as_str())
+        self.db
+            .collection(format!("user:{}#bookmarked", id).as_str())
     }
 }
 
@@ -27,12 +28,14 @@ pub struct MongoContentRepository {
 impl MongoContentRepository {
     #[inline]
     fn liked_coll(&self, id: Uuid) -> Collection<u64> {
-        self.db.collection(format!("content:{}#liked", id.as_u128()).as_str())
+        self.db
+            .collection(format!("content:{}#liked", id.as_u128()).as_str())
     }
 
     #[inline]
     fn pinned_coll(&self, id: Uuid) -> Collection<u64> {
-        self.db.collection(format!("content:{}#pinned", id.as_u128()).as_str())
+        self.db
+            .collection(format!("content:{}#pinned", id.as_u128()).as_str())
     }
 }
 
