@@ -1,10 +1,7 @@
-use std::collections::HashSet;
-
 use async_trait::async_trait;
 use mongodb::Collection;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serenity::model::id::UserId;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
@@ -129,35 +126,6 @@ impl UserRepository for InMemoryRepository<User> {
     }
 }
 
-    async fn edit_match(
-        &self,
-        queries: Vec<&(dyn Query<User> + Sync + Send)>,
-        mutation: Box<dyn Mutation<User> + Sync + Send>,
-    ) -> Result<User> {
-        unimplemented!()
-    }
-
-    async fn remove_match(&self, queries: Vec<&(dyn Query<User> + Sync + Send)>) -> Result<User> {
-        unimplemented!()
-    }
-}
-
-        mutation.apply_boxed(target);
-
-        Ok(target.clone())
-    }
-
-    async fn remove_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T> {
-        let matched = self.get_match(queries).await?;
-
-        let mut guard = self.0.lock().await;
-        let vec = guard.as_mut();
-
-        try_remove_target_from_vec(vec, |v| matched.is_same(v))
-            .map_err(|e| RepositoryError::NoUnique { matched: e as u32 })
-    }
-}
-
 #[derive(Debug)]
 pub enum RepositoryError {
     NotFound,
@@ -202,134 +170,12 @@ pub fn try_remove_target_from_vec<T>(
 
 pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
 
-impl<T> InMemoryRepository<T> {
-    pub async fn new() -> Self { Self(Mutex::new(vec![])) }
-}
 
-pub struct MongoRepository<T>(Collection<T>);
-
-impl<T> MongoRepository<T> {
-    pub async fn new(coll: Collection<T>) -> Self { Self(coll) }
-}
-
-impl Same for User {
-    fn is_same(&self, other: &Self) -> bool { self.id == other.id }
-}
-
-#[derive(Debug, Clone)]
-pub enum UserQuery {
-    Id(UserId),
-    Admin(bool),
-    SubAdmin(bool),
-    Posted(HashSet<Uuid>),
-    Bookmark(HashSet<Uuid>),
-}
-
-#[async_trait]
-impl Query<User> for UserQuery {
-    #[allow(clippy::needless_lifetimes)]
-    async fn filter<'a>(&self, mut src: Vec<&'a User>) -> anyhow::Result<Vec<&'a User>> {
-        let mut c: Box<dyn FnMut(&'a User) -> bool> = match self {
-            // FIXME: `User`変更時にQueryの変更をしていないので, 足りないfieldがある
-            Self::Id(f_id) => box move |User { id, .. }| id == f_id,
-            Self::Admin(f_admin) => box move |User { admin, .. }| admin == f_admin,
-            Self::SubAdmin(f_sub_admin) =>
-                box move |User { sub_admin, .. }| sub_admin == f_sub_admin,
-            Self::Posted(f_posted) => box move |User { posted, .. }| {
-                f_posted.iter().filter(|elem| posted.contains(elem)).count() == posted.len()
-            },
-            Self::Bookmark(f_bookmark) => box move |User { bookmark, .. }| {
-                f_bookmark
-                    .iter()
-                    .filter(|elem| bookmark.contains(elem))
-                    .count()
-                    == bookmark.len()
-            },
-        };
-
-        Ok(src.drain_filter(|v| c.call_mut((v,))).collect())
-    }
-}
-
-impl Same for Content {
-    fn is_same(&self, other: &Self) -> bool { self.id == other.id }
-}
-
-#[derive(Debug, Clone)]
-pub enum ContentQuery {
-    Id(Uuid),
-    IdHead(u32),
-    Author(String),
-    Posted(UserId),
-    Content(String),
-    Liked(HashSet<UserId>),
-    LikedNum(u32, Comparison),
-    Bookmarked(u32, Comparison),
-    Pinned(HashSet<UserId>),
-    PinnedNum(u32, Comparison),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Comparison {
-    Over,
-    Eq,
-    Under,
-}
-
-#[async_trait]
-impl Query<Content> for ContentQuery {
-    #[allow(clippy::needless_lifetimes)]
-    async fn filter<'a>(&self, mut src: Vec<&'a Content>) -> anyhow::Result<Vec<&'a Content>> {
-        let mut c: Box<dyn FnMut(&'a Content) -> bool> = match self {
-            Self::Id(f_id) => box move |Content { id, .. }| id == f_id,
-            Self::IdHead(f_id_head) => box move |Content { id, .. }| id.as_fields().0 == *f_id_head,
-            Self::Author(f_author) => {
-                let r = regex::Regex::new(f_author)?;
-                box move |Content { author, .. }| r.is_match(author)
-            },
-            Self::Posted(f_posted) => box move |Content { posted, .. }| posted == f_posted,
-            Self::Content(f_content) => {
-                let rx = regex::Regex::new(f_content)?;
-                box move |Content { content, .. }| rx.is_match(content)
-            },
-            Self::Liked(f_liked) => box move |Content { liked, .. }| {
-                f_liked.iter().filter(|elem| liked.contains(elem)).count() == liked.len()
-            },
-            Self::LikedNum(f_liked_num, comp) => box move |Content { liked, .. }| match comp {
-                Comparison::Over => liked.len() as u32 >= *f_liked_num,
-                Comparison::Eq => liked.len() as u32 == *f_liked_num,
-                Comparison::Under => liked.len() as u32 <= *f_liked_num,
-            },
-            Self::Bookmarked(f_bookmarked, comp) =>
-                box move |Content { bookmarked, .. }| match comp {
-                    Comparison::Over => bookmarked >= f_bookmarked,
-                    Comparison::Eq => bookmarked == f_bookmarked,
-                    Comparison::Under => bookmarked <= f_bookmarked,
-                },
-            Self::Pinned(f_pinned) => box move |Content { pinned, .. }| {
-                f_pinned.iter().filter(|elem| pinned.contains(elem)).count() == pinned.len()
-            },
-            Self::PinnedNum(f_pinned_num, comp) => box move |Content { pinned, .. }| match comp {
-                Comparison::Over => pinned.len() as u32 >= *f_pinned_num,
-                Comparison::Eq => pinned.len() as u32 == *f_pinned_num,
-                Comparison::Under => pinned.len() as u32 <= *f_pinned_num,
-            },
-        };
-
-        Ok(src.drain_filter(|v| c.call_mut((v,))).collect())
-    }
-}
 
 #[derive(Debug, Clone, Default)]
 pub struct UserMutation {
     pub admin: Option<bool>,
     pub sub_admin: Option<bool>,
-}
-
-impl Mutation<User> for UserMutation {
-    fn apply(self, target: &mut User) { unimplemented!() }
-
-    fn apply_boxed(self: Box<Self>, target: &mut User) { (*self).apply(target) }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -338,8 +184,4 @@ pub struct ContentMutation {
     pub content: Option<String>,
 }
 
-impl Mutation<Content> for ContentMutation {
-    fn apply(self, target: &mut Content) { unimplemented!() }
 
-    fn apply_boxed(self: Box<Self>, target: &mut Content) { (*self).apply(target) }
-}
