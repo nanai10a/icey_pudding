@@ -16,6 +16,24 @@ pub trait Same {
 }
 
 #[async_trait]
+pub trait UserRepository : Send + Sync + Clone + Same {
+    async fn insert(&self, item: User) -> Result<()>;
+    async fn is_exists(&self, user_id: u64) -> Result<bool>;
+    async fn find(&self, user_id: u64) -> Result<User>;
+    async fn update(&self, mutation: UserMutation) -> Result<User>;
+    async fn delete(&self, user_id: u64) -> Result<User>;
+}
+
+#[async_trait]
+pub trait ContentRepository: Send + Sync + Clone + Same {
+    async fn insert(&self, item: Content) -> Result<()>;
+    async fn is_exists(&self, content_id: Uuid) -> Result<bool>;
+    async fn find(&self, content_id: Uuid) -> Result<Content>;
+    async fn update(&self, mutation: ContentMutation) -> Result<Content>;
+    async fn delete(&self, content_id: Uuid) -> Result<Content>;
+}
+
+#[async_trait]
 impl<T: Send + Sync + Clone + Same> Repository<T> for InMemoryRepository<T> {
     async fn save(&self, item: T) -> Result<()> {
         self.0.lock().await.push(item);
