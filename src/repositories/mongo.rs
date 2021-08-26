@@ -2,8 +2,6 @@ use mongodb::Collection;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::entities::Author;
-
 pub struct MongoUserRepository {
     main_coll: Collection<MongoUserModel>,
 }
@@ -25,4 +23,14 @@ struct MongoContentModel {
     author: Author,
     posted: u64,
     content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+enum Author {
+    User {
+        id: u64,
+        name: String,
+        nick: Option<String>,
+    },
+    Virtual(String),
 }
