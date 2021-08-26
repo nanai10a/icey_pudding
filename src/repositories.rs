@@ -42,56 +42,105 @@ pub trait ContentRepository: Send + Sync + Clone + Same {
 }
 
 #[async_trait]
-impl<T: Send + Sync + Clone + Same> Repository<T> for InMemoryRepository<T> {
-    async fn save(&self, item: T) -> Result<()> {
+impl UserRepository for InMemoryRepository<User> {
+    async fn insert(&self, item: User) -> Result<()> {
         self.0.lock().await.push(item);
 
         Ok(())
     }
 
-    async fn get_matches(&self, mut queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<Vec<T>> {
+    async fn is_exists(&self, id: u64) -> Result<bool> {
         let guard = self.0.lock().await;
-        let mut vec = guard.iter().collect();
 
-        for q in queries.drain(..) {
-            vec = q.filter(vec).await.map_err(RepositoryError::Internal)?;
-        }
-
-        Ok(vec.drain(..).cloned().collect())
-    }
-
-    async fn get_match(&self, queries: Vec<&(dyn Query<T> + Sync + Send)>) -> Result<T> {
-        let mut matches = self.get_matches(queries).await?;
-
-        match matches.len() {
-            1 => Ok(matches.remove(0)),
-            _ => Err(RepositoryError::NoUnique {
-                matched: matches.len() as u32,
-            }),
+        match guard.iter().filter(|v| *v.id == id).count() {
+            0 => Ok(false),
+            1 => Ok(true),
+            i => Err(RepositoryError::NoUnique { matched: i }),
         }
     }
+
+    async fn find(&self, id: u64) -> Result<User> {
+        let guard = self.0.lock().await;
+        let res = guard.iter().filter(|v| *v.id == id).collect::<Vec<_>>();
+
+        match res.len() {
+            0 => Err(RepositoryError::NotFound),
+            1 => Ok(res.remove(0).clone()),
+            i => Err(RepositoryError::NoUnique { matched: i }),
+        }
+    }
+
+    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        let item = self.find(id).await?;
+
+        match item.posted.iter().filter(|v| *v == content_id).count() {
+            0 => Ok(false),
+            1 => Ok(true),
+            i => Err(RepositoryError::NoUnique { matched: i }),
+        }
+    }
+
+    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        let item = self.find(id).await?;
+
+        match item.bookmark.iter().filter(|v| *v == content_id).count() {
+            0 => Ok(false),
+            1 => Ok(true),
+            i => Err(RepositoryError::NoUnique { matched: i }),
+        }
+    }
+
+    async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
+        let guard = self.0.lock().await;
+        let res = guard.iter_mut().filter(|v| *v.id == id).collect::<Vec<_>>();
+        let item = match res.len() {
+            0 => return Err(RepositoryError::NotFound),
+            1 => res.remove(0),
+            i => return Err(RepositoryError::NoUnique { matched: i }),
+        };
+
+        let UserMutation { admin, sub_admin } = mutation;
+        if let Some(val) = admin {
+            item.admin = val;
+        }
+        if let Some(val) = sub_admin {
+            item.sub_admin = val;
+        }
+
+        Ok(item.clone())
+    }
+
+    async fn delete(&self, id: u64) -> Result<User> {
+        let guard = self.0.lock().await;
+        let res = guard
+            .iter()
+            .enumerate()
+            .filter(|(_, v)| *v.id == id)
+            .map(|(i, _)| i)
+            .collect::<Vec<_>>();
+
+        let index = match res.len() {
+            0 => return Err(RepositoryError::NotFound),
+            1 => res.remove(0),
+            i => return Err(RepositoryError::NoUnique { matched: i }),
+        };
+
+        Ok(guard.remove(index))
+    }
+}
 
     async fn edit_match(
         &self,
-        queries: Vec<&(dyn Query<T> + Sync + Send)>,
-        mutation: Box<dyn Mutation<T> + Sync + Send>,
-    ) -> Result<T> {
-        let target = self.get_match(queries).await?;
+        queries: Vec<&(dyn Query<User> + Sync + Send)>,
+        mutation: Box<dyn Mutation<User> + Sync + Send>,
+    ) -> Result<User> {
+        unimplemented!()
+    }
 
-        let mut guard = self.0.lock().await;
-        let mut indexes: Vec<_> = guard
-            .iter()
-            .enumerate()
-            .filter_map(|(i, v)| match v.is_same(&target) {
-                true => Some(i),
-                false => None,
-            })
-            .collect();
-        debug_assert_eq!(indexes.len(), 1);
-        let index = indexes.remove(0);
-        drop(target);
-
-        let target = guard.get_mut(index).unwrap();
+    async fn remove_match(&self, queries: Vec<&(dyn Query<User> + Sync + Send)>) -> Result<User> {
+        unimplemented!()
+    }
+}
 
         mutation.apply_boxed(target);
 
