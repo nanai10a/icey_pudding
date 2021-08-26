@@ -114,3 +114,54 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(guard.remove(index))
     }
 }
+
+#[async_trait]
+impl ContentRepository for InMemoryRepository<Content> {
+    async fn insert(&self, item: Content) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn is_exists(&self, id: Uuid) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn find(&self, id: Uuid) -> Result<Content> {
+        unimplemented!()
+    }
+
+    async fn finds(&self, query: super::ContentQuery) -> Result<Vec<Content>> {
+        unimplemented!()
+    }
+
+    async fn update(&self, mutation: super::ContentMutation) -> Result<Content> {
+        unimplemented!()
+    }
+
+    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        unimplemented!()
+    }
+
+    async fn delete(&self, id: Uuid) -> Result<Content> {
+        unimplemented!()
+    }
+}
