@@ -118,18 +118,12 @@ impl Conductor {
                         .await?,
                 )],
                 Command::Bookmark { content_id, undo } => {
-                    let (_, Content { bookmarked, .. }) = self
-                        .handler
-                        .bookmark_update_user(user_id, content_id, undo)
-                        .await?;
-
                     vec![Response {
                         title: "bookmarked".to_string(),
                         rgb: BOOKMARK,
                         description: from_user_shows,
                         fields: vec![
                             ("id:".to_string(), format!("{}", content_id)),
-                            ("bookmarked:".to_string(), format!("{}", bookmarked)),
                         ],
                     }]
                 },
