@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use async_trait::async_trait;
 use regex::Regex;
 use uuid::Uuid;
@@ -12,26 +14,68 @@ type Result<T> = ::std::result::Result<T, RepositoryError>;
 
 #[async_trait]
 pub trait UserRepository {
-    async fn insert(&self, item: User) -> Result<()>;
+    async fn insert(&self, item: User) -> Result<bool>;
     async fn is_exists(&self, id: u64) -> Result<bool>;
+
     async fn find(&self, id: u64) -> Result<User>;
-    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool>;
-    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn finds(&self, query: UserQuery) -> Result<Vec<User>>;
+
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User>;
+
+    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool>;
+
+    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn insert_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn delete_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool>;
+
     async fn delete(&self, id: u64) -> Result<User>;
 }
 
 #[async_trait]
 pub trait ContentRepository {
-    async fn insert(&self, item: Content) -> Result<()>;
+    async fn insert(&self, item: Content) -> Result<bool>;
     async fn is_exists(&self, id: Uuid) -> Result<bool>;
+
     async fn find(&self, id: Uuid) -> Result<Content>;
-    async fn find_author(&self, regex: Regex) -> Result<Vec<Content>>;
-    async fn find_content(&self, regex: Regex) -> Result<Vec<Content>>;
-    async fn is_liked(&self, user_id: u64) -> Result<bool>;
-    async fn is_pinned(&self, user_id: u64) -> Result<bool>;
+    async fn finds(&self, query: ContentQuery) -> Result<Vec<Content>>;
+
     async fn update(&self, mutation: ContentMutation) -> Result<Content>;
+
+    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool>;
+    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool>;
+    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool>;
+
+    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool>;
+    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool>;
+    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool>;
+
     async fn delete(&self, id: Uuid) -> Result<Content>;
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UserQuery {
+    pub posted: Option<HashSet<Uuid>>,
+    pub bookmark: Option<HashSet<Uuid>>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ContentQuery {
+    pub author: Option<AuthorQuery>,
+    pub posted: Option<u64>,
+    pub content: Option<Regex>,
+    pub liked: Option<HashSet<u64>>,
+    pub pinned: Option<HashSet<u64>>,
+}
+
+#[derive(Debug, Clone)]
+pub enum AuthorQuery {
+    UserId(u64),
+    UserName(Regex),
+    UserNick(Regex),
+    Virtual(Regex),
+    Any(Regex),
 }
 
 #[derive(Debug)]
