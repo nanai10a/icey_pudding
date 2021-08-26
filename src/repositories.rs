@@ -2,11 +2,13 @@ use std::collections::HashSet;
 
 use async_trait::async_trait;
 use mongodb::Collection;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
 use serenity::model::id::UserId;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use crate::entities::{Content, User};
+use crate::entities::{Author, Content, User};
 
 type StdResult<T, E> = ::std::result::Result<T, E>;
 type Result<T> = ::std::result::Result<T, RepositoryError>;
