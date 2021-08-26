@@ -18,21 +18,21 @@ impl UserRepository for InMemoryRepository<User> {
     async fn is_exists(&self, id: u64) -> Result<bool> {
         let guard = self.0.lock().await;
 
-        match guard.iter().filter(|v| *v.id == id).count() {
+        match guard.iter().filter(|v| v.id == id).count() {
             0 => Ok(false),
             1 => Ok(true),
-            i => Err(RepositoryError::NoUnique { matched: i }),
+            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
         }
     }
 
     async fn find(&self, id: u64) -> Result<User> {
         let guard = self.0.lock().await;
-        let res = guard.iter().filter(|v| *v.id == id).collect::<Vec<_>>();
+        let res = guard.iter().filter(|v| v.id == id).collect::<Vec<_>>();
 
         match res.len() {
             0 => Err(RepositoryError::NotFound),
             1 => Ok(res.remove(0).clone()),
-            i => Err(RepositoryError::NoUnique { matched: i }),
+            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
         }
     }
 
@@ -42,11 +42,11 @@ impl UserRepository for InMemoryRepository<User> {
 
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
         let guard = self.0.lock().await;
-        let res = guard.iter_mut().filter(|v| *v.id == id).collect::<Vec<_>>();
+        let res = guard.iter_mut().filter(|v| v.id == id).collect::<Vec<_>>();
         let item = match res.len() {
             0 => return Err(RepositoryError::NotFound),
             1 => res.remove(0),
-            i => return Err(RepositoryError::NoUnique { matched: i }),
+            i => return Err(RepositoryError::NoUnique { matched: i as u32 }),
         };
 
         let UserMutation { admin, sub_admin } = mutation;
@@ -63,10 +63,10 @@ impl UserRepository for InMemoryRepository<User> {
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let item = self.find(id).await?;
 
-        match item.posted.iter().filter(|v| *v == content_id).count() {
+        match item.posted.iter().filter(|v| **v == content_id).count() {
             0 => Ok(false),
             1 => Ok(true),
-            i => Err(RepositoryError::NoUnique { matched: i }),
+            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
         }
     }
 
@@ -81,10 +81,10 @@ impl UserRepository for InMemoryRepository<User> {
     async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let item = self.find(id).await?;
 
-        match item.bookmark.iter().filter(|v| *v == content_id).count() {
+        match item.bookmark.iter().filter(|v| **v == content_id).count() {
             0 => Ok(false),
             1 => Ok(true),
-            i => Err(RepositoryError::NoUnique { matched: i }),
+            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
         }
     }
 
@@ -101,14 +101,14 @@ impl UserRepository for InMemoryRepository<User> {
         let res = guard
             .iter()
             .enumerate()
-            .filter(|(_, v)| *v.id == id)
+            .filter(|(_, v)| v.id == id)
             .map(|(i, _)| i)
             .collect::<Vec<_>>();
 
         let index = match res.len() {
             0 => return Err(RepositoryError::NotFound),
             1 => res.remove(0),
-            i => return Err(RepositoryError::NoUnique { matched: i }),
+            i => return Err(RepositoryError::NoUnique { matched: i as u32 }),
         };
 
         Ok(guard.remove(index))
