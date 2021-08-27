@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt::Display;
 
 use uuid::Uuid;
 
@@ -29,4 +30,20 @@ pub enum Author {
         nick: Option<String>,
     },
     Virtual(String),
+}
+
+impl Display for Author {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Author::User { id, name, nick } => {
+                let nick_fmt = match nick {
+                    Some(s) => s,
+                    None => &String::new(),
+                };
+
+                write!(f, "{} ({} | {})", name, nick_fmt, id)
+            },
+            Author::Virtual(name) => write!(f, "{}", name),
+        }
+    }
 }
