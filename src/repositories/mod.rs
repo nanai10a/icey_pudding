@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::ops::Bound;
 
 use async_trait::async_trait;
 use regex::Regex;
@@ -63,7 +64,7 @@ pub struct UserQuery {
 #[derive(Debug, Clone, Default)]
 pub struct ContentQuery {
     pub author: Option<AuthorQuery>,
-    pub posted: Option<u64>,
+    pub posted: Option<(Bound<u64>, Bound<u64>)>,
     pub content: Option<Regex>,
     pub liked: Option<HashSet<u64>>,
     pub pinned: Option<HashSet<u64>>,
