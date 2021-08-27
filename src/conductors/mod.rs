@@ -122,9 +122,7 @@ impl Conductor {
                         title: "bookmarked".to_string(),
                         rgb: BOOKMARK,
                         description: from_user_shows,
-                        fields: vec![
-                            ("id:".to_string(), format!("{}", content_id)),
-                        ],
+                        fields: vec![("id:".to_string(), format!("{}", content_id))],
                     }]
                 },
                 Command::UserDelete => {
