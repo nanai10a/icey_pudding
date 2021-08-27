@@ -1,9 +1,126 @@
+#![allow(non_upper_case_globals)]
+
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 consts::consts! {
     NAME: "icey_pudding";
     PREFIX: "*ip";
     ABOUT: "this is a ICEy_PUDDING.";
+
+    user: "user";
+    user {
+        DESC: "about users.";
+
+        create: "create";
+
+        read: "read";
+
+        update: "update";
+        update {
+            DESC: "owner can only use.";
+
+            id: "id";
+
+            admin: "admin";
+            admin {
+                DESC: "`admin` privileges.";
+            }
+
+            sub_admin: "sub_admin";
+            sub_admin {
+                DESC: "`sub_admin` privileges.";
+            }
+        }
+
+        delete: "delete";
+    }
+
+    content: "content";
+    content {
+        DESC: "about contents.";
+
+        read: "read";
+        read {
+            id: "id";
+        }
+
+        reads: "reads";
+        reads {
+            DESC: "queries contents. see `post` for details.";
+
+            author_id: "author-id";
+            author: "author";
+            content: "content";
+        }
+
+        update: "update";
+        update {
+            DESC: "see `post` for details.";
+
+            id: "id";
+            author_id: "author-id";
+            author: "author";
+            content: "content";
+        }
+
+        delete: "delete";
+        delete {
+            id: "id";
+        }
+    }
+
+    post_v2: "post";
+    post_v2 {
+        DESC: "post content.";
+
+        author_id: "author-id";
+        author_id {
+            DESC: "author user id. (u64)";
+        }
+
+        author: "author";
+        author {
+            DESC: "author name. (str)";
+        }
+
+        content: "content";
+        content {
+            DESC: "content's content.";
+        }
+    }
+
+    like_v2: "like";
+    like_v2 {
+        DESC: "do thing like twitter's fav.";
+
+        id: "id";
+        undo: "undo";
+        undo {
+            DESC: "is `unlike`?";
+        }
+    }
+
+    pin_v2: "pin";
+    pin_v2 {
+        DESC: "imitates twitter's RT.";
+
+        id: "id";
+        undo {
+            DESC: "is `unpin`?";
+        }
+    }
+
+    bookmark_v2: "bookmark";
+    bookmark_v2 {
+        DESC: "bookmark content.";
+
+        id: "id";
+        undo {
+            DESC: "is `unbookmark`?";
+        }
+    }
+
+
 
     register {
         NAME: "register";
