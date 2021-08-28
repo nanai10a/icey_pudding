@@ -190,6 +190,7 @@ impl Conductor {
                         .await?,
                 )],
                 Command::Bookmark { content_id, undo } => {
+                    unimplemented!();
                     vec![Response {
                         title: "bookmarked".to_string(),
                         rgb: BOOKMARK,
