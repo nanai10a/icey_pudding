@@ -128,10 +128,12 @@ impl Handler {
 
     #[deprecated]
     pub async fn delete_user(&self, UserId(user_id): UserId) -> Result<()> {
+        #[allow(deprecated)]
         self.delete_user_v2(user_id).await?;
         Ok(())
     }
 
+    #[deprecated]
     pub async fn delete_user_v2(&self, user_id: u64) -> Result<User> {
         self.user_repository
             .delete(user_id)
