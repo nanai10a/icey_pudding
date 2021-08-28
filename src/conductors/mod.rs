@@ -66,25 +66,38 @@ pub enum Command {
     },
 }
 
+/// command data.
+/// *note: `(user_)?id: Option<u64>` is expecting fallback to executed user's
+/// id.*
 #[derive(Debug, Clone)]
 pub enum CommandV2 {
+    /// commands about user.
     User(UserCommandV2),
+    /// commands about content.
     Content(ContentCommandV2),
+    /// post content with user_id.
+    /// if not given id, fallback to executed user's id.
     Post {
         user_id: Option<u64>,
         author: Author,
         content: String,
     },
+    /// (un)like content with user_id.
+    /// if not given id, fallback to executed user's id.
     Like {
         user_id: Option<u64>,
         content_id: Uuid,
         undo: bool,
     },
+    /// (un)pin content with user_id.
+    /// if not given id, fallback to executed user's id.
     Pin {
         user_id: Option<u64>,
         content_id: Uuid,
         undo: bool,
     },
+    /// (un)bookmark content to user_id.
+    /// if not given id, fallback to executed user's id.
     Bookmark {
         user_id: Option<u64>,
         content_id: Uuid,
@@ -94,21 +107,33 @@ pub enum CommandV2 {
 
 #[derive(Debug, Clone)]
 pub enum UserCommandV2 {
+    /// create user with executed user's id.
     Create,
+    /// read user with id.
     Read { id: Option<u64> },
     Reads {
+        /// read users with query.
+        /// page must satisfies `1..`.
         page: u32,
         query: UserQuery,
     },
+    /// update user with id and mutation.
+    /// it's **must** given id.
     Update { id: u64, mutation: UserMutation },
+    /// delete user with executed user's id.
     Delete,
 }
 
 #[derive(Debug, Clone)]
 pub enum ContentCommandV2 {
+    /// read content with id.
     Read { id: Uuid },
+    /// read contents with query.
+    /// page **must** satisfies `1..`.
     Reads { page: u32, query: ContentQuery },
+    /// update content with id and mutation.
     Update { id: Uuid, mutation: ContentMutation },
+    /// delete content with id.
     Delete { id: Uuid },
 }
 
