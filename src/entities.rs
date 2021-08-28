@@ -3,6 +3,10 @@ use std::fmt::Display;
 
 use uuid::Uuid;
 
+// TODO: replace to this structures
+pub struct UserId(u64);
+pub struct ContentId(Uuid);
+
 #[derive(Debug, Clone)]
 pub struct User {
     pub id: u64,
