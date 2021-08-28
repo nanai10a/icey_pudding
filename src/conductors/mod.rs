@@ -11,9 +11,9 @@ use serenity::model::prelude::User;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use crate::entities::Content;
+use crate::entities::{Author, Content};
 use crate::handlers::Handler;
-use crate::repositories::ContentQuery;
+use crate::repositories::{ContentMutation, ContentQuery, UserMutation, UserQuery};
 
 mod appcmd;
 mod clapcmd;
@@ -64,6 +64,52 @@ pub enum Command {
     ContentDelete {
         content_id: Uuid,
     },
+}
+
+#[derive(Debug, Clone)]
+pub enum CommandV2 {
+    User(UserCommandV2),
+    Content(ContentCommandV2),
+    Post {
+        user_id: Option<u64>,
+        author: Author,
+        content: String,
+    },
+    Like {
+        user_id: Option<u64>,
+        content_id: Uuid,
+        undo: bool,
+    },
+    Pin {
+        user_id: Option<u64>,
+        content_id: Uuid,
+        undo: bool,
+    },
+    Bookmark {
+        user_id: Option<u64>,
+        content_id: Uuid,
+        undo: bool,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub enum UserCommandV2 {
+    Create,
+    Read { id: Option<u64> },
+    Reads {
+        page: u32,
+        query: UserQuery,
+    },
+    Update { id: u64, mutation: UserMutation },
+    Delete,
+}
+
+#[derive(Debug, Clone)]
+pub enum ContentCommandV2 {
+    Read { id: Uuid },
+    Reads { page: u32, query: ContentQuery },
+    Update { id: Uuid, mutation: ContentMutation },
+    Delete { id: Uuid },
 }
 
 #[derive(Debug)]
