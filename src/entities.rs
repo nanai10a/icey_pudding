@@ -16,6 +16,7 @@ pub struct User {
     pub bookmark: HashSet<Uuid>,
 }
 
+// TODO: rename to `Post`
 #[derive(Debug, Clone)]
 pub struct Content {
     pub id: Uuid,
