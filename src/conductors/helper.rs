@@ -16,80 +16,89 @@ use super::{clapcmd, command_strs, Command, MsgCommand, Response};
 use crate::entities::{Content, User};
 use crate::repositories::{Comparison, ContentQuery};
 
-pub async fn parse_ia(acid: &ApplicationCommandInteractionData) -> Result<Command> {
-    use crate::extract_option;
-
-    let com = match acid.name.as_str() {
-        "register" => Command::UserRegister,
-        "info" => Command::UserRead,
-        "change" => {
-            let admin = extract_option!(opt Value::Bool => ref admin in acid)?.copied();
-            let sub_admin = extract_option!(opt Value::Bool => ref sub_admin in acid)?.copied();
-
-            Command::UserUpdate { admin, sub_admin }
-        },
-        "bookmark" => {
-            let content_id =
-                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
-
-            Command::Bookmark {
-                content_id,
-                undo: false,
-            }
-        },
-        "delete_me" => Command::UserDelete,
-        "post" => {
-            let content = extract_option!(Value::String => ref id in acid)?.clone();
-            let author = extract_option!(Value::String => ref author in acid)?.clone();
-
-            Command::ContentPost { content, author }
-        },
-        "get" => {
-            // FIXME: clap版のcommandに追従していない.
-            let queries = vec![ContentQuery::Id(Uuid::parse_str(
-                extract_option!(Value::String => ref id in acid)?.as_str(),
-            )?)];
-
-            Command::ContentRead { queries, page: 1 }
-        },
-        "edit" => {
-            let content_id =
-                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
-            let new_content = extract_option!(Value::String => ref content in acid)?.clone();
-
-            Command::ContentUpdate {
-                content_id,
-                new_content,
-            }
-        },
-        "like" => {
-            let content_id =
-                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
-
-            Command::Like {
-                content_id,
-                undo: false,
-            }
-        },
-        "pin" => {
-            let content_id =
-                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
-
-            Command::Pin {
-                content_id,
-                undo: false,
-            }
-        },
-        "remove" => {
-            let content_id =
-                Uuid::parse_str(extract_option!(Value::String => ref id in acid)?.as_str())?;
-
-            Command::ContentDelete { content_id }
-        },
-        _ => bail!("unrecognized application_command name."),
-    };
-
-    Ok(com)
+#[deprecated]
+pub async fn parse_ia(_: &ApplicationCommandInteractionData) -> Result<Command> {
+    unimplemented!();
+    // use crate::extract_option;
+    //
+    // let com = match acid.name.as_str() {
+    // "register" => Command::UserRegister,
+    // "info" => Command::UserRead,
+    // "change" => {
+    // let admin = extract_option!(opt Value::Bool => ref admin in
+    // acid)?.copied(); let sub_admin = extract_option!(opt Value::Bool =>
+    // ref sub_admin in acid)?.copied();
+    //
+    // Command::UserUpdate { admin, sub_admin }
+    // },
+    // "bookmark" => {
+    // let content_id =
+    // Uuid::parse_str(extract_option!(Value::String => ref id in
+    // acid)?.as_str())?;
+    //
+    // Command::Bookmark {
+    // content_id,
+    // undo: false,
+    // }
+    // },
+    // "delete_me" => Command::UserDelete,
+    // "post" => {
+    // let content = extract_option!(Value::String => ref id in acid)?.clone();
+    // let author = extract_option!(Value::String => ref author in
+    // acid)?.clone();
+    //
+    // Command::ContentPost { content, author }
+    // },
+    // "get" => {
+    // FIXME: clap版のcommandに追従していない.
+    // let queries = vec![ContentQuery::Id(Uuid::parse_str(
+    // extract_option!(Value::String => ref id in acid)?.as_str(),
+    // )?)];
+    //
+    // Command::ContentRead { queries, page: 1 }
+    // },
+    // "edit" => {
+    // let content_id =
+    // Uuid::parse_str(extract_option!(Value::String => ref id in
+    // acid)?.as_str())?; let new_content = extract_option!(Value::String =>
+    // ref content in acid)?.clone();
+    //
+    // Command::ContentUpdate {
+    // content_id,
+    // new_content,
+    // }
+    // },
+    // "like" => {
+    // let content_id =
+    // Uuid::parse_str(extract_option!(Value::String => ref id in
+    // acid)?.as_str())?;
+    //
+    // Command::Like {
+    // content_id,
+    // undo: false,
+    // }
+    // },
+    // "pin" => {
+    // let content_id =
+    // Uuid::parse_str(extract_option!(Value::String => ref id in
+    // acid)?.as_str())?;
+    //
+    // Command::Pin {
+    // content_id,
+    // undo: false,
+    // }
+    // },
+    // "remove" => {
+    // let content_id =
+    // Uuid::parse_str(extract_option!(Value::String => ref id in
+    // acid)?.as_str())?;
+    //
+    // Command::ContentDelete { content_id }
+    // },
+    // _ => bail!("unrecognized application_command name."),
+    // };
+    //
+    // Ok(com)
 }
 
 pub async fn parse_msg(msg: &str) -> Option<MsgCommand> {
