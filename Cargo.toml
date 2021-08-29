@@ -17,3 +17,4 @@ shell-words = "1.0.0"
 mongodb = "2.0.0-beta.3"
 serde = { version = "1.0.126", features = ["derive"] }
 async-trait = "0.1.51"
+range_parser = { git = "https://github.com/Nanai10a/range_parser" }
