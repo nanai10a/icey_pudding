@@ -153,7 +153,7 @@ subcommands:
       about: "do thing like twitter's fav."
       args:
         - content_id:
-            value_name: "content_id: uuid"
+            value_name: "CONTENT_ID: uuid"
             required: true
         - undo:
             short: "u"
@@ -163,7 +163,7 @@ subcommands:
       about: "imitetes twitter's RT."
       args:
         - content_id:
-            value_name: "content_id: uuid"
+            value_name: "CONTENT_ID: uuid"
             required: true
         - undo:
             short: "u"
@@ -173,7 +173,7 @@ subcommands:
       about: "bookmark content."
       args:
         - content_id:
-            value_name: "content_id: uuid"
+            value_name: "CONTENT_ID: uuid"
             required: true
         - undo:
             short: "u"
