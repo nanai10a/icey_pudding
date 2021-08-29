@@ -386,61 +386,10 @@ pub fn range_syntax_parser(mut src: String) -> Result<(u32, Comparison)> {
     Ok((num, comp))
 }
 
-/// parser of "range" notation like of rust's.
-///
-/// the following differences are acceptable:
-///
-/// - spaces before and after. (e.g. ` 0..=1  `)
-/// - spaces between `[num]` and *range token*. (e.g. `0 ..=  1`)
-///
-/// but, cannot use this notation: `[num][type]` (e.g. `8u32`)
-///
-/// assignable types to T:
-///
-/// - any unsigned integer types
-/// - any signed integer types
-///
-/// *note:*
-/// "Q. why cannot use *floating point number types*?"
-/// "A. because parse considering the decimal point is *troublesome* and
-/// unnecessary (not used that types in *this Project*. )."
 pub fn range_syntax_parser_v2<N>(src: String) -> Result<(Bound<N>, Bound<N>)>
 where
     N: range_parser::Num + FromStr + Debug,
     <N as FromStr>::Err: Debug + PartialEq + Eq,
 {
     range_parser::parse(src).map_err(|e| anyhow::anyhow!("{:?}", e))
-}
-
-#[test]
-fn parsing_test() {
-    use Comparison::*;
-
-    assert_eq!(range_syntax_parser("2..".to_string()).unwrap(), (2, Over));
-
-    assert_eq!(range_syntax_parser("010".to_string()).unwrap(), (10, Eq));
-
-    assert_eq!(range_syntax_parser("..=5".to_string()).unwrap(), (5, Under));
-
-    assert!(range_syntax_parser("..5".to_string()).is_err());
-
-    assert!(range_syntax_parser("3..=".to_string()).is_err());
-
-    assert!(range_syntax_parser("..=5f".to_string()).is_err());
-
-    assert!(range_syntax_parser(".a.2".to_string()).is_err());
-
-    assert!(range_syntax_parser("not expected".to_string()).is_err());
-
-    assert_eq!(
-        range_syntax_parser("  ..=   100".to_string()).unwrap(),
-        (100, Under)
-    );
-
-    assert!(range_syntax_parser(" . . = 100".to_string()).is_err());
-
-    assert_eq!(
-        range_syntax_parser("  100    ..".to_string()).unwrap(),
-        (100, Over)
-    );
 }
