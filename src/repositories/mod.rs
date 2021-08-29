@@ -148,8 +148,5 @@ pub struct ContentMutation {
 #[derive(Debug, Clone)]
 pub enum ContentContentMutation {
     Complete(String),
-    Sed {
-        capture: Regex,
-        replace: Regex,
-    }
+    Sed { capture: Regex, replace: Regex },
 }
