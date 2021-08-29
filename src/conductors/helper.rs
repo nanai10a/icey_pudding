@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::io::Cursor;
+use std::ops::Bound;
 use std::str::FromStr;
 
 use anyhow::{bail, Result};
@@ -294,6 +295,7 @@ pub fn append_message_reference(
 /// [`Over`]: crate::repositories::Comparison::Over
 /// [`Eq`]: crate::repositories::Comparison::Eq
 /// [`Under`]: crate::repositories::Comparison::Under
+#[deprecated]
 pub fn range_syntax_parser(mut src: String) -> Result<(u32, Comparison)> {
     let mut iter = src.drain(..).enumerate();
 
@@ -383,6 +385,38 @@ pub fn range_syntax_parser(mut src: String) -> Result<(u32, Comparison)> {
 
     Ok((num, comp))
 }
+
+/// parser of "range" notation like of rust's.
+///
+/// the following differences are acceptable:
+///
+/// - spaces before and after. (e.g. ` 0..=1  `)
+/// - spaces between `[num]` and *range token*. (e.g. `0 ..=  1`)
+///
+/// but, cannot use this notation: `[num][type]` (e.g. `8u32`)
+///
+/// assignable types to T:
+///
+/// - any unsigned integer types
+/// - any signed integer types
+///
+/// *note:*
+/// "Q. why cannot use *floating point number types*?"
+/// "A. because parse considering the decimal point is *troublesome* and
+/// unnecessary (not used that types in *this Project*. )."
+pub fn range_syntax_parser_v2<T: Num>(mut src: String) -> Result<(Bound<T>, Bound<T>)> {
+    unimplemented!()
+}
+
+trait Num {}
+macro_rules! impl_num {
+    ($($t:ty)*) => {
+        $(
+            impl Num for $t {}
+        )*
+    };
+}
+impl_num! { usize u8 u16 u32 u64 u128 isize i8 i16 i32 i64 i128 }
 
 #[test]
 fn parsing_test() {
