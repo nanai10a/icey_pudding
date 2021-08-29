@@ -1,0 +1,167 @@
+name: "*ip"
+author: "Nanai Jua (github.com/Nanai10a)"
+about: "this is a ICEy_PUDDING."
+
+settings:
+  - ColorNever
+
+subcommands:
+  - user:
+      about: "about user."
+      subcommands:
+        - create:
+        - read:
+            args:
+              - id:
+                  value_name: "ID: u64"
+        - reads:
+            args:
+              - page:
+                  help: "must satisfies `1..`"
+                  value_name: "PAGE: u32"
+                  required: true
+              - posted:
+                  short: "p"
+                  long: "posted"
+                  value_name: "[uuid]"
+              - posted_num:
+                  long: "posted-num"
+                  value_name: "range<u32>"
+              - bookmark:
+                  short: "b"
+                  long: "bookmark"
+                  value_name: "[uuid]"
+              - bookmark_num:
+                  long: "bookmark-num"
+                  value_name: "range<u32>"
+        - update:
+            args:
+              - id:
+                  value_name: "ID: u64"
+                  required: true
+              - admin:
+                  short: "a"
+                  long: "admin"
+                  value_name: "bool"
+              - sub_admin:
+                  short: "s"
+                  long: "sub-admin"
+                  value_name: "bool"
+
+  - content:
+      about: "about content."
+      subcommands:
+        - read:
+            args:
+              - id:
+                  value_name: "ID: uuid"
+                  required: true
+        - reads:
+            args:
+              - page:
+                  help: "must satisfies `1..`"
+                  value_name: "PAGE: u32"
+                  required: true
+              - author:
+                  short: "a"
+                  long: "author"
+                  value_names:
+                    - "`id` | `name` | `nick` | `virt` | `any`"
+                    - "u64 | regex"
+              - posted:
+                  short: "p"
+                  long: "posted"
+                  value_names:
+                    - "`id` | `name` | `nick` | `any`"
+                    - "u64 | regex"
+              - content:
+                  short: "c"
+                  long: "content"
+                  value_name: "regex"
+              - liked:
+                  short: "l"
+                  long: "liked"
+                  value_name: "[u64]"
+              - liked_num:
+                  long: "liked-num"
+                  value_name: "range<u32>"
+              - pinned:
+                  short: "n"
+                  long: "pinned"
+                  value_name: "[u64]"
+              - pinned_num:
+                  long: "pinned-num"
+                  value_name: "range<u32>"
+        - update:
+            args:
+              - id:
+                  value_name: "ID: uuid"
+                  required: true
+              - author:
+                  short: "a"
+                  long: "author"
+                  value_names:
+                    - "`user` | `virt`"
+                    - "u64 | str"
+              - complete:
+                  short: "c"
+                  long: "complete"
+                  value_name: "str"
+              - sed:
+                  help: "like a `s/$0/$1/g`"
+                  short: "s"
+                  long: "sed"
+                  value_names:
+                    - "regex"
+                    - "regex"
+            groups:
+              - content:
+                  args:
+                    - complete
+                    - sed
+        - delete:
+            args:
+              - id:
+                  value_name: "ID: uuid"
+                  required: true
+
+  - post:
+      args:
+        - author:
+            short: "a"
+            long: "author"
+            value_names:
+              - "`user` | `virt`"
+              - "u64 | str"
+        - content:
+            short: "c"
+            long: "content"
+            value_name: "str"
+            required: true
+
+  - like:
+      args:
+        - content_id:
+            value_name: "content_id: uuid"
+            required: true
+        - undo:
+            short: "u"
+            long: "undo"
+
+  - pin:
+      args:
+        - content_id:
+            value_name: "content_id: uuid"
+            required: true
+        - undo:
+            short: "u"
+            long: "undo"
+
+  - bookmark:
+      args:
+        - content_id:
+            value_name: "content_id: uuid"
+            required: true
+        - undo:
+            short: "u"
+            long: "undo"
