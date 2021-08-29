@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{load_yaml, App, AppSettings, Arg, ArgMatches, SubCommand};
 
 pub fn create_clap_app() -> App<'static, 'static> {
     use super::command_strs::*;
@@ -122,6 +122,18 @@ pub fn create_clap_app() -> App<'static, 'static> {
                     .value_name(remove::id::NAME),
             ),
         ])
+}
+
+pub fn create_clap_app_v2() -> App<'static, 'static> {
+    let yml = load_yaml!("clap.yml");
+    App::from_yaml(yml)
+}
+
+#[test]
+fn load_clap_yaml() {
+    create_clap_app_v2()
+        .get_matches_from_safe(vec!["*ip", "--help"])
+        .unwrap();
 }
 
 #[inline]
