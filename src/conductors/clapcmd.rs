@@ -1,6 +1,7 @@
 use anyhow::{bail, Result};
 use clap::{load_yaml, App, AppSettings, Arg, ArgMatches, SubCommand};
 
+#[deprecated]
 pub fn create_clap_app() -> App<'static, 'static> {
     use super::command_strs::*;
 
