@@ -127,6 +127,9 @@ pub fn create_clap_app() -> App<'static, 'static> {
 pub fn create_clap_app_v2() -> App<'static, 'static> {
     let yml = load_yaml!("clap.yml");
     App::from_yaml(yml)
+        .help_message("")
+        .version(env!("CARGO_PKG_VERSION"))
+        .version_message("")
 }
 
 #[test]
