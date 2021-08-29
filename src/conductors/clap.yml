@@ -157,6 +157,7 @@ subcommands:
             value_name: "CONTENT_ID: uuid"
             required: true
         - undo:
+            help: "is `unlike`?"
             short: "u"
             long: "undo"
 
@@ -167,6 +168,7 @@ subcommands:
             value_name: "CONTENT_ID: uuid"
             required: true
         - undo:
+            help: "is `unpin`?"
             short: "u"
             long: "undo"
 
@@ -177,5 +179,6 @@ subcommands:
             value_name: "CONTENT_ID: uuid"
             required: true
         - undo:
+            help: "is `unbookmark`?"
             short: "u"
             long: "undo"
