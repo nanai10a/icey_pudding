@@ -9,6 +9,7 @@ use serenity::model::interactions::application_command::{
 
 use super::command_strs::*;
 
+#[deprecated]
 pub async fn application_command_create(
     http: impl AsRef<Http>,
     guild_id: Option<GuildId>,

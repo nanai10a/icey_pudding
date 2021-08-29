@@ -1,3 +1,4 @@
+#[deprecated]
 #[macro_export]
 macro_rules! extract_option {
     (opt $t:path => ref $v:ident in $d:ident) => {{
