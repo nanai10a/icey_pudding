@@ -143,6 +143,7 @@ subcommands:
             value_names:
               - "`user` | `virt`"
               - "u64 | str"
+            required: true
         - content:
             short: "c"
             long: "content"
