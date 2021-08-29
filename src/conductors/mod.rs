@@ -74,25 +74,13 @@ pub enum CommandV2 {
     /// commands about content.
     Content(ContentCommandV2),
     /// post content with executed user's id.
-    Post {
-        author: Author,
-        content: String,
-    },
+    Post { author: Author, content: String },
     /// (un)like content with executed user's id.
-    Like {
-        content_id: Uuid,
-        undo: bool,
-    },
+    Like { content_id: Uuid, undo: bool },
     /// (un)pin content with executed user's id.
-    Pin {
-        content_id: Uuid,
-        undo: bool,
-    },
+    Pin { content_id: Uuid, undo: bool },
     /// (un)bookmark content to executed user's id.
-    Bookmark {
-        content_id: Uuid,
-        undo: bool,
-    },
+    Bookmark { content_id: Uuid, undo: bool },
 }
 
 #[derive(Debug, Clone)]
