@@ -10,11 +10,14 @@ subcommands:
       about: "about user."
       subcommands:
         - create:
+            about: "create user with executed user's id."
         - read:
+            about: "read user with id."
             args:
               - id:
                   value_name: "ID: u64"
         - reads:
+            about: "read users with query."
             args:
               - page:
                   help: "must satisfies `1..`"
@@ -35,6 +38,7 @@ subcommands:
                   long: "bookmark-num"
                   value_name: "range<u32>"
         - update:
+            about: "update user with mutation. (note: owner can only use.)"
             args:
               - id:
                   value_name: "ID: u64"
@@ -52,11 +56,13 @@ subcommands:
       about: "about content."
       subcommands:
         - read:
+            about: "read content with id."
             args:
               - id:
                   value_name: "ID: uuid"
                   required: true
         - reads:
+            about: "read contents with query."
             args:
               - page:
                   help: "must satisfies `1..`"
@@ -93,6 +99,7 @@ subcommands:
                   long: "pinned-num"
                   value_name: "range<u32>"
         - update:
+            about: "update content with mutation."
             args:
               - id:
                   value_name: "ID: uuid"
@@ -104,6 +111,7 @@ subcommands:
                     - "`user` | `virt`"
                     - "u64 | str"
               - complete:
+                  help: "replace completely."
                   short: "c"
                   long: "complete"
                   value_name: "str"
@@ -120,12 +128,14 @@ subcommands:
                     - complete
                     - sed
         - delete:
+            about: "delete content."
             args:
               - id:
                   value_name: "ID: uuid"
                   required: true
 
   - post:
+      about: "post content."
       args:
         - author:
             short: "a"
@@ -140,6 +150,7 @@ subcommands:
             required: true
 
   - like:
+      about: "do thing like twitter's fav."
       args:
         - content_id:
             value_name: "content_id: uuid"
@@ -149,6 +160,7 @@ subcommands:
             long: "undo"
 
   - pin:
+      about: "imitetes twitter's RT."
       args:
         - content_id:
             value_name: "content_id: uuid"
@@ -158,6 +170,7 @@ subcommands:
             long: "undo"
 
   - bookmark:
+      about: "bookmark content."
       args:
         - content_id:
             value_name: "content_id: uuid"
