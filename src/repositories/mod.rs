@@ -58,16 +58,28 @@ pub trait ContentRepository {
 #[derive(Debug, Clone, Default)]
 pub struct UserQuery {
     pub posted: Option<HashSet<Uuid>>,
+    pub posted_num: Option<(Bound<u32>, Bound<u32>)>,
     pub bookmark: Option<HashSet<Uuid>>,
+    pub bookmark_num: Option<(Bound<u32>, Bound<u32>)>,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct ContentQuery {
     pub author: Option<AuthorQuery>,
-    pub posted: Option<(Bound<u64>, Bound<u64>)>,
+    pub posted: Option<PostedQuery>,
     pub content: Option<Regex>,
     pub liked: Option<HashSet<u64>>,
+    pub liked_num: Option<(Bound<u32>, Bound<u32>)>,
     pub pinned: Option<HashSet<u64>>,
+    pub pinned_num: Option<(Bound<u32>, Bound<u32>)>,
+}
+
+#[derive(Debug, Clone)]
+pub enum PostedQuery {
+    UserId(u64),
+    UserName(Regex),
+    UserNick(Regex),
+    Any(Regex),
 }
 
 #[derive(Debug, Clone)]
