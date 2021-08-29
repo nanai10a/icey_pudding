@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::io::Cursor;
 use std::ops::Bound;
 use std::str::FromStr;
 
-use anyhow::{bail, Result};
+use anyhow::{bail, Error, Result};
 use clap::ErrorKind;
 use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
@@ -404,19 +404,13 @@ pub fn range_syntax_parser(mut src: String) -> Result<(u32, Comparison)> {
 /// "Q. why cannot use *floating point number types*?"
 /// "A. because parse considering the decimal point is *troublesome* and
 /// unnecessary (not used that types in *this Project*. )."
-pub fn range_syntax_parser_v2<T: Num>(mut src: String) -> Result<(Bound<T>, Bound<T>)> {
-    unimplemented!()
+pub fn range_syntax_parser_v2<N>(src: String) -> Result<(Bound<N>, Bound<N>)>
+where
+    N: range_parser::Num + FromStr + Debug,
+    <N as FromStr>::Err: Debug + PartialEq + Eq,
+{
+    range_parser::parse(src).map_err(|e| anyhow::anyhow!("{:?}", e))
 }
-
-trait Num {}
-macro_rules! impl_num {
-    ($($t:ty)*) => {
-        $(
-            impl Num for $t {}
-        )*
-    };
-}
-impl_num! { usize u8 u16 u32 u64 u128 isize i8 i16 i32 i64 i128 }
 
 #[test]
 fn parsing_test() {
