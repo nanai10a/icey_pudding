@@ -142,5 +142,14 @@ pub struct UserMutation {
 #[derive(Debug, Clone, Default)]
 pub struct ContentMutation {
     pub author: Option<Author>,
-    pub content: Option<String>,
+    pub content: Option<ContentContentMutation>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ContentContentMutation {
+    Complete(String),
+    Sed {
+        capture: Regex,
+        replace: Regex,
+    }
 }
