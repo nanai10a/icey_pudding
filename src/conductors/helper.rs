@@ -14,6 +14,7 @@ use serenity::utils::Colour;
 use uuid::Uuid;
 
 use super::{clapcmd, command_strs, Command, CommandV2, MsgCommand, Response};
+use crate::conductors::UserCommandV2;
 use crate::entities::{Content, User};
 use crate::repositories::{Comparison, ContentQuery};
 
@@ -47,10 +48,8 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
         };
 
         match ams0.subcommand() {
-            ("user", Some(ams1)) => match ams1.subcommand() {
-                ("create", Some(ams2)) => {
-                    unimplemented!()
-                },
+            ("user", Some(ams1)) => CommandV2::User(match ams1.subcommand() {
+                ("create", Some(ams2)) => UserCommandV2::Create {},
                 ("read", Some(ams2)) => {
                     unimplemented!()
                 },
@@ -62,7 +61,7 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                 },
                 sc => unreachable!("unrecognized subcommand on `user`. (impl error): {:?}", sc),
             }),
-            ("content", Some(ams1)) => match ams1.subcommand() {
+            ("content", Some(ams1)) => CommandV2::Content(match ams1.subcommand() {
                 ("read", Some(ams2)) => {
                     unimplemented!()
                 },
