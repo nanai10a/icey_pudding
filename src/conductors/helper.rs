@@ -74,8 +74,11 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                 ("delete", Some(ams2)) => {
                     unimplemented!()
                 },
-                sc => unreachable!("unrecognized subcommand on `content`. (impl error): {:?}", sc),
-            },
+                sc => unreachable!(
+                    "unrecognized subcommand on `content`. (impl error): {:?}",
+                    sc
+                ),
+            }),
             ("post", Some(ams1)) => {
                 unimplemented!()
             },
@@ -88,7 +91,10 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
             ("bookmark", Some(ams1)) => {
                 unimplemented!()
             },
-            sc => unreachable!("unrecognized subcommand on `(root)`. (impl error): {:?}", sc),
+            sc => unreachable!(
+                "unrecognized subcommand on `(root)`. (impl error): {:?}",
+                sc
+            ),
         }
     };
 
