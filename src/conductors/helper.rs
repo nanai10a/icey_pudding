@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Display};
 use std::io::Cursor;
+use std::num::ParseIntError;
 use std::ops::Bound;
 use std::str::FromStr;
 
@@ -49,9 +50,24 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
 
         match ams0.subcommand() {
             ("user", Some(ams1)) => CommandV2::User(match ams1.subcommand() {
-                ("create", Some(ams2)) => UserCommandV2::Create {},
+                ("create", Some(_)) => UserCommandV2::Create,
                 ("read", Some(ams2)) => {
-                    unimplemented!()
+                    let mut errs = vec![];
+
+                    let id = ams2.value_of("id").map(|s| match s.parse() {
+                        Ok(o) => o,
+                        Err(e) => {
+                            let e: ParseIntError = e;
+                            errs.push(e.to_string());
+                            0 // tmp value
+                        },
+                    });
+
+                    if !errs.is_empty() {
+                        Err(anyhow!(combine_errs(errs)))?
+                    }
+
+                    UserCommandV2::Read { id }
                 },
                 ("reads", Some(ams2)) => {
                     unimplemented!()
@@ -476,4 +492,20 @@ where
     <N as FromStr>::Err: Debug + PartialEq + Eq,
 {
     range_parser::parse(src).map_err(|e| anyhow::anyhow!("{:?}", e))
+}
+
+#[inline]
+fn combine_errs(mut errs: Vec<String>) -> String {
+    let mut s = vec![];
+    let len = errs.len();
+    errs.drain(..)
+        .enumerate()
+        .map(|(i, s)| match (i + 1) == len {
+            true => format!("err ({}): {}", i, s),
+            false => format!("err ({}): {}\n", i, s),
+        })
+        .map(|v| v.into_bytes())
+        .for_each(|mut v| s.append(&mut v));
+
+    String::from_utf8(s).unwrap()
 }
