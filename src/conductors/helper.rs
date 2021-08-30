@@ -48,43 +48,43 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
 
         match ams0.subcommand() {
             ("user", Some(ams1)) => match ams1.subcommand() {
-                ("create", None) => {
+                ("create", Some(ams2)) => {
                     unimplemented!()
                 },
-                ("read", None) => {
+                ("read", Some(ams2)) => {
                     unimplemented!()
                 },
-                ("reads", None) => {
+                ("reads", Some(ams2)) => {
                     unimplemented!()
                 },
-                ("update", None) => {
+                ("update", Some(ams2)) => {
                     unimplemented!()
                 },
             },
             ("content", Some(ams1)) => match ams1.subcommand() {
-                ("read", None) => {
+                ("read", Some(ams2)) => {
                     unimplemented!()
                 },
-                ("reads", None) => {
+                ("reads", Some(ams2)) => {
                     unimplemented!()
                 },
-                ("update", None) => {
+                ("update", Some(ams2)) => {
                     unimplemented!()
                 },
-                ("delete", None) => {
+                ("delete", Some(ams2)) => {
                     unimplemented!()
                 },
             },
-            ("post", None) => {
+            ("post", Some(ams1)) => {
                 unimplemented!()
             },
-            ("like", None) => {
+            ("like", Some(ams1)) => {
                 unimplemented!()
             },
-            ("pin", None) => {
+            ("pin", Some(ams1)) => {
                 unimplemented!()
             },
-            ("bookmark", None) => {
+            ("bookmark", Some(ams1)) => {
                 unimplemented!()
             },
             sc => unreachable!("unrecognized subcommand. (impl error): {:?}", sc),
