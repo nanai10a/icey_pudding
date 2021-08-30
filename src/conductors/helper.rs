@@ -7,6 +7,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Error, Result};
 use clap::ErrorKind;
+use serde::de::DeserializeOwned;
 use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
 use serenity::model::id::{ChannelId, GuildId, MessageId, UserId};
@@ -14,10 +15,12 @@ use serenity::model::interactions::application_command::ApplicationCommandIntera
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use super::{clapcmd, command_strs, Command, CommandV2, MsgCommand, Response};
-use crate::conductors::UserCommandV2;
+use super::{
+    clapcmd, command_strs, Command, CommandV2, ContentCommandV2, MsgCommand, Response,
+    UserCommandV2,
+};
 use crate::entities::{Content, User};
-use crate::repositories::{Comparison, ContentQuery};
+use crate::repositories::{Comparison, ContentQuery, UserQuery};
 
 #[deprecated]
 pub async fn parse_ia(_: &ApplicationCommandInteractionData) -> Result<Command> {
@@ -54,14 +57,7 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                 ("read", Some(ams2)) => {
                     let mut errs = vec![];
 
-                    let id = ams2.value_of("id").map(|s| match s.parse() {
-                        Ok(o) => o,
-                        Err(e) => {
-                            let e: ParseIntError = e;
-                            errs.push(e.to_string());
-                            0 // tmp value
-                        },
-                    });
+                    let id = ams2.value_of("id").map(|s| parse_num(s, &mut errs));
 
                     if !errs.is_empty() {
                         Err(anyhow!(combine_errs(errs)))?
@@ -70,7 +66,32 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                     UserCommandV2::Read { id }
                 },
                 ("reads", Some(ams2)) => {
-                    unimplemented!()
+                    let mut errs = vec![];
+
+                    let page = ams2
+                        .value_of("page")
+                        .map(|s| parse_num(s, &mut errs))
+                        .unwrap();
+                    let mut query = UserQuery::default();
+
+                    if let Some(s) = ams2.value_of("posted") {
+                        query.posted = Some(parse_array(s, &mut errs).drain(..).collect());
+                    }
+                    if let Some(s) = ams2.value_of("posted_num") {
+                        query.posted_num = Some(parse_range(s, &mut errs));
+                    }
+                    if let Some(s) = ams2.value_of("bookmark") {
+                        query.posted = Some(parse_array(s, &mut errs).drain(..).collect());
+                    }
+                    if let Some(s) = ams2.value_of("bookmark_num") {
+                        query.bookmark_num = Some(parse_range(s, &mut errs));
+                    }
+
+                    if !errs.is_empty() {
+                        Err(anyhow!(combine_errs(errs)))?
+                    }
+
+                    UserCommandV2::Reads { page, query }
                 },
                 ("update", Some(ams2)) => {
                     unimplemented!()
@@ -79,7 +100,18 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
             }),
             ("content", Some(ams1)) => CommandV2::Content(match ams1.subcommand() {
                 ("read", Some(ams2)) => {
-                    unimplemented!()
+                    let mut errs = vec![];
+
+                    let id = ams2
+                        .value_of("id")
+                        .map(|s| parse_uuid(s, &mut errs))
+                        .unwrap();
+
+                    if !errs.is_empty() {
+                        Err(anyhow!(combine_errs(errs)))?
+                    }
+
+                    ContentCommandV2::Read { id }
                 },
                 ("reads", Some(ams2)) => {
                     unimplemented!()
@@ -508,4 +540,57 @@ fn combine_errs(mut errs: Vec<String>) -> String {
         .for_each(|mut v| s.append(&mut v));
 
     String::from_utf8(s).unwrap()
+}
+
+#[inline]
+fn parse_num<N>(s: &str, errs: &mut Vec<String>) -> N
+where
+    N: Default + FromStr,
+    <N as FromStr>::Err: ToString,
+{
+    match s.parse() {
+        Ok(o) => o,
+        Err(e) => {
+            errs.push(e.to_string());
+            Default::default() // tmp value
+        },
+    }
+}
+
+#[inline]
+fn parse_range<N>(s: &str, errs: &mut Vec<String>) -> (Bound<N>, Bound<N>)
+where
+    N: range_parser::Num + Default + FromStr + Debug,
+    <N as FromStr>::Err: Debug + PartialEq + Eq,
+{
+    match range_syntax_parser_v2(s.to_string()) {
+        Ok(o) => o,
+        Err(e) => {
+            errs.push(e.to_string());
+            (Bound::Unbounded, Bound::Unbounded) // tmp value
+        },
+    }
+}
+
+#[inline]
+fn parse_array<T>(s: &str, errs: &mut Vec<String>) -> Vec<T>
+where T: DeserializeOwned {
+    match serde_json::from_str(s) {
+        Ok(o) => o,
+        Err(e) => {
+            errs.push(e.to_string());
+            Default::default() // tmp value
+        },
+    }
+}
+
+#[inline]
+fn parse_uuid(s: &str, errs: &mut Vec<String>) -> Uuid {
+    match s.parse() {
+        Ok(o) => o,
+        Err(e) => {
+            errs.push(e.to_string());
+            Default::default() // tmp value
+        },
+    }
 }
