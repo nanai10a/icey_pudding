@@ -4,7 +4,7 @@ use std::io::Cursor;
 use std::ops::Bound;
 use std::str::FromStr;
 
-use anyhow::{bail, Error, Result};
+use anyhow::{anyhow, bail, Error, Result};
 use clap::ErrorKind;
 use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
@@ -13,13 +13,90 @@ use serenity::model::interactions::application_command::ApplicationCommandIntera
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use super::{clapcmd, command_strs, Command, MsgCommand, Response};
+use super::{clapcmd, command_strs, Command, CommandV2, MsgCommand, Response};
 use crate::entities::{Content, User};
 use crate::repositories::{Comparison, ContentQuery};
 
 #[deprecated]
 pub async fn parse_ia(_: &ApplicationCommandInteractionData) -> Result<Command> {
     unimplemented!();
+}
+
+pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
+    let res: Result<_> = try {
+        let splitted = shell_words::split(msg)?;
+
+        if let Some(n) = splitted.get(0) {
+            if n != "*ip" {
+                return None;
+            }
+        }
+
+        let ams0 = match clapcmd::create_clap_app_v2().get_matches_from_safe(splitted) {
+            Ok(o) => o,
+            Err(e) => match e.kind {
+                ErrorKind::VersionDisplayed => Err(anyhow!({
+                    let mut buf = Cursor::new(vec![]);
+                    clapcmd::create_clap_app_v2()
+                        .write_long_version(&mut buf)
+                        .unwrap();
+                    String::from_utf8(buf.into_inner()).unwrap()
+                }))?,
+                _ => Err(anyhow!(e))?,
+            },
+        };
+
+        match ams0.subcommand() {
+            ("user", Some(ams1)) => match ams1.subcommand() {
+                ("create", None) => {
+                    unimplemented!()
+                },
+                ("read", None) => {
+                    unimplemented!()
+                },
+                ("reads", None) => {
+                    unimplemented!()
+                },
+                ("update", None) => {
+                    unimplemented!()
+                },
+            },
+            ("content", Some(ams1)) => match ams1.subcommand() {
+                ("read", None) => {
+                    unimplemented!()
+                },
+                ("reads", None) => {
+                    unimplemented!()
+                },
+                ("update", None) => {
+                    unimplemented!()
+                },
+                ("delete", None) => {
+                    unimplemented!()
+                },
+            },
+            ("post", None) => {
+                unimplemented!()
+            },
+            ("like", None) => {
+                unimplemented!()
+            },
+            ("pin", None) => {
+                unimplemented!()
+            },
+            ("bookmark", None) => {
+                unimplemented!()
+            },
+            sc => unreachable!("unrecognized subcommand. (impl error): {:?}", sc),
+        }
+    };
+
+    let tmp = match res {
+        Ok(o) => Ok(o),
+        Err(e) => Err(e.to_string()),
+    };
+
+    Some(tmp)
 }
 
 pub async fn parse_msg(msg: &str) -> Option<MsgCommand> {
