@@ -396,11 +396,7 @@ impl<T> ConvertRange<T> for RangeFull {
 }
 impl<T> ConvertRange<T> for RangeInclusive<T> {
     fn to_turple(self) -> (Bound<T>, Bound<T>) {
-        let RangeInclusive {
-            start,
-            end,
-            exhausted: _,
-        } = self;
+        let (start, end) = self.into_inner();
         (Bound::Included(start), Bound::Included(end))
     }
 }
