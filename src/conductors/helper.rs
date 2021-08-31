@@ -67,20 +67,23 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                         .value_of("page")
                         .map(|s| parse_num(s, &mut errs))
                         .unwrap();
-                    let mut query = UserQuery::default();
+                    let mut query = Default::default();
 
-                    if let Some(s) = ams2.value_of("posted") {
-                        query.posted = Some(parse_array(s, &mut errs).drain(..).collect());
-                    }
-                    if let Some(s) = ams2.value_of("posted_num") {
-                        query.posted_num = Some(parse_range(s, &mut errs));
-                    }
-                    if let Some(s) = ams2.value_of("bookmark") {
-                        query.posted = Some(parse_array(s, &mut errs).drain(..).collect());
-                    }
-                    if let Some(s) = ams2.value_of("bookmark_num") {
-                        query.bookmark_num = Some(parse_range(s, &mut errs));
-                    }
+                    let UserQuery {
+                        posted,
+                        posted_num,
+                        bookmark,
+                        bookmark_num,
+                    } = &mut query;
+                    *posted = ams2
+                        .value_of("posted")
+                        .map(|s| parse_array(s, &mut errs).drain(..).collect());
+                    *posted_num = ams2
+                        .value_of("posted_num")
+                        .map(|s| parse_range(s, &mut errs));
+                    *bookmark_num = ams2
+                        .value_of("bookmark_num")
+                        .map(|s| parse_range(s, &mut errs));
 
                     UserCommandV2::Reads { page, query }
                 },
