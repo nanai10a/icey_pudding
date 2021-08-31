@@ -6,12 +6,11 @@ use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
 use serenity::model::channel::Message;
 use serenity::model::id::UserId;
-use serenity::model::interactions::Interaction;
 use serenity::model::prelude::User;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use crate::entities::{Author, Content, PartialAuthor};
+use crate::entities::{Content, PartialAuthor};
 use crate::handlers::Handler;
 use crate::repositories::{ContentMutation, ContentQuery, UserMutation, UserQuery};
 
@@ -22,8 +21,6 @@ mod command_colors;
 mod command_strs;
 mod helper;
 mod macros;
-
-pub use appcmd::application_command_create;
 
 pub struct Conductor {
     pub handler: Handler,
@@ -307,45 +304,6 @@ impl Conductor {
 
 #[async_trait]
 impl EventHandler for Conductor {
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        let aci = match interaction {
-            Interaction::ApplicationCommand(aci) => aci,
-            _ => return eprintln!("received not `application command`"),
-        };
-
-        let cmd = match helper::parse_ia(&aci.data).await {
-            Ok(c) => c,
-            Err(e) => return eprintln!("{}", e),
-        };
-
-        let nick_opt_string = match aci.guild_id {
-            Some(gi) => aci.user.nick_in(&ctx, gi).await,
-            None => None,
-        };
-
-        let nick_opt = nick_opt_string.as_deref();
-
-        let mut resps = self
-            .handle(cmd, aci.user.id, aci.user.name.clone(), nick_opt)
-            .await;
-
-        let res = aci
-            .create_interaction_response(&ctx, |cir| {
-                cir.interaction_response_data(|cird| {
-                    resps.drain(..).for_each(|resp| {
-                        cird.create_embed(|ce| helper::build_embed_from_resp(ce, resp));
-                    });
-                    cird
-                })
-            })
-            .await;
-
-        match res {
-            Ok(o) => o,
-            Err(e) => eprintln!("{}", e),
-        };
-    }
-
     async fn message(&self, ctx: Context, msg: Message) {
         let parse_res = match helper::parse_msg_v2(msg.content.as_str()).await {
             Some(o) => o,
