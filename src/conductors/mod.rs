@@ -1,4 +1,7 @@
 use std::fmt::Display;
+use std::ops::{
+    Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
+};
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -175,6 +178,47 @@ impl Conductor {
                 fields: vec![],
             }],
         }
+    }
+}
+
+trait ConvertRange<T>: RangeBounds<T> {
+    fn to_turple(self) -> (Bound<T>, Bound<T>);
+}
+impl<T> ConvertRange<T> for Range<T> {
+    fn to_turple(self) -> (Bound<T>, Bound<T>) {
+        let Range { start, end } = self;
+        (Bound::Included(start), Bound::Excluded(end))
+    }
+}
+impl<T> ConvertRange<T> for RangeFrom<T> {
+    fn to_turple(self) -> (Bound<T>, Bound<T>) {
+        let RangeFrom { start } = self;
+        (Bound::Included(start), Bound::Unbounded)
+    }
+}
+impl<T> ConvertRange<T> for RangeFull {
+    fn to_turple(self) -> (Bound<T>, Bound<T>) { (Bound::Unbounded, Bound::Unbounded) }
+}
+impl<T> ConvertRange<T> for RangeInclusive<T> {
+    fn to_turple(self) -> (Bound<T>, Bound<T>) {
+        let RangeInclusive {
+            start,
+            end,
+            exhausted: _,
+        } = self;
+        (Bound::Included(start), Bound::Included(end))
+    }
+}
+impl<T> ConvertRange<T> for RangeTo<T> {
+    fn to_turple(self) -> (Bound<T>, Bound<T>) {
+        let RangeTo { end } = self;
+        (Bound::Unbounded, Bound::Excluded(end))
+    }
+}
+impl<T> ConvertRange<T> for RangeToInclusive<T> {
+    fn to_turple(self) -> (Bound<T>, Bound<T>) {
+        let RangeToInclusive { end } = self;
+        (Bound::Unbounded, Bound::Included(end))
     }
 }
 
