@@ -142,7 +142,16 @@ impl Conductor {
 
         let res: Result<Vec<Response>> = try {
             match cmd {
-                CommandV2::User(UserCommandV2::Create) => unimplemented!(),
+                CommandV2::User(UserCommandV2::Create) => {
+                    let user = self.handler.create_user_v2(*user_id.as_u64()).await?;
+
+                    vec![helper::resp_from_user(
+                        "registered user",
+                        from_user_shows,
+                        USER_CREATE,
+                        user,
+                    )]
+                },
                 CommandV2::User(UserCommandV2::Read { id }) => unimplemented!(),
                 CommandV2::User(UserCommandV2::Reads { page, query }) => unimplemented!(),
                 CommandV2::User(UserCommandV2::Update { id, mutation }) => unimplemented!(),
