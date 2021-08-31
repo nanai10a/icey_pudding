@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::ops::{
     Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
@@ -9,12 +8,12 @@ use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
 use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
-use serenity::model::id::{GuildId, UserId};
+use serenity::model::id::UserId;
 use serenity::model::prelude::User;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use crate::entities::{Author, Content, PartialAuthor};
+use crate::entities::{Author, PartialAuthor};
 use crate::handlers::Handler;
 use crate::repositories::{ContentMutation, ContentQuery, UserMutation, UserQuery};
 
