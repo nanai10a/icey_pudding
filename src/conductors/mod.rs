@@ -11,7 +11,7 @@ use serenity::model::prelude::User;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use crate::entities::{Author, Content};
+use crate::entities::{Author, Content, PartialAuthor};
 use crate::handlers::Handler;
 use crate::repositories::{ContentMutation, ContentQuery, UserMutation, UserQuery};
 
@@ -75,7 +75,10 @@ pub enum CommandV2 {
     /// commands about content.
     Content(ContentCommandV2),
     /// post content with executed user's id.
-    Post { author: Author, content: String },
+    Post {
+        author: PartialAuthor,
+        content: String,
+    },
     /// (un)like content with executed user's id.
     Like { content_id: Uuid, undo: bool },
     /// (un)pin content with executed user's id.
