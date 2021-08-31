@@ -20,7 +20,9 @@ use super::{
     UserCommandV2,
 };
 use crate::entities::{Content, User};
-use crate::repositories::{Comparison, ContentQuery, UserQuery};
+use crate::repositories::{
+    Comparison, ContentContentMutation, ContentMutation, ContentQuery, UserMutation, UserQuery,
+};
 
 #[deprecated]
 pub async fn parse_ia(_: &ApplicationCommandInteractionData) -> Result<Command> {
@@ -83,7 +85,17 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                     UserCommandV2::Reads { page, query }
                 },
                 ("update", Some(ams2)) => {
-                    unimplemented!()
+                    let id = ams2
+                        .value_of("id")
+                        .map(|s| parse_num(s, &mut errs))
+                        .unwrap();
+                    let mut mutation = Default::default();
+
+                    let UserMutation { admin, sub_admin } = &mut mutation;
+                    *admin = ams2.value_of("admin").map(|s| parse_bool(s, &mut errs));
+                    *sub_admin = ams2.value_of("sub_admin").map(|s| parse_bool(s, &mut errs));
+
+                    UserCommandV2::Update { id, mutation }
                 },
                 sc => unreachable!("unrecognized subcommand on `user`. (impl error): {:?}", sc),
             }),
@@ -579,6 +591,18 @@ fn parse_uuid(s: &str, errs: &mut Vec<String>) -> Uuid {
         Err(e) => {
             errs.push(e.to_string());
             Default::default() // tmp value
+        },
+    }
+}
+
+#[inline]
+fn parse_bool(s: &str, errs: &mut Vec<String>) -> bool {
+    // FIXME: allows few differences
+    match s.parse() {
+        Ok(o) => o,
+        Err(e) => {
+            errs.push(e.to_string());
+            Default::default()
         },
     }
 }
