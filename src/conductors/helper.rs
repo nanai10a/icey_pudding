@@ -7,6 +7,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Error, Result};
 use clap::ErrorKind;
+use regex::Regex;
 use serde::de::DeserializeOwned;
 use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
@@ -21,7 +22,8 @@ use super::{
 };
 use crate::entities::{Content, User};
 use crate::repositories::{
-    Comparison, ContentContentMutation, ContentMutation, ContentQuery, UserMutation, UserQuery,
+    AuthorQuery, Comparison, ContentContentMutation, ContentMutation, ContentQuery, PostedQuery,
+    UserMutation, UserQuery,
 };
 
 #[deprecated]
@@ -112,7 +114,81 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                     ContentCommandV2::Read { id }
                 },
                 ("reads", Some(ams2)) => {
-                    unimplemented!()
+                    let page = ams2
+                        .value_of("page")
+                        .map(|s| parse_num(s, &mut errs))
+                        .unwrap();
+                    let mut query = Default::default();
+
+                    let ContentQuery {
+                        author,
+                        posted,
+                        content,
+                        liked,
+                        liked_num,
+                        pinned,
+                        pinned_num,
+                    } = &mut query;
+
+                    *author = ams2
+                        .values_of("author")
+                        .map(|vs| vs.collect::<Vec<_>>())
+                        .map(|mut v| match v.len() {
+                            2 => (v.remove(0), v.remove(0)),
+                            l => unreachable!(
+                                "illegal args (expected: 2, found: {}) (impl error)",
+                                l
+                            ),
+                        })
+                        .map(|(ty, val)| {
+                            match ty {
+                                "id" => AuthorQuery::UserId(parse_num(val, &mut errs)),
+                                "name" => AuthorQuery::UserName(parse_regex(val, &mut errs)),
+                                "nick" => AuthorQuery::UserNick(parse_regex(val, &mut errs)),
+                                "virt" => AuthorQuery::Virtual(parse_regex(val, &mut errs)),
+                                "any" => AuthorQuery::Any(parse_regex(val, &mut errs)),
+                                s => {
+                                    errs.push(format!("unrecognized author_query type: {}", s));
+                                    AuthorQuery::UserId(0) // tmp value
+                                },
+                            }
+                        });
+                    *posted = ams2
+                        .values_of("posted")
+                        .map(|vs| vs.collect::<Vec<_>>())
+                        .map(|mut v| match v.len() {
+                            2 => (v.remove(0), v.remove(0)),
+                            l => unreachable!(
+                                "illegal args (expected: 2, found: {}) (impl error)",
+                                l
+                            ),
+                        })
+                        .map(|(ty, val)| match val {
+                            "id" => PostedQuery::UserId(parse_num(val, &mut errs)),
+                            "name" => PostedQuery::UserName(parse_regex(val, &mut errs)),
+                            "nick" => PostedQuery::UserNick(parse_regex(val, &mut errs)),
+                            "any" => PostedQuery::Any(parse_regex(val, &mut errs)),
+                            s => {
+                                errs.push(format!("unrecognized posted_query type: {}", s));
+
+                                PostedQuery::UserId(0) // tmp value
+                            },
+                        });
+                    *content = ams2.value_of("content").map(|s| parse_regex(s, &mut errs));
+                    *liked = ams2
+                        .value_of("liked")
+                        .map(|s| parse_array(s, &mut errs).drain(..).collect());
+                    *liked_num = ams2
+                        .value_of("liked_num")
+                        .map(|s| parse_range(s, &mut errs));
+                    *pinned = ams2
+                        .value_of("pinned")
+                        .map(|s| parse_array(s, &mut errs).drain(..).collect());
+                    *pinned_num = ams2
+                        .value_of("pinned_num")
+                        .map(|s| parse_range(s, &mut errs));
+
+                    ContentCommandV2::Reads { page, query }
                 },
                 ("update", Some(ams2)) => {
                     unimplemented!()
@@ -606,6 +682,17 @@ fn parse_bool(s: &str, errs: &mut Vec<String>) -> bool {
         Err(e) => {
             errs.push(e.to_string());
             Default::default()
+        },
+    }
+}
+
+#[inline]
+fn parse_regex(s: &str, errs: &mut Vec<String>) -> Regex {
+    match s.parse() {
+        Ok(o) => o,
+        Err(e) => {
+            errs.push(e.to_string());
+            "".parse().unwrap() // tmp value
         },
     }
 }
