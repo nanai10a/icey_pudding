@@ -251,7 +251,26 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                 ),
             }),
             ("post", Some(ams1)) => {
-                unimplemented!()
+                let author = ams1
+                    .values_of("author")
+                    .map(|vs| vs.collect::<Vec<_>>())
+                    .map(|mut v| match v.len() {
+                        2 => (v.remove(0), v.remove(0)),
+                        l => unreachable!("illegal args (expected: 2, found: {}) (impl error)", l),
+                    })
+                    .map(|(ty, val)| match ty {
+                        "user" => PartialAuthor::User(parse_num(val, &mut errs)),
+                        "virt" => PartialAuthor::Virtual(val.to_string()),
+                        s => {
+                            errs.push(format!("unrecognized post_author type: {}", s));
+
+                            PartialAuthor::User(0) // tmp value
+                        },
+                    })
+                    .unwrap();
+                let content = ams1.value_of("content").map(|s| s.to_string()).unwrap();
+
+                CommandV2::Post { author, content }
             },
             ("like", Some(ams1)) => {
                 unimplemented!()
