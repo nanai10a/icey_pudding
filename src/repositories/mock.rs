@@ -20,9 +20,13 @@ impl<T> Default for InMemoryRepository<T> {
 #[async_trait]
 impl UserRepository for InMemoryRepository<User> {
     async fn insert(&self, item: User) -> Result<bool> {
-        self.0.lock().await.push(item);
+        let mut guard = self.0.lock().await;
+        if guard.iter().filter(|v| v.id == item.id).count() != 0 {
+            return Ok(false);
+        }
 
-        Ok(unimplemented!())
+        guard.push(item);
+        Ok(true)
     }
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
