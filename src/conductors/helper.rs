@@ -22,8 +22,8 @@ use super::{
 };
 use crate::entities::{Content, User};
 use crate::repositories::{
-    AuthorQuery, Comparison, ContentContentMutation, ContentMutation, ContentQuery, PostedQuery,
-    UserMutation, UserQuery,
+    AuthorQuery, Comparison, ContentAuthorMutation, ContentContentMutation, ContentMutation,
+    ContentQuery, PostedQuery, UserMutation, UserQuery,
 };
 
 #[deprecated]
@@ -191,10 +191,59 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                     ContentCommandV2::Reads { page, query }
                 },
                 ("update", Some(ams2)) => {
-                    unimplemented!()
+                    let id = ams2
+                        .value_of("id")
+                        .map(|s| parse_uuid(s, &mut errs))
+                        .unwrap();
+                    let mut mutation = Default::default();
+
+                    let ContentMutation { author, content } = &mut mutation;
+                    *author = ams2
+                        .values_of("author")
+                        .map(|vs| vs.collect::<Vec<_>>())
+                        .map(|mut v| match v.len() {
+                            2 => (v.remove(0), v.remove(0)),
+                            l => unreachable!(
+                                "illegal args (expected: 2, found: {}) (impl error)",
+                                l
+                            ),
+                        })
+                        .map(|(ty, val)| match ty {
+                            "user" => ContentAuthorMutation::User(parse_num(val, &mut errs)),
+                            "virt" => ContentAuthorMutation::Virtual(val.to_string()),
+                            s => {
+                                errs.push(format!("unrecognized author_mutation type: {}", s));
+
+                                ContentAuthorMutation::User(0) // tmp value
+                            },
+                        });
+                    *content = ams2
+                        .value_of("complete")
+                        .map(|s| ContentContentMutation::Complete(s.to_string()));
+                    *content = ams2
+                        .values_of("sed")
+                        .map(|vs| vs.collect::<Vec<_>>())
+                        .map(|mut v| match v.len() {
+                            2 => (v.remove(0), v.remove(0)),
+                            l => unreachable!(
+                                "illegal args (expected: 2, found: {}) (impl error)",
+                                l
+                            ),
+                        })
+                        .map(|(val0, val1)| ContentContentMutation::Sed {
+                            capture: parse_regex(val0, &mut errs),
+                            replace: parse_regex(val1, &mut errs),
+                        });
+
+                    ContentCommandV2::Update { id, mutation }
                 },
                 ("delete", Some(ams2)) => {
-                    unimplemented!()
+                    let id = ams2
+                        .value_of("id")
+                        .map(|s| parse_uuid(s, &mut errs))
+                        .unwrap();
+
+                    ContentCommandV2::Delete { id }
                 },
                 sc => unreachable!(
                     "unrecognized subcommand on `content`. (impl error): {:?}",

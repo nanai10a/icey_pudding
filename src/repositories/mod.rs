@@ -141,8 +141,14 @@ pub struct UserMutation {
 
 #[derive(Debug, Clone, Default)]
 pub struct ContentMutation {
-    pub author: Option<Author>,
+    pub author: Option<ContentAuthorMutation>,
     pub content: Option<ContentContentMutation>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ContentAuthorMutation {
+    User(u64),
+    Virtual(String),
 }
 
 #[derive(Debug, Clone)]
