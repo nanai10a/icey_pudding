@@ -141,152 +141,20 @@ impl Conductor {
         use command_colors::*;
 
         let res: Result<Vec<Response>> = try {
-            let resp: Vec<Response> = match cmd {
-                Command::UserRegister => vec![helper::resp_from_user(
-                    "registered user",
-                    from_user_shows,
-                    REGISTER,
-                    self.handler.create_user(user_id).await?,
-                )],
-                Command::UserRead => vec![helper::resp_from_user(
-                    "showing user",
-                    from_user_shows,
-                    INFO,
-                    self.handler.read_user(user_id).await?,
-                )],
-                Command::UserUpdate {
-                    admin: new_admin,
-                    sub_admin: new_sub_admin,
-                } => vec![helper::resp_from_user(
-                    "updated user",
-                    from_user_shows,
-                    CHANGE,
-                    self.handler
-                        .update_user(user_id, new_admin, new_sub_admin)
-                        .await?,
-                )],
-                Command::Bookmark { content_id, undo } => {
-                    unimplemented!();
-                    vec![Response {
-                        title: "bookmarked".to_string(),
-                        rgb: BOOKMARK,
-                        description: from_user_shows,
-                        fields: vec![("id:".to_string(), format!("{}", content_id))],
-                    }]
-                },
-                Command::UserDelete => {
-                    self.handler.delete_user(user_id).await?;
-
-                    vec![Response {
-                        title: "deleted user".to_string(),
-                        rgb: DELETE_ME,
-                        description: "see you!".to_string(),
-                        fields: vec![],
-                    }]
-                },
-                Command::ContentPost { content, author } => vec![helper::resp_from_content(
-                    "posted content",
-                    from_user_shows,
-                    POST,
-                    self.handler
-                        .create_content_and_posted_update_user(content, user_id, author)
-                        .await?,
-                )],
-                Command::ContentRead { queries, page } => {
-                    // 一度に表示するcontentsは5つ.
-                    const ITEMS: usize = 5;
-
-                    let mut matchces = self.handler.read_content(queries).await?;
-                    match matchces.len() {
-                        0 => vec![Response {
-                            title: "try showing contents, but...".to_string(),
-                            description: "not found. (match: 0)".to_string(),
-                            rgb: ERROR,
-                            fields: vec![],
-                        }],
-                        len => matchces
-                            .drain({
-                                let all_range = ..len;
-                                let range = (ITEMS * (page as usize - 1))
-                                    ..(ITEMS + ITEMS * (page as usize - 1));
-
-                                if !all_range.contains(&range.start) {
-                                    Err(anyhow::anyhow!("out of bounds. (total: 0..{})", len))?;
-                                }
-
-                                if !all_range.contains(&range.end) {
-                                    range.start..len
-                                } else {
-                                    range
-                                }
-                            })
-                            .enumerate()
-                            .map(|(i, v)| {
-                                helper::resp_from_content(
-                                    format!("showing contents: {} | {}", i, page),
-                                    from_user_shows.clone(),
-                                    GET,
-                                    v,
-                                )
-                            })
-                            .collect(),
-                    }
-                },
-                Command::ContentUpdate {
-                    content_id,
-                    new_content,
-                } => vec![helper::resp_from_content(
-                    "updated content",
-                    from_user_shows,
-                    EDIT,
-                    self.handler.update_content(content_id, new_content).await?,
-                )],
-
-                Command::Like { content_id, undo } => {
-                    let Content { liked, .. } = self
-                        .handler
-                        .like_update_content(content_id, user_id, undo)
-                        .await?;
-
-                    vec![Response {
-                        title: "liked".to_string(),
-                        rgb: LIKE,
-                        description: from_user_shows,
-                        fields: vec![
-                            ("id:".to_string(), format!("{}", content_id)),
-                            ("liked:".to_string(), format!("{}", liked.len())),
-                        ],
-                    }]
-                },
-                Command::Pin { content_id, undo } => {
-                    let Content { pinned, .. } = self
-                        .handler
-                        .pin_update_content(content_id, user_id, undo)
-                        .await?;
-
-                    vec![Response {
-                        title: "pinned".to_string(),
-                        rgb: PIN,
-                        description: from_user_shows,
-                        fields: vec![
-                            ("id:".to_string(), format!("{}", content_id)),
-                            ("pinned:".to_string(), format!("{}", pinned.len())),
-                        ],
-                    }]
-                },
-                Command::ContentDelete { content_id } => {
-                    self.handler.delete_content(content_id).await?;
-
-                    vec![Response {
-                        title: "deleted content".to_string(),
-                        description: "i'm sad...".to_string(),
-                        rgb: REMOVE,
-                        fields: vec![("id:".to_string(), format!("{}", content_id))],
-                    }]
-                },
-            };
-
-            resp
+            match cmd {
+                CommandV2::User(UserCommandV2::Create) => unimplemented!(),
+                CommandV2::User(UserCommandV2::Read { id }) => unimplemented!(),
+                CommandV2::User(UserCommandV2::Reads { page, query }) => unimplemented!(),
+                CommandV2::User(UserCommandV2::Update { id, mutation }) => unimplemented!(),
+                CommandV2::Content(ContentCommandV2::Read { id }) => unimplemented!(),
+                CommandV2::Content(ContentCommandV2::Reads { page, query }) => unimplemented!(),
+                CommandV2::Content(ContentCommandV2::Update { id, mutation }) => unimplemented!(),
+                CommandV2::Content(ContentCommandV2::Delete { id }) => unimplemented!(),
+                CommandV2::Post { author, content } => unimplemented!(),
+                CommandV2::Like { content_id, undo } => unimplemented!(),
+                CommandV2::Pin { content_id, undo } => unimplemented!(),
+                CommandV2::Bookmark { content_id, undo } => unimplemented!(),
+            }
         };
 
         match res {
@@ -332,7 +200,7 @@ impl EventHandler for Conductor {
                     Ok(_) => (),
                     Err(e) => eprintln!("err: {}", e),
                 };
-            }
+            },
         };
 
         let nick_opt_string = msg.author_nick(&ctx).await;
