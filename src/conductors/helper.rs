@@ -163,7 +163,7 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                                 l
                             ),
                         })
-                        .map(|(ty, val)| match val {
+                        .map(|(ty, val)| match ty {
                             "id" => PostedQuery::UserId(parse_num(val, &mut errs)),
                             "name" => PostedQuery::UserName(parse_regex(val, &mut errs)),
                             "nick" => PostedQuery::UserNick(parse_regex(val, &mut errs)),
