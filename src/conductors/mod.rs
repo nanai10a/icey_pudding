@@ -3,7 +3,7 @@ use std::ops::{
     Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
@@ -155,17 +155,197 @@ impl Conductor {
                         user,
                     )]
                 },
-                CommandV2::User(UserCommandV2::Read { id }) => unimplemented!(),
-                CommandV2::User(UserCommandV2::Reads { page, query }) => unimplemented!(),
-                CommandV2::User(UserCommandV2::Update { id, mutation }) => unimplemented!(),
-                CommandV2::Content(ContentCommandV2::Read { id }) => unimplemented!(),
-                CommandV2::Content(ContentCommandV2::Reads { page, query }) => unimplemented!(),
-                CommandV2::Content(ContentCommandV2::Update { id, mutation }) => unimplemented!(),
-                CommandV2::Content(ContentCommandV2::Delete { id }) => unimplemented!(),
-                CommandV2::Post { author, content } => unimplemented!(),
-                CommandV2::Like { content_id, undo } => unimplemented!(),
-                CommandV2::Pin { content_id, undo } => unimplemented!(),
-                CommandV2::Bookmark { content_id, undo } => unimplemented!(),
+                CommandV2::User(UserCommandV2::Read { id }) => {
+                    let user = self.handler.read_user_v2(user_id.0).await?;
+
+                    vec![helper::resp_from_user(
+                        "showing user",
+                        from_user_shows,
+                        USER_READ,
+                        user,
+                    )]
+                },
+                CommandV2::User(UserCommandV2::Reads { page, query }) => {
+                    let mut users = self.handler.read_users_v2(query).await?;
+
+                    if users.is_empty() {
+                        Err(anyhow!("matched: {}", users.len()))?
+                    }
+
+                    const ITEMS: usize = 5; // show 5[users]/[page]
+
+                    let lim = {
+                        let full = ..users.len();
+                        let lim =
+                            (ITEMS * (page as usize - 1))..(ITEMS + ITEMS * (page as usize - 1));
+
+                        if !full.contains(&lim.start) {
+                            Err(anyhow!("out of range (0..{} !< {:?})", users.len(), lim))?
+                        }
+
+                        if !full.contains(&lim.end) {
+                            (lim.start..).to_turple()
+                        } else {
+                            lim.to_turple()
+                        }
+                    };
+                    let all_pages = ((users.len() as f32) / (ITEMS as f32)).ceil();
+                    users
+                        .drain(..)
+                        .enumerate()
+                        .collect::<Vec<_>>()
+                        .drain(lim)
+                        .enumerate()
+                        .map(|(s, (i, u))| {
+                            helper::resp_from_user(
+                                format!("showing users: {}[{}] | {}/{}", i, s, page, all_pages),
+                                from_user_shows.clone(),
+                                USER_READ,
+                                u,
+                            )
+                        })
+                        .collect()
+                },
+                CommandV2::User(UserCommandV2::Update { id, mutation }) => {
+                    let user = self.handler.update_user_v2(id, mutation).await?;
+
+                    vec![helper::resp_from_user(
+                        "updated user",
+                        from_user_shows,
+                        USER_UPDATE,
+                        user,
+                    )]
+                },
+                CommandV2::Content(ContentCommandV2::Read { id }) => {
+                    let content = self.handler.read_content_v2(id).await?;
+
+                    vec![helper::resp_from_content(
+                        "showing content",
+                        from_user_shows,
+                        CONTENT_READ,
+                        content,
+                    )]
+                },
+                CommandV2::Content(ContentCommandV2::Reads { page, query }) => {
+                    let mut contents = self.handler.read_contents_v2(query).await?;
+
+                    if contents.is_empty() {
+                        Err(anyhow!("matched: {}", contents.len()))?
+                    }
+
+                    const ITEMS: usize = 5; // show 5[contents]/[page]
+
+                    let lim = {
+                        let full = ..contents.len();
+                        let lim =
+                            (ITEMS * (page as usize - 1))..(ITEMS + ITEMS * (page as usize - 1));
+
+                        if !full.contains(&lim.start) {
+                            Err(anyhow!("out of range (0..{} !< {:?})", contents.len(), lim))?
+                        }
+
+                        if !full.contains(&lim.end) {
+                            (lim.start..).to_turple()
+                        } else {
+                            lim.to_turple()
+                        }
+                    };
+                    let all_pages = ((contents.len() as f32) / (ITEMS as f32)).ceil();
+                    contents
+                        .drain(..)
+                        .enumerate()
+                        .collect::<Vec<_>>()
+                        .drain(lim)
+                        .enumerate()
+                        .map(|(s, (i, c))| {
+                            helper::resp_from_content(
+                                format!("showing contents: {}[{}] | {}/{}", i, s, page, all_pages),
+                                from_user_shows.clone(),
+                                CONTENT_READ,
+                                c,
+                            )
+                        })
+                        .collect()
+                },
+                CommandV2::Content(ContentCommandV2::Update { id, mutation }) => {
+                    let content = self.handler.update_content_v2(id, mutation).await?;
+
+                    vec![helper::resp_from_content(
+                        "updated user",
+                        from_user_shows,
+                        CONTENT_UPDATE,
+                        content,
+                    )]
+                },
+                CommandV2::Content(ContentCommandV2::Delete { id }) => {
+                    let content = self.handler.delete_content_v2(id).await?;
+
+                    vec![helper::resp_from_content(
+                        "deleted content",
+                        from_user_shows,
+                        CONTENT_DELETE,
+                        content,
+                    )]
+                },
+                CommandV2::Post {
+                    author: partial_author,
+                    content,
+                } => {
+                    let author = unimplemented!();
+                    let content = self.handler.post_v2(content, user_id.0, author).await?;
+
+                    vec![helper::resp_from_content(
+                        "posted content",
+                        from_user_shows,
+                        POST,
+                        content,
+                    )]
+                },
+                CommandV2::Like { content_id, undo } => {
+                    let content = self.handler.like_v2(content_id, user_id.0, undo).await?;
+
+                    let title = match undo {
+                        false => "liked",
+                        true => "unliked",
+                    };
+                    vec![helper::resp_from_content(
+                        title,
+                        from_user_shows,
+                        LIKE,
+                        content,
+                    )]
+                },
+                CommandV2::Pin { content_id, undo } => {
+                    let content = self.handler.pin_v2(content_id, user_id.0, undo).await?;
+
+                    let title = match undo {
+                        false => "pinned",
+                        true => "unpinned",
+                    };
+                    vec![helper::resp_from_content(
+                        title,
+                        from_user_shows,
+                        PIN,
+                        content,
+                    )]
+                },
+                CommandV2::Bookmark { content_id, undo } => {
+                    let (user, _) = self
+                        .handler
+                        .bookmark_v2(user_id.0, content_id, undo)
+                        .await?;
+
+                    let title = match undo {
+                        false => "bookmarked",
+                        true => "unbookmarked",
+                    };
+                    vec![helper::resp_from_user(
+                        title,
+                        from_user_shows,
+                        BOOKMARK,
+                        user,
+                    )]
+                },
             }
         };
 
