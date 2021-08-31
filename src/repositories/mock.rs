@@ -10,6 +10,10 @@ use crate::entities::{Content, User};
 
 pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
 
+impl<T> InMemoryRepository<T> {
+    pub fn new() -> Self { Self(Mutex::new(vec![])) }
+}
+
 #[async_trait]
 impl UserRepository for InMemoryRepository<User> {
     async fn insert(&self, item: User) -> Result<bool> {
