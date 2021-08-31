@@ -1,11 +1,10 @@
 use std::collections::HashMap;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 use std::io::Cursor;
-use std::num::ParseIntError;
 use std::ops::Bound;
 use std::str::FromStr;
 
-use anyhow::{anyhow, bail, Error, Result};
+use anyhow::{anyhow, Result};
 use clap::ErrorKind;
 use regex::Regex;
 use serde::de::DeserializeOwned;
