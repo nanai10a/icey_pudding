@@ -7,6 +7,7 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
+use serenity::http::Http;
 use serenity::model::channel::Message;
 use serenity::model::id::UserId;
 use serenity::model::prelude::User;
@@ -136,11 +137,9 @@ impl Conductor {
         &self,
         cmd: CommandV2,
         user_id: UserId,
-        user_name: impl Display,
-        user_nick: Option<&str>,
+        from_user_shows: impl ToString,
+        http: impl AsRef<Http>,
     ) -> Vec<Response> {
-        let from_user_shows = format!("from: {} ({})", user_name, user_nick.unwrap_or(""));
-
         use command_colors::*;
 
         let res: Result<Vec<Response>> = try {
@@ -199,7 +198,7 @@ impl Conductor {
                         .map(|(s, (i, u))| {
                             helper::resp_from_user(
                                 format!("showing users: {}[{}] | {}/{}", i, s, page, all_pages),
-                                from_user_shows.clone(),
+                                from_user_shows.to_string(),
                                 USER_READ,
                                 u,
                             )
@@ -260,7 +259,7 @@ impl Conductor {
                         .map(|(s, (i, c))| {
                             helper::resp_from_content(
                                 format!("showing contents: {}[{}] | {}/{}", i, s, page, all_pages),
-                                from_user_shows.clone(),
+                                from_user_shows.to_string(),
                                 CONTENT_READ,
                                 c,
                             )
@@ -451,7 +450,14 @@ impl EventHandler for Conductor {
             id: user_id, name, ..
         } = author;
 
-        let mut resps = self.handle(cmd, user_id, name, nick_opt).await;
+        let mut resps = self
+            .handle(
+                cmd,
+                user_id,
+                format!("from: {} ({})", name, nick_opt.unwrap_or("")),
+                ctx.clone(),
+            )
+            .await;
 
         let res = channel_id
             .send_message(ctx.http, |cm| {
