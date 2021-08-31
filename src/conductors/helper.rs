@@ -323,8 +323,8 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
 pub async fn parse_msg(_: &str) -> Option<MsgCommand> { unimplemented!() }
 
 pub fn resp_from_user(
-    title: impl Display,
-    description: impl Display,
+    title: impl ToString,
+    description: impl ToString,
     rgb: (u8, u8, u8),
     User {
         id,
@@ -335,22 +335,22 @@ pub fn resp_from_user(
     }: User,
 ) -> Response {
     Response {
-        title: format!("{}", title),
+        title: title.to_string(),
         rgb,
-        description: format!("{}", description),
+        description: description.to_string(),
         fields: vec![
-            ("id:".to_string(), format!("{}", id)),
-            ("is_admin?".to_string(), format!("{}", admin)),
-            ("is_sub_admin?".to_string(), format!("{}", sub_admin)),
-            ("posted:".to_string(), format!("{}", posted.len())),
-            ("bookmarked:".to_string(), format!("{}", bookmark.len())),
+            ("id:".to_string(), id.to_string()),
+            ("is_admin?".to_string(), admin.to_string()),
+            ("is_sub_admin?".to_string(), sub_admin.to_string()),
+            ("posted:".to_string(), posted.len().to_string()),
+            ("bookmarked:".to_string(), bookmark.len().to_string()),
         ],
     }
 }
 
 pub fn resp_from_content(
-    title: impl Display,
-    description: impl Display,
+    title: impl ToString,
+    description: impl ToString,
     rgb: (u8, u8, u8),
     Content {
         id,
@@ -358,22 +358,20 @@ pub fn resp_from_content(
         author,
         posted,
         liked,
-        bookmarked,
         pinned,
     }: Content,
 ) -> Response {
     Response {
-        title: format!("{}", title),
+        title: title.to_string(),
         rgb,
-        description: format!("{}", description),
+        description: description.to_string(),
         fields: vec![
-            ("id:".to_string(), format!("{}", id)),
-            ("author".to_string(), author),
-            ("posted".to_string(), format!("{}", posted)),
+            ("id:".to_string(), id.to_string()),
+            ("author".to_string(), author.to_string()),
+            ("posted".to_string(), posted.to_string()),
             ("content:".to_string(), content),
-            ("liked:".to_string(), format!("{}", liked.len())),
-            ("pinned:".to_string(), format!("{}", pinned.len())),
-            ("bookmarked:".to_string(), format!("{}", bookmarked)),
+            ("liked:".to_string(), liked.len().to_string()),
+            ("pinned:".to_string(), pinned.len().to_string()),
         ],
     }
 }
