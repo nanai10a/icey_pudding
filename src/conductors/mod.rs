@@ -7,14 +7,14 @@ use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
-use serenity::http::Http;
+use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
-use serenity::model::id::UserId;
+use serenity::model::id::{GuildId, UserId};
 use serenity::model::prelude::User;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use crate::entities::{Content, PartialAuthor};
+use crate::entities::{Author, Content, PartialAuthor};
 use crate::handlers::Handler;
 use crate::repositories::{ContentMutation, ContentQuery, UserMutation, UserQuery};
 
@@ -138,7 +138,8 @@ impl Conductor {
         cmd: CommandV2,
         user_id: UserId,
         from_user_shows: impl ToString,
-        http: impl AsRef<Http>,
+        http: impl CacheHttp,
+        guild_id: Option<u64>,
     ) -> Vec<Response> {
         use command_colors::*;
 
@@ -290,7 +291,23 @@ impl Conductor {
                     author: partial_author,
                     content,
                 } => {
-                    let author = unimplemented!();
+                    let author = match partial_author {
+                        PartialAuthor::Virtual(s) => Author::Virtual(s),
+                        PartialAuthor::User(id) => {
+                            let user = http.http().get_user(id).await?;
+                            let nick = match guild_id {
+                                Some(i) => user.nick_in(http, i).await,
+                                None => None,
+                            };
+
+                            Author::User {
+                                id,
+                                name: user.name,
+                                nick,
+                            }
+                        },
+                    };
+
                     let content = self.handler.post_v2(content, user_id.0, author).await?;
 
                     vec![helper::resp_from_content(
@@ -456,6 +473,7 @@ impl EventHandler for Conductor {
                 user_id,
                 format!("from: {} ({})", name, nick_opt.unwrap_or("")),
                 ctx.clone(),
+                guild_id_opt.map(|i| i.0),
             )
             .await;
 
