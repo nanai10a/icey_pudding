@@ -51,23 +51,16 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
             },
         };
 
-        match ams0.subcommand() {
+        let mut errs = vec![];
+        let cmd = match ams0.subcommand() {
             ("user", Some(ams1)) => CommandV2::User(match ams1.subcommand() {
                 ("create", Some(_)) => UserCommandV2::Create,
                 ("read", Some(ams2)) => {
-                    let mut errs = vec![];
-
                     let id = ams2.value_of("id").map(|s| parse_num(s, &mut errs));
-
-                    if !errs.is_empty() {
-                        Err(anyhow!(combine_errs(errs)))?
-                    }
 
                     UserCommandV2::Read { id }
                 },
                 ("reads", Some(ams2)) => {
-                    let mut errs = vec![];
-
                     let page = ams2
                         .value_of("page")
                         .map(|s| parse_num(s, &mut errs))
@@ -87,10 +80,6 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                         query.bookmark_num = Some(parse_range(s, &mut errs));
                     }
 
-                    if !errs.is_empty() {
-                        Err(anyhow!(combine_errs(errs)))?
-                    }
-
                     UserCommandV2::Reads { page, query }
                 },
                 ("update", Some(ams2)) => {
@@ -100,16 +89,10 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
             }),
             ("content", Some(ams1)) => CommandV2::Content(match ams1.subcommand() {
                 ("read", Some(ams2)) => {
-                    let mut errs = vec![];
-
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_uuid(s, &mut errs))
                         .unwrap();
-
-                    if !errs.is_empty() {
-                        Err(anyhow!(combine_errs(errs)))?
-                    }
 
                     ContentCommandV2::Read { id }
                 },
@@ -143,7 +126,12 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                 "unrecognized subcommand on `(root)`. (impl error): {:?}",
                 sc
             ),
+        };
+        if !errs.is_empty() {
+            Err(anyhow!(combine_errs(errs)))?
         }
+
+        cmd
     };
 
     let tmp = match res {
