@@ -273,13 +273,31 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                 CommandV2::Post { author, content }
             },
             ("like", Some(ams1)) => {
-                unimplemented!()
+                let content_id = ams1
+                    .value_of("content_id")
+                    .map(|s| parse_uuid(s, &mut errs))
+                    .unwrap();
+                let undo = ams1.values_of("undo").is_some();
+
+                CommandV2::Like { content_id, undo }
             },
             ("pin", Some(ams1)) => {
-                unimplemented!()
+                let content_id = ams1
+                    .value_of("content_id")
+                    .map(|s| parse_uuid(s, &mut errs))
+                    .unwrap();
+                let undo = ams1.values_of("undo").is_some();
+
+                CommandV2::Pin { content_id, undo }
             },
             ("bookmark", Some(ams1)) => {
-                unimplemented!()
+                let content_id = ams1
+                    .value_of("content_id")
+                    .map(|s| parse_uuid(s, &mut errs))
+                    .unwrap();
+                let undo = ams1.values_of("undo").is_some();
+
+                CommandV2::Bookmark { content_id, undo }
             },
             sc => unreachable!(
                 "unrecognized subcommand on `(root)`. (impl error): {:?}",
