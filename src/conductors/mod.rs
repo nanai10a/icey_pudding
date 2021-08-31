@@ -135,7 +135,7 @@ pub struct Response {
 impl Conductor {
     pub async fn handle(
         &self,
-        cmd: Command,
+        cmd: CommandV2,
         user_id: UserId,
         user_name: impl Display,
         user_nick: Option<&str>,
@@ -347,21 +347,21 @@ impl EventHandler for Conductor {
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        let mcmd = match helper::parse_msg(msg.content.as_str()).await {
+        let parse_res = match helper::parse_msg_v2(msg.content.as_str()).await {
             Some(o) => o,
             None => return,
         };
 
-        let cmd = match mcmd {
-            MsgCommand::Command(c) => c,
-            MsgCommand::Showing(s) => {
+        let cmd = match parse_res {
+            Ok(o) => o,
+            Err(e) => {
                 let res = msg
                     .channel_id
                     .send_message(ctx.http, |cm| {
                         cm.add_embed(|ce| {
                             ce.title("response")
                                 .colour(Colour::RED)
-                                .description(format!("```{}```", s))
+                                .description(format!("```{}```", e))
                         });
 
                         let CreateMessage(ref mut raw, ..) = cm;
@@ -375,7 +375,7 @@ impl EventHandler for Conductor {
                     Ok(_) => (),
                     Err(e) => eprintln!("err: {}", e),
                 };
-            },
+            }
         };
 
         let nick_opt_string = msg.author_nick(&ctx).await;
