@@ -11,21 +11,15 @@ use serde::de::DeserializeOwned;
 use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
-use serenity::model::interactions::application_command::ApplicationCommandInteractionData;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use super::{clapcmd, Command, CommandV2, ContentCommandV2, MsgCommand, Response, UserCommandV2};
+use super::{clapcmd, CommandV2, ContentCommandV2, Response, UserCommandV2};
 use crate::entities::{Content, PartialAuthor, User};
 use crate::repositories::{
     AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, PostedQuery, UserMutation,
     UserQuery,
 };
-
-#[deprecated]
-pub async fn parse_ia(_: &ApplicationCommandInteractionData) -> Result<Command> {
-    unimplemented!();
-}
 
 pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
     let res: Result<_> = try {
@@ -318,9 +312,6 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
     Some(tmp)
 }
 
-#[deprecated]
-pub async fn parse_msg(_: &str) -> Option<MsgCommand> { unimplemented!() }
-
 pub fn resp_from_user(
     title: impl ToString,
     description: impl ToString,
@@ -414,9 +405,6 @@ pub fn append_message_reference(
 
     raw.insert("message_reference", mr);
 }
-
-#[deprecated]
-pub fn range_syntax_parser(_: String) -> Result<(u32, ())> { unimplemented!() }
 
 pub fn range_syntax_parser_v2<N>(src: String) -> Result<(Bound<N>, Bound<N>)>
 where
