@@ -37,6 +37,12 @@ pub enum Author {
     Virtual(String),
 }
 
+#[derive(Debug, Clone)]
+pub enum PartialAuthor {
+    User(u64),
+    Virtual(String),
+}
+
 impl Display for Author {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
