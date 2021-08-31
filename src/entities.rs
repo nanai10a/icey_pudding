@@ -47,10 +47,10 @@ impl Display for Author {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Author::User { id, name, nick } => {
-                let nick_fmt = match nick {
-                    Some(s) => s,
-                    None => &String::new(),
-                };
+                let mut nick_fmt = &String::new();
+                if let Some(s) = nick {
+                    nick_fmt = s;
+                }
 
                 write!(f, "{} ({} | {})", name, nick_fmt, id)
             },
