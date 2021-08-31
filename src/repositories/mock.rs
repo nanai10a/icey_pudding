@@ -30,7 +30,7 @@ impl UserRepository for InMemoryRepository<User> {
 
     async fn find(&self, id: u64) -> Result<User> {
         let guard = self.0.lock().await;
-        let res = guard.iter().filter(|v| v.id == id).collect::<Vec<_>>();
+        let mut res = guard.iter().filter(|v| v.id == id).collect::<Vec<_>>();
 
         match res.len() {
             0 => Err(RepositoryError::NotFound),
@@ -42,8 +42,8 @@ impl UserRepository for InMemoryRepository<User> {
     async fn finds(&self, query: UserQuery) -> Result<Vec<User>> { unimplemented!() }
 
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
-        let guard = self.0.lock().await;
-        let res = guard.iter_mut().filter(|v| v.id == id).collect::<Vec<_>>();
+        let mut guard = self.0.lock().await;
+        let mut res = guard.iter_mut().filter(|v| v.id == id).collect::<Vec<_>>();
         let item = match res.len() {
             0 => return Err(RepositoryError::NotFound),
             1 => res.remove(0),
@@ -94,8 +94,8 @@ impl UserRepository for InMemoryRepository<User> {
     }
 
     async fn delete(&self, id: u64) -> Result<User> {
-        let guard = self.0.lock().await;
-        let res = guard
+        let mut guard = self.0.lock().await;
+        let mut res = guard
             .iter()
             .enumerate()
             .filter(|(_, v)| v.id == id)
