@@ -8,9 +8,7 @@ use serenity::client::bridge::gateway::GatewayIntents;
 use serenity::client::ClientBuilder;
 
 async fn async_main() {
-    let AppValues {
-        token,
-    } = match get_values() {
+    let AppValues { token } = match get_values() {
         Ok(o) => o,
         Err(e) => return e,
     };
