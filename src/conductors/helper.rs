@@ -20,10 +20,10 @@ use super::{
     clapcmd, command_strs, Command, CommandV2, ContentCommandV2, MsgCommand, Response,
     UserCommandV2,
 };
-use crate::entities::{Content, User};
+use crate::entities::{Content, PartialAuthor, User};
 use crate::repositories::{
-    AuthorQuery, Comparison, ContentAuthorMutation, ContentContentMutation, ContentMutation,
-    ContentQuery, PostedQuery, UserMutation, UserQuery,
+    AuthorQuery, Comparison, ContentContentMutation, ContentMutation, ContentQuery, PostedQuery,
+    UserMutation, UserQuery,
 };
 
 #[deprecated]
@@ -209,8 +209,8 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                             ),
                         })
                         .map(|(ty, val)| match ty {
-                            "user" => ContentAuthorMutation::User(parse_num(val, &mut errs)),
-                            "virt" => ContentAuthorMutation::Virtual(val.to_string()),
+                            "user" => PartialAuthor::User(parse_num(val, &mut errs)),
+                            "virt" => PartialAuthor::Virtual(val.to_string()),
                             s => {
                                 errs.push(format!("unrecognized author_mutation type: {}", s));
 
