@@ -1,7 +1,7 @@
 pub const USER_CREATE: (u8, u8, u8) = (0xd5, 0xc4, 0xa1);
 pub const USER_READ: (u8, u8, u8) = (0x83, 0xa5, 0x98);
 pub const USER_UPDATE: (u8, u8, u8) = (0xb8, 0xb2, 0x26);
-pub const USER_DELETE: (u8, u8, u8) = (0x1d, 0x20, 0x21);
+// pub const USER_DELETE: (u8, u8, u8) = (0x1d, 0x20, 0x21); <- disabled
 
 pub const CONTENT_READ: (u8, u8, u8) = (0xfa, 0xdb, 0x2f);
 pub const CONTENT_UPDATE: (u8, u8, u8) = (0x8e, 0xc0, 0x7c);

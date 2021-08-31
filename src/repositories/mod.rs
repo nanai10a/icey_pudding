@@ -117,7 +117,7 @@ impl ::std::error::Error for RepositoryError {}
 pub fn try_remove_target_from_vec<T>(
     vec: &mut Vec<T>,
     is_target: impl Fn(&T) -> bool,
-) -> ::std::result::Result<T, usize> {
+) -> StdResult<T, usize> {
     let mut indexes: Vec<_> = vec
         .iter()
         .enumerate()
