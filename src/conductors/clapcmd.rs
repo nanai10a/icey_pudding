@@ -126,8 +126,11 @@ pub fn create_clap_app() -> App<'static, 'static> {
 }
 
 pub fn create_clap_app_v2() -> App<'static, 'static> {
-    let yml = load_yaml!("clap.yml");
-    App::from_yaml(yml).version(env!("CARGO_PKG_VERSION"))
+    ::lazy_static::lazy_static! {
+        static ref YAML: ::yaml_rust::Yaml = load_yaml!("clap.yml").clone();
+    }
+
+    App::from_yaml(&*YAML).version(env!("CARGO_PKG_VERSION"))
 }
 
 #[test]
