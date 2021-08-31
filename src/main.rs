@@ -17,8 +17,8 @@ async fn async_main() {
 
     let eh = Conductor {
         handler: Handler {
-            user_repository: Box::new(InMemoryRepository::<User>::new().await),
-            content_repository: Box::new(InMemoryRepository::<Content>::new().await),
+            user_repository: Box::new(InMemoryRepository::<User>::new()),
+            content_repository: Box::new(InMemoryRepository::<Content>::new()),
         },
     };
 
