@@ -17,11 +17,8 @@ use crate::entities::{Author, PartialAuthor};
 use crate::handlers::Handler;
 use crate::repositories::{ContentMutation, ContentQuery, UserMutation, UserQuery};
 
-mod appcmd;
 mod clapcmd;
 mod command_colors;
-#[deprecated]
-mod command_strs;
 mod helper;
 mod macros;
 
