@@ -136,7 +136,7 @@ impl Handler {
     }
 
     #[deprecated]
-    pub async fn delete_user(&self, UserId(user_id): UserId) -> Result<()> { unimplemented!() }
+    pub async fn delete_user(&self, _: UserId) -> Result<()> { unimplemented!() }
 
     #[deprecated]
     pub async fn delete_user_v2(&self, user_id: u64) -> Result<User> {
@@ -261,12 +261,7 @@ impl Handler {
     }
 
     #[deprecated]
-    pub async fn pin_update_content(
-        &self,
-        content_id: Uuid,
-        UserId(user_id): UserId,
-        undo: bool,
-    ) -> Result<Content> {
+    pub async fn pin_update_content(&self, _: Uuid, _: UserId, _: bool) -> Result<Content> {
         unimplemented!()
     }
 
