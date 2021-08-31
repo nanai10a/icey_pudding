@@ -97,9 +97,8 @@ pub enum UserCommandV2 {
     /// update user with id and mutation.
     /// it's **must** given id.
     Update { id: u64, mutation: UserMutation },
-    /// delete user with executed user's id.
-    #[deprecated]
-    Delete,
+    /* delete user with executed user's id.
+     * Delete, <- disabled */
 }
 
 #[derive(Debug, Clone)]
