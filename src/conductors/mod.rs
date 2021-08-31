@@ -152,7 +152,7 @@ impl Conductor {
                     )]
                 },
                 CommandV2::User(UserCommandV2::Read { id }) => {
-                    let user = self.handler.read_user_v2(user_id.0).await?;
+                    let user = self.handler.read_user_v2(id.unwrap_or(user_id.0)).await?;
 
                     vec![helper::resp_from_user(
                         "showing user",
