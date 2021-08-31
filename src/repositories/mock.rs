@@ -2,7 +2,10 @@ use async_trait::async_trait;
 use tokio::sync::Mutex;
 use uuid::Uuid;
 
-use super::{ContentRepository, RepositoryError, Result, UserMutation, UserRepository};
+use super::{
+    ContentMutation, ContentQuery, ContentRepository, RepositoryError, Result, UserMutation,
+    UserQuery, UserRepository,
+};
 use crate::entities::{Content, User};
 
 pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
@@ -36,7 +39,7 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn finds(&self, query: super::UserQuery) -> Result<Vec<User>> { unimplemented!() }
+    async fn finds(&self, query: UserQuery) -> Result<Vec<User>> { unimplemented!() }
 
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
         let guard = self.0.lock().await;
@@ -117,9 +120,11 @@ impl ContentRepository for InMemoryRepository<Content> {
 
     async fn find(&self, id: Uuid) -> Result<Content> { unimplemented!() }
 
-    async fn finds(&self, query: super::ContentQuery) -> Result<Vec<Content>> { unimplemented!() }
+    async fn finds(&self, query: ContentQuery) -> Result<Vec<Content>> { unimplemented!() }
 
-    async fn update(&self, mutation: super::ContentMutation) -> Result<Content> { unimplemented!() }
+    async fn update(&self, id: Uuid, mutation: ContentMutation) -> Result<Content> {
+        unimplemented!()
+    }
 
     async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
 
