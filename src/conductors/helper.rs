@@ -83,6 +83,9 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                     *posted_num = ams2
                         .value_of("posted_num")
                         .map(|s| parse_range(s, &mut errs));
+                    *bookmark = ams2
+                        .value_of("bookmark")
+                        .map(|s| parse_array(s, &mut errs).drain(..).collect());
                     *bookmark_num = ams2
                         .value_of("bookmark_num")
                         .map(|s| parse_range(s, &mut errs));
@@ -214,7 +217,7 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                             s => {
                                 errs.push(format!("unrecognized author_mutation type: {}", s));
 
-                                ContentAuthorMutation::User(0) // tmp value
+                                PartialAuthor::User(0) // tmp value
                             },
                         });
                     *content = ams2
