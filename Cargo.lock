@@ -619,6 +619,7 @@ dependencies = [
  "chrono",
  "clap",
  "consts",
+ "lazy_static",
  "mongodb",
  "range_parser",
  "regex",
@@ -628,6 +629,7 @@ dependencies = [
  "shell-words",
  "tokio",
  "uuid",
+ "yaml-rust",
 ]
 
 [[package]]
