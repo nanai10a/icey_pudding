@@ -13,6 +13,9 @@ pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
 impl<T> InMemoryRepository<T> {
     pub fn new() -> Self { Self(Mutex::new(vec![])) }
 }
+impl<T> Default for InMemoryRepository<T> {
+    fn default() -> Self { Self::new() }
+}
 
 #[async_trait]
 impl UserRepository for InMemoryRepository<User> {
