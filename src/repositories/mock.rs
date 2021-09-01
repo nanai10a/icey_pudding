@@ -47,8 +47,11 @@ where P: FnMut(&&T) -> bool {
 impl UserRepository for InMemoryRepository<User> {
     async fn insert(&self, item: User) -> Result<bool> {
         let mut guard = self.0.lock().await;
-        if guard.iter().filter(|v| v.id == item.id).count() != 0 {
-            return Ok(false);
+
+        match find_ref(&guard, |v| v.id == item.id) {
+            Ok(_) => return Ok(false),
+            Err(RepositoryError::NotFound) => (),
+            Err(e) => return Err(e),
         }
 
         guard.push(item);
@@ -58,22 +61,17 @@ impl UserRepository for InMemoryRepository<User> {
     async fn is_exists(&self, id: u64) -> Result<bool> {
         let guard = self.0.lock().await;
 
-        match guard.iter().filter(|v| v.id == id).count() {
-            0 => Ok(false),
-            1 => Ok(true),
-            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
+        match find_ref(&guard, |v| v.id == id) {
+            Ok(_) => Ok(true),
+            Err(RepositoryError::NotFound) => Ok(false),
+            Err(e) => Err(e),
         }
     }
 
     async fn find(&self, id: u64) -> Result<User> {
         let guard = self.0.lock().await;
-        let mut res = guard.iter().filter(|v| v.id == id).collect::<Vec<_>>();
 
-        match res.len() {
-            0 => Err(RepositoryError::NotFound),
-            1 => Ok(res.remove(0).clone()),
-            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
-        }
+        Ok(find_ref(&guard, |v| v.id == id)?.clone())
     }
 
     async fn finds(
@@ -139,7 +137,8 @@ impl UserRepository for InMemoryRepository<User> {
     }
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let item = self.find(id).await?;
+        let guard = self.0.lock().await;
+        let item = find_ref(&guard, |u| u.id == id)?;
 
         match item.posted.iter().filter(|v| **v == content_id).count() {
             0 => Ok(false),
@@ -148,7 +147,12 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
+    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        let mut guard = self.0.lock().await;
+        let mut item = find_mut(&mut guard, |u| u.id == id)?;
+
+        Ok(item.posted.insert(content_id))
+    }
 
     async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
 
