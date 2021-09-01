@@ -15,10 +15,10 @@ use serenity::utils::Colour;
 use uuid::Uuid;
 
 use super::{clapcmd, CommandV2, ContentCommandV2, Response, UserCommandV2};
+use crate::conductors::PartialContentMutation;
 use crate::entities::{Content, PartialAuthor, User};
 use crate::repositories::{
-    AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, PostedQuery, UserMutation,
-    UserQuery,
+    AuthorQuery, ContentContentMutation, ContentQuery, PostedQuery, UserMutation, UserQuery,
 };
 
 pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
@@ -190,7 +190,7 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                         .unwrap();
                     let mut mutation = Default::default();
 
-                    let ContentMutation { author, content } = &mut mutation;
+                    let PartialContentMutation { author, content } = &mut mutation;
                     *author = ams2
                         .values_of("author")
                         .map(|vs| vs.collect::<Vec<_>>())

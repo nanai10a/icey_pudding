@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use regex::Regex;
 use uuid::Uuid;
 
-use crate::entities::{Content, PartialAuthor, User};
+use crate::entities::{Author, Content, User};
 
 pub mod mock;
 pub mod mongo;
@@ -141,7 +141,7 @@ pub struct UserMutation {
 
 #[derive(Debug, Clone, Default)]
 pub struct ContentMutation {
-    pub author: Option<PartialAuthor>,
+    pub author: Option<Author>,
     pub content: Option<ContentContentMutation>,
 }
 
