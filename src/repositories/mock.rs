@@ -263,10 +263,10 @@ impl ContentRepository for InMemoryRepository<Content> {
                             AuthorQuery::UserId(q_id) => q_id == id,
                             AuthorQuery::UserName(q_r) => q_r.is_match(name.as_str()),
                             AuthorQuery::UserNick(q_r) =>
-                                nick.map(|n| q_r.is_match(n.as_str())).unwrap_or(false),
+                                nick.as_ref().map(|n| q_r.is_match(n.as_str())).unwrap_or(false),
                             AuthorQuery::Any(q_r) =>
                                 (q_r.is_match(name.as_str())
-                                    || nick.map(|n| q_r.is_match(n.as_str())).unwrap_or(false)),
+                                    || nick.as_ref().map(|n| q_r.is_match(n.as_str())).unwrap_or(false)),
                             _ => false,
                         },
                         Author::Virtual(name) => match q {
