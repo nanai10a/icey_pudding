@@ -17,6 +17,7 @@ pub struct User {
 }
 
 // TODO: rename to `Post`
+// TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
 pub struct Content {
     pub id: Uuid,
