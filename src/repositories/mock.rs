@@ -83,7 +83,7 @@ impl UserRepository for InMemoryRepository<User> {
             bookmark_num,
         }: UserQuery,
     ) -> Result<Vec<User>> {
-        Ok(self
+        let res = self
             .0
             .lock()
             .await
@@ -113,11 +113,14 @@ impl UserRepository for InMemoryRepository<User> {
                     .unwrap_or(true)
             })
             .cloned()
-            .collect())
+            .collect();
+
+        res
     }
 
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
         let mut guard = self.0.lock().await;
+
         let mut res = guard.iter_mut().filter(|v| v.id == id).collect::<Vec<_>>();
         let item = match res.len() {
             0 => return Err(RepositoryError::NotFound),
