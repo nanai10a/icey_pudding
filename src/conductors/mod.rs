@@ -13,7 +13,7 @@ use serenity::model::prelude::User;
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use crate::entities::{Author, PartialAuthor};
+use crate::entities::{Author, PartialAuthor, Posted};
 use crate::handlers::Handler;
 use crate::repositories::{ContentMutation, ContentQuery, UserMutation, UserQuery};
 
@@ -133,10 +133,13 @@ impl Conductor {
         &self,
         cmd: CommandV2,
         user_id: UserId,
-        from_user_shows: impl ToString,
+        user_name: String,
+        user_nick: Option<String>,
         http: impl CacheHttp,
         guild_id: Option<u64>,
     ) -> Vec<Response> {
+        let from_user_shows = format!("from: {} ({})", user_name, user_nick.as_ref().unwrap_or(&"".to_string()));
+
         use command_colors::*;
 
         let res: Result<Vec<Response>> = try {
@@ -304,7 +307,18 @@ impl Conductor {
                         },
                     };
 
-                    let content = self.handler.post_v2(content, user_id.0, author).await?;
+                    let content = self
+                        .handler
+                        .post_v2(
+                            content,
+                            Posted {
+                                id: user_id.0,
+                                name: user_name,
+                                nick: user_nick,
+                            },
+                            author,
+                        )
+                        .await?;
 
                     vec![helper::resp_from_content(
                         "posted content",
@@ -444,9 +458,7 @@ impl EventHandler for Conductor {
             },
         };
 
-        let nick_opt_string = msg.author_nick(&ctx).await;
-
-        let nick_opt = nick_opt_string.as_deref();
+        let user_nick = msg.author_nick(&ctx).await;
 
         let Message {
             id: message_id,
@@ -456,14 +468,17 @@ impl EventHandler for Conductor {
             ..
         } = msg;
         let User {
-            id: user_id, name, ..
+            id: user_id,
+            name: user_name,
+            ..
         } = author;
 
         let mut resps = self
             .handle(
                 cmd,
                 user_id,
-                format!("from: {} ({})", name, nick_opt.unwrap_or("")),
+                user_name,
+                user_nick,
                 ctx.clone(),
                 guild_id_opt.map(|i| i.0),
             )
