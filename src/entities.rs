@@ -21,10 +21,17 @@ pub struct User {
 pub struct Content {
     pub id: Uuid,
     pub author: Author,
-    pub posted: u64,
+    pub posted: Posted,
     pub content: String,
     pub liked: HashSet<u64>,
     pub pinned: HashSet<u64>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Posted {
+    pub id: u64,
+    pub name: String,
+    pub nick: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -56,5 +63,17 @@ impl Display for Author {
             },
             Author::Virtual(name) => write!(f, "{}", name),
         }
+    }
+}
+
+impl Display for Posted {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} ({} | {})",
+            self.name,
+            self.nick.as_ref().unwrap_or(&"".to_string()),
+            self.id
+        )
     }
 }
