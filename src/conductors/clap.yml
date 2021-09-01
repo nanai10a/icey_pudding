@@ -121,7 +121,7 @@ subcommands:
                   long: "sed"
                   value_names:
                     - "regex"
-                    - "regex"
+                    - "str"
             groups:
               - content:
                   args:

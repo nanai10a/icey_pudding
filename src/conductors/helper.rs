@@ -225,7 +225,7 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
                         })
                         .map(|(val0, val1)| ContentContentMutation::Sed {
                             capture: parse_regex(val0, &mut errs),
-                            replace: parse_regex(val1, &mut errs),
+                            replace: val1.to_string(),
                         });
 
                     ContentCommandV2::Update { id, mutation }
