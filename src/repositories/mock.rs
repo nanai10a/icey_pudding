@@ -118,7 +118,11 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(res)
     }
 
-    async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
+    async fn update(
+        &self,
+        id: u64,
+        UserMutation { admin, sub_admin }: UserMutation,
+    ) -> Result<User> {
         let mut guard = self.0.lock().await;
 
         let mut res = guard.iter_mut().filter(|v| v.id == id).collect::<Vec<_>>();
@@ -128,7 +132,6 @@ impl UserRepository for InMemoryRepository<User> {
             i => return Err(RepositoryError::NoUnique { matched: i as u32 }),
         };
 
-        let UserMutation { admin, sub_admin } = mutation;
         if let Some(val) = admin {
             item.admin = val;
         }
