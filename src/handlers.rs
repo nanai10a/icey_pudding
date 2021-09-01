@@ -4,7 +4,7 @@ use anyhow::{bail, Error, Result};
 use serenity::model::id::UserId;
 use uuid::Uuid;
 
-use crate::entities::{Author, Content, User};
+use crate::entities::{Author, Content, Posted, User};
 use crate::repositories::{
     ContentMutation, ContentQuery, ContentRepository, RepositoryError, UserMutation, UserQuery,
     UserRepository,
@@ -156,16 +156,22 @@ impl Handler {
         unimplemented!()
     }
 
-    pub async fn post_v2(&self, content: String, posted: u64, author: Author) -> Result<Content> {
+    pub async fn post_v2(
+        &self,
+        content: String,
+        posted: Posted,
+        author: Author,
+    ) -> Result<Content> {
         let user_is_exists = !self
             .user_repository
-            .is_exists(posted)
+            .is_exists(posted.id)
             .await
             .map_err(user_err_fmt)?;
         if !user_is_exists {
             bail!("cannot find user. not registered?");
         }
 
+        let posted_id = posted.id;
         let new_content = Content {
             id: uuid::Uuid::new_v4(),
             content,
@@ -177,7 +183,7 @@ impl Handler {
 
         let user_posted_can_insert = self
             .user_repository
-            .insert_posted(posted, new_content.id)
+            .insert_posted(posted_id, new_content.id)
             .await
             .map_err(user_err_fmt)?;
         if !user_posted_can_insert {
