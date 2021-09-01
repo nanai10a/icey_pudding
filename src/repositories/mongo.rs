@@ -72,7 +72,44 @@ enum MongoContentAuthorModel {
 
 #[async_trait]
 impl UserRepository for MongoUserRepository {
-    async fn insert(&self, item: User) -> Result<bool> { unimplemented!() }
+    async fn insert(
+        &self,
+        User {
+            id,
+            admin,
+            sub_admin,
+            posted,
+            bookmark,
+        }: User,
+    ) -> Result<bool> {
+        let model = MongoUserModel {
+            id,
+            admin,
+            sub_admin,
+        };
+
+        if let Err(e) = self.main_coll.insert_one(model, None).await {
+            return Err(RepositoryError::Internal(anyhow!(e)));
+        }
+
+        match posted.len() {
+            0 => (),
+            _ =>
+                if let Err(e) = self.posted_coll(id).insert_many(posted, None).await {
+                    return Err(RepositoryError::Internal(anyhow!(e)));
+                },
+        }
+
+        match bookmark.len() {
+            0 => (),
+            _ =>
+                if let Err(e) = self.bookmarked_coll(id).insert_many(bookmark, None).await {
+                    return Err(RepositoryError::Internal(anyhow!(e)));
+                },
+        }
+
+        Ok(true)
+    }
 
     async fn is_exists(&self, id: u64) -> Result<bool> { unimplemented!() }
 
