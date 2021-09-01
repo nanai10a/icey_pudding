@@ -15,7 +15,9 @@ use uuid::Uuid;
 
 use crate::entities::{Author, PartialAuthor, Posted};
 use crate::handlers::Handler;
-use crate::repositories::{ContentMutation, ContentQuery, UserMutation, UserQuery};
+use crate::repositories::{
+    ContentContentMutation, ContentMutation, ContentQuery, UserMutation, UserQuery,
+};
 
 mod clapcmd;
 mod command_colors;
@@ -109,9 +111,18 @@ pub enum ContentCommandV2 {
     /// page **must** satisfies `1..`.
     Reads { page: u32, query: ContentQuery },
     /// update content with id and mutation.
-    Update { id: Uuid, mutation: ContentMutation },
+    Update {
+        id: Uuid,
+        mutation: PartialContentMutation,
+    },
     /// delete content with id.
     Delete { id: Uuid },
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PartialContentMutation {
+    pub author: Option<PartialAuthor>,
+    pub content: Option<ContentContentMutation>,
 }
 
 #[derive(Debug)]
@@ -270,7 +281,31 @@ impl Conductor {
                         })
                         .collect()
                 },
-                CommandV2::Content(ContentCommandV2::Update { id, mutation }) => {
+                CommandV2::Content(ContentCommandV2::Update {
+                    id,
+                    mutation:
+                        PartialContentMutation {
+                            author: p_author,
+                            content,
+                        },
+                }) => {
+                    let author = match p_author {
+                        Some(PartialAuthor::Virtual(s)) => Some(Author::Virtual(s)),
+                        Some(PartialAuthor::User(id)) => {
+                            let user = http.http().get_user(id).await?;
+
+                            let nick = match guild_id {
+                                Some(i) => user.nick_in(http, i).await,
+                                None => None,
+                            };
+                            let name = user.name;
+
+                            Some(Author::User { id, name, nick })
+                        },
+                        None => None,
+                    };
+
+                    let mutation = ContentMutation { author, content };
                     let content = self.handler.update_content_v2(id, mutation).await?;
 
                     vec![helper::resp_from_content(

@@ -5,8 +5,8 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use super::{
-    AuthorQuery, ContentMutation, ContentQuery, ContentRepository, PostedQuery, RepositoryError,
-    Result, UserMutation, UserQuery, UserRepository,
+    AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, ContentRepository,
+    PostedQuery, RepositoryError, Result, UserMutation, UserQuery, UserRepository,
 };
 use crate::entities::{Author, Content, User};
 
