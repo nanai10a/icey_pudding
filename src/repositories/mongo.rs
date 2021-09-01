@@ -16,13 +16,13 @@ pub struct MongoUserRepository {
 impl MongoUserRepository {
     #[inline]
     fn posted_coll(&self, id: u64) -> Collection<Uuid> {
-        self.db.collection(format!("user:{}#posted", id).as_str())
+        self.db.collection(format!("user:{:x}#posted", id).as_str())
     }
 
     #[inline]
     fn bookmarked_coll(&self, id: u64) -> Collection<Uuid> {
         self.db
-            .collection(format!("user:{}#bookmarked", id).as_str())
+            .collection(format!("user:{:x}#bookmarked", id).as_str())
     }
 }
 
@@ -35,13 +35,13 @@ impl MongoContentRepository {
     #[inline]
     fn liked_coll(&self, id: Uuid) -> Collection<u64> {
         self.db
-            .collection(format!("content:{}#liked", id.as_u128()).as_str())
+            .collection(format!("content:{:x}#liked", id.as_u128()).as_str())
     }
 
     #[inline]
     fn pinned_coll(&self, id: Uuid) -> Collection<u64> {
         self.db
-            .collection(format!("content:{}#pinned", id.as_u128()).as_str())
+            .collection(format!("content:{:x}#pinned", id.as_u128()).as_str())
     }
 }
 
