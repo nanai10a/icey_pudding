@@ -340,8 +340,28 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(res)
     }
 
-    async fn update(&self, id: Uuid, mutation: ContentMutation) -> Result<Content> {
-        unimplemented!()
+    async fn update(
+        &self,
+        id: Uuid,
+        ContentMutation { author, content }: ContentMutation,
+    ) -> Result<Content> {
+        let mut guard = self.0.lock().await;
+        let item = find_mut(&mut guard, |c| c.id == id)?;
+
+        if let Some(new_author) = author {
+            item.author = new_author;
+        }
+        match content {
+            Some(ContentContentMutation::Complete(new_content)) => {
+                item.content = new_content;
+            },
+            Some(ContentContentMutation::Sed { capture, replace }) => {
+                unimplemented!()
+            },
+            None => (),
+        };
+
+        Ok(item.clone())
     }
 
     async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
