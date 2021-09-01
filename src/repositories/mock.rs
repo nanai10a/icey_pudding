@@ -277,23 +277,28 @@ impl ContentRepository for InMemoryRepository<Content> {
                     })
                     .unwrap_or(true)
             })
-            .filter(|_| posted.as_ref().map(|_| unimplemented!()).unwrap_or(true))
-                /*|q| match q {
-                        PostedQuery::UserId(q_id) => q_id == c.posted.id,
+            .filter(|c| {
+                posted
+                    .as_ref()
+                    .map(|q| match q {
+                        PostedQuery::UserId(q_id) => *q_id == c.posted.id,
                         PostedQuery::UserName(q_r) => q_r.is_match(c.posted.name.as_str()),
                         PostedQuery::UserNick(q_r) => c
                             .posted
                             .nick
+                            .as_ref()
                             .map(|n| q_r.is_match(n.as_str()))
                             .unwrap_or(false),
                         PostedQuery::Any(q_r) =>
                             (q_r.is_match(c.posted.name.as_str())
                                 || c.posted
                                     .nick
+                                    .as_ref()
                                     .map(|n| q_r.is_match(n.as_str()))
                                     .unwrap_or(false)),
-                    }
-                 * */
+                    })
+                    .unwrap_or(true)
+            })
             .filter(|c| {
                 content
                     .as_ref()
