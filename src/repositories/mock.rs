@@ -5,10 +5,10 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use super::{
-    ContentMutation, ContentQuery, ContentRepository, RepositoryError, Result, UserMutation,
-    UserQuery, UserRepository,
+    AuthorQuery, ContentMutation, ContentQuery, ContentRepository, PostedQuery, RepositoryError,
+    Result, UserMutation, UserQuery, UserRepository,
 };
-use crate::entities::{Content, User};
+use crate::entities::{Author, Content, User};
 
 pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
 
@@ -209,13 +209,126 @@ impl UserRepository for InMemoryRepository<User> {
 
 #[async_trait]
 impl ContentRepository for InMemoryRepository<Content> {
-    async fn insert(&self, item: Content) -> Result<bool> { unimplemented!() }
+    async fn insert(&self, item: Content) -> Result<bool> {
+        let mut guard = self.0.lock().await;
 
-    async fn is_exists(&self, id: Uuid) -> Result<bool> { unimplemented!() }
+        match find_ref(&guard, |v| v.id == item.id) {
+            Ok(_) => return Ok(false),
+            Err(RepositoryError::NotFound) => (),
+            Err(e) => return Err(e),
+        }
 
-    async fn find(&self, id: Uuid) -> Result<Content> { unimplemented!() }
+        guard.push(item);
+        Ok(true)
+    }
 
-    async fn finds(&self, query: ContentQuery) -> Result<Vec<Content>> { unimplemented!() }
+    async fn is_exists(&self, id: Uuid) -> Result<bool> {
+        let guard = self.0.lock().await;
+
+        match find_ref(&guard, |v| v.id == id) {
+            Ok(_) => Ok(true),
+            Err(RepositoryError::NotFound) => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+
+    async fn find(&self, id: Uuid) -> Result<Content> {
+        let guard = self.0.lock().await;
+
+        Ok(find_ref(&guard, |v| v.id == id)?.clone())
+    }
+
+    async fn finds(
+        &self,
+        ContentQuery {
+            author,
+            posted,
+            content,
+            liked,
+            liked_num,
+            pinned,
+            pinned_num,
+        }: ContentQuery,
+    ) -> Result<Vec<Content>> {
+        let res = self
+            .00
+            .lock()
+            .await
+            .iter()
+            .filter(|c| {
+                author
+                    .as_ref()
+                    .map(|q| match &c.author {
+                        Author::User { id, name, nick } => match q {
+                            AuthorQuery::UserId(q_id) => q_id == id,
+                            AuthorQuery::UserName(q_r) => q_r.is_match(name.as_str()),
+                            AuthorQuery::UserNick(q_r) =>
+                                nick.map(|n| q_r.is_match(n.as_str())).unwrap_or(false),
+                            AuthorQuery::Any(q_r) =>
+                                (q_r.is_match(name.as_str())
+                                    || nick.map(|n| q_r.is_match(n.as_str())).unwrap_or(false)),
+                            _ => false,
+                        },
+                        Author::Virtual(name) => match q {
+                            AuthorQuery::Virtual(q_r) => q_r.is_match(name.as_str()),
+                            AuthorQuery::Any(q_r) => q_r.is_match(name.as_str()),
+                            _ => false,
+                        },
+                    })
+                    .unwrap_or(true)
+            })
+            .filter(|_| posted.as_ref().map(|_| unimplemented!()).unwrap_or(true))
+                /*|q| match q {
+                        PostedQuery::UserId(q_id) => q_id == c.posted.id,
+                        PostedQuery::UserName(q_r) => q_r.is_match(c.posted.name.as_str()),
+                        PostedQuery::UserNick(q_r) => c
+                            .posted
+                            .nick
+                            .map(|n| q_r.is_match(n.as_str()))
+                            .unwrap_or(false),
+                        PostedQuery::Any(q_r) =>
+                            (q_r.is_match(c.posted.name.as_str())
+                                || c.posted
+                                    .nick
+                                    .map(|n| q_r.is_match(n.as_str()))
+                                    .unwrap_or(false)),
+                    }
+                 * */
+            .filter(|c| {
+                content
+                    .as_ref()
+                    .map(|r| r.is_match(c.content.as_str()))
+                    .unwrap_or(true)
+            })
+            .filter(|c| {
+                liked
+                    .as_ref()
+                    .map(|s| s.is_subset(&c.liked))
+                    .unwrap_or(true)
+            })
+            .filter(|c| {
+                liked_num
+                    .as_ref()
+                    .map(|b| b.contains(&(c.liked.len() as u32)))
+                    .unwrap_or(true)
+            })
+            .filter(|c| {
+                pinned
+                    .as_ref()
+                    .map(|s| s.is_subset(&c.pinned))
+                    .unwrap_or(true)
+            })
+            .filter(|c| {
+                pinned_num
+                    .as_ref()
+                    .map(|b| b.contains(&(c.pinned.len() as u32)))
+                    .unwrap_or(true)
+            })
+            .cloned()
+            .collect();
+
+        Ok(res)
+    }
 
     async fn update(&self, id: Uuid, mutation: ContentMutation) -> Result<Content> {
         unimplemented!()
