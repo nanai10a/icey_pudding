@@ -367,17 +367,71 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(item.clone())
     }
 
-    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let guard = self.0.lock().await;
+        let item = find_ref(&guard, |c| c.id == id)?;
 
-    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+        match item.liked.iter().filter(|v| **v == user_id).count() {
+            0 => Ok(false),
+            1 => Ok(true),
+            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
+        }
+    }
 
-    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let mut guard = self.0.lock().await;
+        let item = find_mut(&mut guard, |c| c.id == id)?;
 
-    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+        Ok(item.liked.insert(user_id))
+    }
 
-    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let mut guard = self.0.lock().await;
+        let item = find_mut(&mut guard, |c| c.id == id)?;
 
-    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+        Ok(item.liked.remove(&user_id))
+    }
 
-    async fn delete(&self, id: Uuid) -> Result<Content> { unimplemented!() }
+    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let guard = self.0.lock().await;
+        let item = find_ref(&guard, |c| c.id == id)?;
+
+        match item.pinned.iter().filter(|v| **v == user_id).count() {
+            0 => Ok(false),
+            1 => Ok(true),
+            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
+        }
+    }
+
+    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let mut guard = self.0.lock().await;
+        let item = find_mut(&mut guard, |c| c.id == id)?;
+
+        Ok(item.pinned.insert(user_id))
+    }
+
+    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let mut guard = self.0.lock().await;
+        let item = find_mut(&mut guard, |c| c.id == id)?;
+
+        Ok(item.pinned.remove(&user_id))
+    }
+
+    async fn delete(&self, id: Uuid) -> Result<Content> {
+        let mut guard = self.0.lock().await;
+        let mut res = guard
+            .iter()
+            .enumerate()
+            .filter(|(_, v)| v.id == id)
+            .map(|(i, _)| i)
+            .collect::<Vec<_>>();
+
+        let index = match res.len() {
+            0 => return Err(RepositoryError::NotFound),
+            1 => res.remove(0),
+            i => return Err(RepositoryError::NoUnique { matched: i as u32 }),
+        };
+
+        Ok(guard.remove(index))
+    }
 }
