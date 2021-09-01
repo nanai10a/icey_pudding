@@ -152,7 +152,7 @@ impl UserRepository for InMemoryRepository<User> {
 
     async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let mut guard = self.0.lock().await;
-        let mut item = find_mut(&mut guard, |u| u.id == id)?;
+        let item = find_mut(&mut guard, |u| u.id == id)?;
 
         Ok(item.posted.insert(content_id))
     }
