@@ -55,13 +55,13 @@ struct MongoUserModel {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoContentModel {
     id: Uuid,
-    author: Author,
+    author: MongoContentAuthorModel,
     posted: u64,
     content: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-enum Author {
+enum MongoContentAuthorModel {
     User {
         id: u64,
         name: String,
