@@ -1,3 +1,5 @@
+use std::ops::RangeBounds;
+
 use async_trait::async_trait;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -50,7 +52,47 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn finds(&self, query: UserQuery) -> Result<Vec<User>> { unimplemented!() }
+    async fn finds(
+        &self,
+        UserQuery {
+            posted,
+            posted_num,
+            bookmark,
+            bookmark_num,
+        }: UserQuery,
+    ) -> Result<Vec<User>> {
+        Ok(self
+            .0
+            .lock()
+            .await
+            .iter()
+            .filter(|u| {
+                posted
+                    .as_ref()
+                    .map(|s| s.is_subset(&u.posted))
+                    .unwrap_or(true)
+            })
+            .filter(|u| {
+                posted_num
+                    .as_ref()
+                    .map(|b| b.contains(&(u.posted.len() as u32)))
+                    .unwrap_or(true)
+            })
+            .filter(|u| {
+                bookmark
+                    .as_ref()
+                    .map(|s| s.is_subset(&u.bookmark))
+                    .unwrap_or(true)
+            })
+            .filter(|u| {
+                bookmark_num
+                    .as_ref()
+                    .map(|b| b.contains(&(u.bookmark.len() as u32)))
+                    .unwrap_or(true)
+            })
+            .cloned()
+            .collect())
+    }
 
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
         let mut guard = self.0.lock().await;
