@@ -359,7 +359,7 @@ impl ContentRepository for InMemoryRepository<Content> {
                 item.content = new_content;
             },
             Some(ContentContentMutation::Sed { capture, replace }) => {
-                unimplemented!()
+                item.content = capture.replace(item.content.as_ref(), replace).to_string();
             },
             None => (),
         };
