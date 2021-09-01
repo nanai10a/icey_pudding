@@ -115,7 +115,7 @@ impl UserRepository for InMemoryRepository<User> {
             .cloned()
             .collect();
 
-        res
+        Ok(res)
     }
 
     async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
