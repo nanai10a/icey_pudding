@@ -138,7 +138,11 @@ impl Conductor {
         http: impl CacheHttp,
         guild_id: Option<u64>,
     ) -> Vec<Response> {
-        let from_user_shows = format!("from: {} ({})", user_name, user_nick.as_ref().unwrap_or(&"".to_string()));
+        let from_user_shows = format!(
+            "from: {} ({})",
+            user_name,
+            user_nick.as_ref().unwrap_or(&"".to_string())
+        );
 
         use command_colors::*;
 
