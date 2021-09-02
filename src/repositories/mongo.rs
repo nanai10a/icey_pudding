@@ -16,46 +16,41 @@ use crate::entities::{Content, User};
 
 pub struct MongoUserRepository {
     main_coll: Collection<MongoUserModel>,
-    db: Database,
+    posted_coll: Collection<MongoUserPostedModel>,
+    bookmark_coll: Collection<MongoUserBookmarkModel>,
 }
 
-impl MongoUserRepository {
-    #[inline]
-    fn posted_coll(&self, id: u64) -> Collection<Uuid> {
-        self.db.collection(format!("user:{:x}#posted", id).as_str())
-    }
-
-    #[inline]
-    fn bookmarked_coll(&self, id: u64) -> Collection<Uuid> {
-        self.db
-            .collection(format!("user:{:x}#bookmarked", id).as_str())
-    }
-}
+// format!("user:{:x}#posted", id)
+// format!("user:{:x}#bookmarked", id)
 
 pub struct MongoContentRepository {
     main_coll: Collection<MongoContentModel>,
-    db: Database,
+    liked_coll: Collection<MongoContentLikedModel>,
+    pinned_coll: Collection<MongoContentPinnedModel>,
 }
 
-impl MongoContentRepository {
-    #[inline]
-    fn liked_coll(&self, id: Uuid) -> Collection<u64> {
-        self.db
-            .collection(format!("content:{:x}#liked", id.as_u128()).as_str())
-    }
-
-    #[inline]
-    fn pinned_coll(&self, id: Uuid) -> Collection<u64> {
-        self.db
-            .collection(format!("content:{:x}#pinned", id.as_u128()).as_str())
-    }
-}
+// format!("content:{:x}#liked", id.as_u128())
+// format!("content:{:x}#pinned", id.as_u128())
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoUserModel {
     id: String,
     admin: bool,
     sub_admin: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MongoUserPostedModel {
+    id: String,
+    set: HashSet<String>,
+    size: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MongoUserBookmarkModel {
+    id: String,
+    set: HashSet<String>,
+    size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,6 +69,20 @@ enum MongoContentAuthorModel {
         nick: Option<String>,
     },
     Virtual(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MongoContentLikedModel {
+    id: Uuid,
+    set: HashSet<String>,
+    size: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MongoContentPinnedModel {
+    id: Uuid,
+    set: HashSet<String>,
+    size: i64,
 }
 
 #[async_trait]
