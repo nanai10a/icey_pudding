@@ -84,7 +84,7 @@ impl UserRepository for MongoUserRepository {
         }: User,
     ) -> Result<bool> {
         let model = MongoUserModel {
-            id,
+            id: id.to_string(),
             admin,
             sub_admin,
         };
