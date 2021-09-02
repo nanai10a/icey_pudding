@@ -42,14 +42,14 @@ struct MongoUserModel {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoUserPostedModel {
     id: String,
-    set: HashSet<String>,
+    set: HashSet<Uuid>,
     size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoUserBookmarkModel {
     id: String,
-    set: HashSet<String>,
+    set: HashSet<Uuid>,
     size: i64,
 }
 
