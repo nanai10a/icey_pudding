@@ -89,10 +89,7 @@ impl UserRepository for MongoUserRepository {
             sub_admin,
         };
 
-        self.main_coll
-            .insert_one(model, None)
-            .await
-            .cvt()?;
+        self.main_coll.insert_one(model, None).await.cvt()?;
         match posted.len() {
             0 => (),
             _ => self
