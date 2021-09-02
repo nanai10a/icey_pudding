@@ -8,7 +8,10 @@ use serde::{Deserialize, Serialize};
 use serenity::futures::TryStreamExt;
 use uuid::Uuid;
 
-use super::{ContentRepository, RepositoryError, Result, StdResult, UserRepository};
+use super::{
+    ContentMutation, ContentQuery, ContentRepository, RepositoryError, Result, StdResult,
+    UserMutation, UserQuery, UserRepository,
+};
 use crate::entities::{Content, User};
 
 pub struct MongoUserRepository {
@@ -174,11 +177,9 @@ impl UserRepository for MongoUserRepository {
         })
     }
 
-    async fn finds(&self, query: super::UserQuery) -> Result<Vec<User>> { unimplemented!() }
+    async fn finds(&self, query: UserQuery) -> Result<Vec<User>> { unimplemented!() }
 
-    async fn update(&self, id: u64, mutation: super::UserMutation) -> Result<User> {
-        unimplemented!()
-    }
+    async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> { unimplemented!() }
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
 
@@ -207,9 +208,9 @@ impl ContentRepository for MongoContentRepository {
 
     async fn find(&self, id: Uuid) -> Result<Content> { unimplemented!() }
 
-    async fn finds(&self, query: super::ContentQuery) -> Result<Vec<Content>> { unimplemented!() }
+    async fn finds(&self, query: ContentQuery) -> Result<Vec<Content>> { unimplemented!() }
 
-    async fn update(&self, id: Uuid, mutation: super::ContentMutation) -> Result<Content> {
+    async fn update(&self, id: Uuid, mutation: ContentMutation) -> Result<Content> {
         unimplemented!()
     }
 
