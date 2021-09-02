@@ -20,17 +20,11 @@ pub struct MongoUserRepository {
     bookmark_coll: Collection<MongoUserBookmarkModel>,
 }
 
-// format!("user:{:x}#posted", id)
-// format!("user:{:x}#bookmarked", id)
-
 pub struct MongoContentRepository {
     main_coll: Collection<MongoContentModel>,
     liked_coll: Collection<MongoContentLikedModel>,
     pinned_coll: Collection<MongoContentPinnedModel>,
 }
-
-// format!("content:{:x}#liked", id.as_u128())
-// format!("content:{:x}#pinned", id.as_u128())
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoUserModel {
