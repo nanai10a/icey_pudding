@@ -97,31 +97,31 @@ impl UserRepository for MongoUserRepository {
             bookmark,
         }: User,
     ) -> Result<bool> {
-        let model = MongoUserModel {
+        let main_model = MongoUserModel {
             id: id.to_string(),
             admin,
             sub_admin,
         };
+        let posted_model = MongoUserPostedModel {
+            id: id.to_string(),
+            set: posted,
+            size: posted.len() as i64,
+        };
+        let bookmark_model = MongoUserBookmarkModel {
+            id: id.to_string(),
+            set: bookmark,
+            size: bookmark.len() as i64,
+        };
 
-        self.main_coll.insert_one(model, None).await.cvt()?;
-        match posted.len() {
-            0 => (),
-            _ => self
-                .posted_coll(id)
-                .insert_many(posted, None)
-                .await
-                .cvt()?
-                .dispose(),
-        }
-        match bookmark.len() {
-            0 => (),
-            _ => self
-                .bookmarked_coll(id)
-                .insert_many(bookmark, None)
-                .await
-                .cvt()?
-                .dispose(),
-        }
+        self.main_coll.insert_one(main_model, None).await.cvt()?;
+        self.posted_coll
+            .insert_one(posted_model, None)
+            .await
+            .cvt()?;
+        self.bookmark_coll
+            .insert_one(bookmark_model, None)
+            .await
+            .cvt()?;
 
         Ok(true)
     }
