@@ -5,7 +5,7 @@ use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::{ContentRepository, RepositoryError, Result, UserRepository};
+use super::{ContentRepository, RepositoryError, Result, StdResult, UserRepository};
 use crate::entities::{Author, Content, User};
 
 pub struct MongoUserRepository {
@@ -88,24 +88,19 @@ impl UserRepository for MongoUserRepository {
             sub_admin,
         };
 
-        if let Err(e) = self.main_coll.insert_one(model, None).await {
-            return Err(RepositoryError::Internal(anyhow!(e)));
-        }
-
+        self.main_coll.insert_one(model, None).await.cvt()?;
         match posted.len() {
             0 => (),
-            _ =>
-                if let Err(e) = self.posted_coll(id).insert_many(posted, None).await {
-                    return Err(RepositoryError::Internal(anyhow!(e)));
-                },
+            _ => self.posted_coll(id).insert_many(posted, None).await.cvt()?,
         }
 
         match bookmark.len() {
             0 => (),
-            _ =>
-                if let Err(e) = self.bookmarked_coll(id).insert_many(bookmark, None).await {
-                    return Err(RepositoryError::Internal(anyhow!(e)));
-                },
+            _ => self
+                .bookmarked_coll(id)
+                .insert_many(bookmark, None)
+                .await
+                .cvt()?,
         }
 
         Ok(true)
@@ -167,4 +162,11 @@ impl ContentRepository for MongoContentRepository {
     async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
 
     async fn delete(&self, id: Uuid) -> Result<Content> { unimplemented!() }
+}
+
+trait Convert<T> {
+    fn cvt(self) -> T;
+}
+impl<T, E: Sync + Send + ::std::error::Error + 'static> Convert<Result<T>> for StdResult<T, E> {
+    fn cvt(self) -> Result<T> { self.map_err(|e| RepositoryError::Internal(anyhow!(e))) }
 }
