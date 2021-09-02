@@ -113,14 +113,12 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
-        match match self
+        match self
             .main_coll
             .count_documents(doc! { "id": id.to_string() }, None)
             .await
+            .cvt()?
         {
-            Ok(o) => o,
-            Err(e) => return Err(RepositoryError::Internal(anyhow!(e))),
-        } {
             0 => Ok(false),
             1 => Ok(true),
             i => Err(RepositoryError::NoUnique { matched: i as u32 }),
