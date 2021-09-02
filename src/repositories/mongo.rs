@@ -88,19 +88,27 @@ impl UserRepository for MongoUserRepository {
             sub_admin,
         };
 
-        self.main_coll.insert_one(model, None).await.cvt()?;
+        self.main_coll
+            .insert_one(model, None)
+            .await
+            .cvt()?;
         match posted.len() {
             0 => (),
-            _ => self.posted_coll(id).insert_many(posted, None).await.cvt()?,
+            _ => self
+                .posted_coll(id)
+                .insert_many(posted, None)
+                .await
+                .cvt()?
+                .dispose(),
         }
-
         match bookmark.len() {
             0 => (),
             _ => self
                 .bookmarked_coll(id)
                 .insert_many(bookmark, None)
                 .await
-                .cvt()?,
+                .cvt()?
+                .dispose(),
         }
 
         Ok(true)
@@ -169,4 +177,11 @@ trait Convert<T> {
 }
 impl<T, E: Sync + Send + ::std::error::Error + 'static> Convert<Result<T>> for StdResult<T, E> {
     fn cvt(self) -> Result<T> { self.map_err(|e| RepositoryError::Internal(anyhow!(e))) }
+}
+
+trait Dispose {
+    fn dispose(self);
+}
+impl<T> Dispose for T {
+    fn dispose(self) {}
 }
