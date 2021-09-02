@@ -1,12 +1,13 @@
 use anyhow::anyhow;
 use async_trait::async_trait;
-use mongodb::bson::Bson;
+use mongodb::bson::doc;
 use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
+use serenity::futures::StreamExt;
 use uuid::Uuid;
 
 use super::{ContentRepository, RepositoryError, Result, StdResult, UserRepository};
-use crate::entities::{Author, Content, User};
+use crate::entities::{Content, User};
 
 pub struct MongoUserRepository {
     main_coll: Collection<MongoUserModel>,
@@ -47,7 +48,7 @@ impl MongoContentRepository {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoUserModel {
-    id: u64,
+    id: String,
     admin: bool,
     sub_admin: bool,
 }
@@ -56,14 +57,14 @@ struct MongoUserModel {
 struct MongoContentModel {
     id: Uuid,
     author: MongoContentAuthorModel,
-    posted: u64,
+    posted: String,
     content: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum MongoContentAuthorModel {
     User {
-        id: u64,
+        id: String,
         name: String,
         nick: Option<String>,
     },
@@ -114,7 +115,20 @@ impl UserRepository for MongoUserRepository {
         Ok(true)
     }
 
-    async fn is_exists(&self, id: u64) -> Result<bool> { unimplemented!() }
+    async fn is_exists(&self, id: u64) -> Result<bool> {
+        match match self
+            .main_coll
+            .count_documents(doc! { "id": id.to_string() }, None)
+            .await
+        {
+            Ok(o) => o,
+            Err(e) => return Err(RepositoryError::Internal(anyhow!(e))),
+        } {
+            0 => Ok(false),
+            1 => Ok(true),
+            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
+        }
+    }
 
     async fn find(&self, id: u64) -> Result<User> { unimplemented!() }
 
