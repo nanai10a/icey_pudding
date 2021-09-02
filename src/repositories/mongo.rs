@@ -1,9 +1,11 @@
+use std::collections::HashSet;
+
 use anyhow::anyhow;
 use async_trait::async_trait;
 use mongodb::bson::doc;
 use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
-use serenity::futures::StreamExt;
+use serenity::futures::TryStreamExt;
 use uuid::Uuid;
 
 use super::{ContentRepository, RepositoryError, Result, StdResult, UserRepository};
@@ -125,7 +127,52 @@ impl UserRepository for MongoUserRepository {
         }
     }
 
-    async fn find(&self, id: u64) -> Result<User> { unimplemented!() }
+    async fn find(&self, id: u64) -> Result<User> {
+        let mut res = self
+            .main_coll
+            .find(doc! { "id": id.to_string() }, None)
+            .await
+            .cvt()?
+            .try_collect::<Vec<_>>()
+            .await
+            .cvt()?;
+        let MongoUserModel {
+            id: id_str,
+            admin,
+            sub_admin,
+        } = match res.len() {
+            0 => return Err(RepositoryError::NotFound),
+            1 => res.remove(0),
+            i => return Err(RepositoryError::NoUnique { matched: i as u32 }),
+        };
+        assert_eq!(id_str, id.to_string(), "not matched id!");
+
+        let posted = self
+            .posted_coll(id)
+            .find(doc! {}, None)
+            .await
+            .cvt()?
+            .try_collect::<HashSet<_>>()
+            .await
+            .cvt()?;
+
+        let bookmark = self
+            .bookmarked_coll(id)
+            .find(doc! {}, None)
+            .await
+            .cvt()?
+            .try_collect::<HashSet<_>>()
+            .await
+            .cvt()?;
+
+        Ok(User {
+            id,
+            admin,
+            sub_admin,
+            posted,
+            bookmark,
+        })
+    }
 
     async fn finds(&self, query: super::UserQuery) -> Result<Vec<User>> { unimplemented!() }
 
