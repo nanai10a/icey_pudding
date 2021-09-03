@@ -20,6 +20,40 @@ pub struct MongoUserRepository {
     bookmark_coll: Collection<MongoUserBookmarkModel>,
 }
 
+macro_rules! inline {
+    ($n:expr) => {
+        doc! {
+            "createIndexes": $n,
+            "indexes": [{
+                "name": "unique_id",
+                "key": {
+                    "id": 1
+                },
+                "unique": true
+            }],
+        }
+    };
+}
+impl MongoUserRepository {
+    pub async fn new_with(db: Database) -> ::anyhow::Result<Self> {
+        for name in vec!["user#main", "user#posted", "user#bookmark"].drain(..) {
+            db.run_command(inline!(name), None)
+                .await
+                .map_err(::anyhow::Error::new)?;
+        }
+
+        let main_coll = db.collection("user#main");
+        let posted_coll = db.collection("user#posted");
+        let bookmark_coll = db.collection("user#bookmark");
+
+        Ok(Self {
+            main_coll,
+            posted_coll,
+            bookmark_coll,
+        })
+    }
+}
+
 pub struct MongoContentRepository {
     main_coll: Collection<MongoContentModel>,
     liked_coll: Collection<MongoContentLikedModel>,
