@@ -307,3 +307,19 @@ impl<T> OptToErr<T> for Option<T> {
         }
     }
 }
+
+trait NumToBool {
+    fn into_bool(self) -> bool;
+}
+impl<N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Copy> NumToBool for N {
+    fn into_bool(self) -> bool {
+        match match ::core::convert::TryInto::<i8>::try_into(self) {
+            Ok(n) => n,
+            Err(_) => unreachable!("expected 0 or 1, found: {:?}", self),
+        } {
+            0 => false,
+            1 => true,
+            n => unreachable!("expected 0 or 1, found: {}", n),
+        }
+    }
+}
