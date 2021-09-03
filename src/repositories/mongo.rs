@@ -275,3 +275,22 @@ trait Dispose {
 impl<T> Dispose for T {
     fn dispose(self) {}
 }
+
+trait DetectUniqueErr {
+    fn unique_check(self) -> Result<bool>;
+}
+impl<T> DetectUniqueErr for ::mongodb::error::Result<T> {
+    fn unique_check(self) -> Result<bool> {
+        match match match self {
+            Ok(_) => return Ok(true),
+            Err(e) => (*e.kind.clone(), e),
+        } {
+            (::mongodb::error::ErrorKind::Write(::mongodb::error::WriteFailure::WriteError(e)), src) =>
+                (e.code, src),
+            (_, src) => return Err(RepositoryError::Internal(anyhow!(src))),
+        } {
+            (11000, _) => Ok(false),
+            (_, src) => Err(RepositoryError::Internal(anyhow!(src))),
+        }
+    }
+}
