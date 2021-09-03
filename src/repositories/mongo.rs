@@ -294,3 +294,15 @@ impl<T> DetectUniqueErr for ::mongodb::error::Result<T> {
         }
     }
 }
+
+trait OptToErr<T> {
+    fn opt_cvt(self) -> Result<T>;
+}
+impl<T> OptToErr<T> for Option<T> {
+    fn opt_cvt(self) -> Result<T> {
+        match self {
+            Some(o) => Ok(o),
+            None => Err(RepositoryError::NotFound),
+        }
+    }
+}
