@@ -141,17 +141,23 @@ impl UserRepository for MongoUserRepository {
             set: bookmark,
         };
 
-        self.main_coll.insert_one(main_model, None).await.cvt()?;
-        self.posted_coll
+        let main_res = self
+            .main_coll
+            .insert_one(main_model, None)
+            .await
+            .unique_check()?;
+        let posted_res = self
+            .posted_coll
             .insert_one(posted_model, None)
             .await
-            .cvt()?;
-        self.bookmark_coll
+            .unique_check()?;
+        let bookmark_res = self
+            .bookmark_coll
             .insert_one(bookmark_model, None)
             .await
-            .cvt()?;
+            .unique_check()?;
 
-        Ok(true)
+        Ok(main_res && posted_res && bookmark_res)
     }
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
