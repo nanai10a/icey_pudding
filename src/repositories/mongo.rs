@@ -174,23 +174,16 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn find(&self, id: u64) -> Result<User> {
-        let mut res = self
-            .main_coll
-            .find(doc! { "id": id.to_string() }, None)
-            .await
-            .cvt()?
-            .try_collect::<Vec<_>>()
-            .await
-            .cvt()?;
         let MongoUserModel {
             id: id_str,
             admin,
             sub_admin,
-        } = match res.len() {
-            0 => return Err(RepositoryError::NotFound),
-            1 => res.remove(0),
-            i => unreachable!("expected 0..=1 value, found {} values!", i),
-        };
+        } = self
+            .main_coll
+            .find_one(doc! { "id": id.to_string() }, None)
+            .await
+            .cvt()?
+            .opt_cvt()?;
         assert_eq!(id_str, id.to_string(), "not matched id!");
 
         let MongoUserPostedModel { set: posted, .. } = self
@@ -198,14 +191,14 @@ impl UserRepository for MongoUserRepository {
             .find_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
-            .unwrap();
+            .opt_cvt()?;
 
         let MongoUserBookmarkModel { set: bookmark, .. } = self
             .bookmark_coll
             .find_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
-            .unwrap();
+            .opt_cvt()?;
 
         Ok(User {
             id,
