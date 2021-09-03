@@ -163,7 +163,7 @@ impl UserRepository for MongoUserRepository {
         {
             0 => Ok(false),
             1 => Ok(true),
-            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
+            i => unreachable!("expected 0..=1 value, found {} values!", i),
         }
     }
 
@@ -183,27 +183,23 @@ impl UserRepository for MongoUserRepository {
         } = match res.len() {
             0 => return Err(RepositoryError::NotFound),
             1 => res.remove(0),
-            i => return Err(RepositoryError::NoUnique { matched: i as u32 }),
+            i => unreachable!("expected 0..=1 value, found {} values!", i),
         };
         assert_eq!(id_str, id.to_string(), "not matched id!");
 
-        let posted = self
-            .posted_coll(id)
-            .find(doc! {}, None)
+        let MongoUserPostedModel { set: posted, .. } = self
+            .posted_coll
+            .find_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
-            .try_collect::<HashSet<_>>()
-            .await
-            .cvt()?;
+            .unwrap();
 
-        let bookmark = self
-            .bookmarked_coll(id)
-            .find(doc! {}, None)
+        let MongoUserBookmarkModel { set: bookmark, .. } = self
+            .bookmark_coll
+            .find_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
-            .try_collect::<HashSet<_>>()
-            .await
-            .cvt()?;
+            .unwrap();
 
         Ok(User {
             id,
