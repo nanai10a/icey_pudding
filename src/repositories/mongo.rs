@@ -161,16 +161,12 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
-        match self
+        Ok(self
             .main_coll
             .count_documents(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
-        {
-            0 => Ok(false),
-            1 => Ok(true),
-            i => unreachable!("expected 0..=1 value, found {} values!", i),
-        }
+            .into_bool())
     }
 
     async fn find(&self, id: u64) -> Result<User> {
