@@ -181,7 +181,7 @@ impl UserRepository for MongoUserRepository {
             .await
             .cvt()?
             .opt_cvt()?;
-        assert_eq!(id_str, id.to_string(), "not matched id!");
+        assert_eq!(id_str, id.to_string(), "not matched id!"); // FIXME: checking only this?
 
         let MongoUserPostedModel { set: posted, .. } = self
             .posted_coll
