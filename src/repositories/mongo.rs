@@ -140,6 +140,7 @@ impl UserRepository for MongoUserRepository {
             set: bookmark,
         };
 
+        // FIXME: transaction begin ---
         let main_res = self
             .main_coll
             .insert_one(main_model, None)
@@ -155,6 +156,7 @@ impl UserRepository for MongoUserRepository {
             .insert_one(bookmark_model, None)
             .await
             .unique_check()?;
+        // --- end
 
         // FIXME: if partially failed to insert doc, other logics will fall.
         // because "if can fetch data from `main_coll`, then must able to fetch
@@ -164,6 +166,7 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
+        // FIXME: transaction begin ---
         let main_res = self
             .main_coll
             .count_documents(doc! { "id": id.to_string() }, None)
@@ -182,6 +185,7 @@ impl UserRepository for MongoUserRepository {
             .await
             .cvt()?
             .into_bool();
+        // --- end
 
         match (main_res, posted_res, bookmark_res) {
             (true, true, true) => Ok(true),
@@ -194,6 +198,7 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn find(&self, id: u64) -> Result<User> {
+        // FIXME: transaction begin ---
         let MongoUserModel {
             id: id_str,
             admin,
@@ -219,6 +224,7 @@ impl UserRepository for MongoUserRepository {
             .await
             .cvt()?
             .opt_cvt()?;
+        // --- end
 
         Ok(User {
             id,
@@ -238,6 +244,7 @@ impl UserRepository for MongoUserRepository {
             bookmark_num,
         }: UserQuery,
     ) -> Result<Vec<User>> {
+        // FIXME: do transaction
         let mut posted_q = doc! {};
         if let Some(mut set_raw) = posted {
             if !set_raw.is_empty() {
@@ -478,6 +485,7 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn delete(&self, id: u64) -> Result<User> {
+        // FIXME: transaction begin ---
         let user = self.find(id).await?;
 
         let main_res = self
@@ -501,6 +509,7 @@ impl UserRepository for MongoUserRepository {
             .cvt()?
             .deleted_count
             .into_bool();
+        // --- end
 
         // `::into_bool` is checking "is `0 | 1`" (= "unique")
 
