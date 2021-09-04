@@ -156,6 +156,10 @@ impl UserRepository for MongoUserRepository {
             .await
             .unique_check()?;
 
+        // FIXME: if partially failed to insert doc, other logics will fall.
+        // because "if can fetch data from `main_coll`, then must able to fetch
+        // [sub_coll]" (logics)
+
         Ok(main_res && posted_res && bookmark_res)
     }
 
