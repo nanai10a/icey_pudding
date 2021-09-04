@@ -499,12 +499,7 @@ impl UserRepository for MongoUserRepository {
             .deleted_count
             .into_bool();
 
-        // `::into_bool` is checking "is `0 | 1`"
-
-        // ignoring partially delete.
-        // because `Self::is_exists` is cheking only `#main_coll`, so if failed to
-        // delete `#posted_coll` and `#bookmark_coll`, actually only some waste
-        // remains. system will do expected.
+        // `::into_bool` is checking "is `0 | 1`" (= "unique")
 
         Ok(user)
     }
