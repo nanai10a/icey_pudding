@@ -342,7 +342,26 @@ impl UserRepository for MongoUserRepository {
         Ok(res)
     }
 
-    async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> { unimplemented!() }
+    async fn update(
+        &self,
+        id: u64,
+        UserMutation { admin, sub_admin }: UserMutation,
+    ) -> Result<User> {
+        let mut main_m = doc! {};
+        if let Some(val) = admin {
+            main_m.insert("admin", val);
+        }
+        if let Some(val) = sub_admin {
+            main_m.insert("sub_admin", val);
+        }
+
+        self.main_coll
+            .update_one(doc! { "id": id.to_string() }, doc! { "$set": main_m }, None)
+            .await
+            .cvt()?;
+
+        self.find(id).await
+    }
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
 
