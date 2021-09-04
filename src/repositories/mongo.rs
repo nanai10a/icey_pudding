@@ -378,7 +378,19 @@ impl UserRepository for MongoUserRepository {
             .into_bool())
     }
 
-    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
+    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        let res = self
+            .posted_coll
+            .update_one(
+                doc! { "id": id.to_string() },
+                doc! { "$addToSet": { "set": content_id.to_string() } },
+                None,
+            )
+            .await
+            .cvt()?;
+        res.matched_count.into_bool().expect_true()?;
+        Ok(res.modified_count.into_bool())
+    }
 
     async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
 
