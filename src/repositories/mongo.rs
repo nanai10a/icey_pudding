@@ -4,7 +4,7 @@ use std::ops::Bound;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use mongodb::bson::doc;
-use mongodb::{Collection, Database};
+use mongodb::{Client, Collection, Database};
 use serde::{Deserialize, Serialize};
 use serenity::futures::TryStreamExt;
 use uuid::Uuid;
@@ -16,13 +16,14 @@ use super::{
 use crate::entities::{Content, User};
 
 pub struct MongoUserRepository {
+    client: Client,
     main_coll: Collection<MongoUserModel>,
     posted_coll: Collection<MongoUserPostedModel>,
     bookmark_coll: Collection<MongoUserBookmarkModel>,
 }
 
 impl MongoUserRepository {
-    pub async fn new_with(db: Database) -> ::anyhow::Result<Self> {
+    pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
         for name in vec!["user#main", "user#posted", "user#bookmark"].drain(..) {
             db.run_command(
                 doc! {
@@ -46,6 +47,7 @@ impl MongoUserRepository {
         let bookmark_coll = db.collection("user#bookmark");
 
         Ok(Self {
+            client,
             main_coll,
             posted_coll,
             bookmark_coll,
@@ -54,6 +56,7 @@ impl MongoUserRepository {
 }
 
 pub struct MongoContentRepository {
+    client: Client,
     main_coll: Collection<MongoContentModel>,
     liked_coll: Collection<MongoContentLikedModel>,
     pinned_coll: Collection<MongoContentPinnedModel>,
