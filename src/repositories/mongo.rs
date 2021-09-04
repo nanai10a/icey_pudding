@@ -24,7 +24,7 @@ pub struct MongoUserRepository {
 
 impl MongoUserRepository {
     pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
-        for name in vec!["user#main", "user#posted", "user#bookmark"].drain(..) {
+        for name in ["user#main", "user#posted", "user#bookmark"] {
             db.run_command(
                 doc! {
                     "createIndexes": name,
