@@ -2,6 +2,7 @@
 #![feature(drain_filter)]
 #![feature(box_syntax)]
 #![feature(fn_traits)]
+#![feature(label_break_value)]
 
 pub mod conductors;
 pub mod entities;
