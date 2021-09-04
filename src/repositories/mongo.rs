@@ -490,3 +490,15 @@ impl<N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Copy> NumToBool for 
         }
     }
 }
+
+trait BoolToErr {
+    fn expect_true(self) -> Result<()>;
+}
+impl BoolToErr for bool {
+    fn expect_true(self) -> Result<()> {
+        match self {
+            true => Ok(()),
+            false => Err(RepositoryError::NotFound),
+        }
+    }
+}
