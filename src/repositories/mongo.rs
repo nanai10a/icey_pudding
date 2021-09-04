@@ -390,7 +390,7 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        Ok(self
+        let res = self
             .posted_coll
             .count_documents(
                 doc! { "id": id.to_string(), "set": { "$in": [content_id.to_string()] } },
@@ -398,7 +398,9 @@ impl UserRepository for MongoUserRepository {
             )
             .await
             .cvt()?
-            .into_bool())
+            .into_bool();
+
+        Ok(res)
     }
 
     async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
@@ -411,6 +413,7 @@ impl UserRepository for MongoUserRepository {
             )
             .await
             .cvt()?;
+
         res.matched_count.into_bool().expect_true()?;
         Ok(res.modified_count.into_bool())
     }
@@ -425,12 +428,13 @@ impl UserRepository for MongoUserRepository {
             )
             .await
             .cvt()?;
+
         res.matched_count.into_bool().expect_true()?;
         Ok(res.modified_count.into_bool())
     }
 
     async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        Ok(self
+        let res = self
             .bookmark_coll
             .count_documents(
                 doc! { "id": id.to_string(), "set": { "$in": [content_id.to_string()] } },
@@ -438,7 +442,9 @@ impl UserRepository for MongoUserRepository {
             )
             .await
             .cvt()?
-            .into_bool())
+            .into_bool();
+
+        Ok(res)
     }
 
     async fn insert_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
@@ -451,6 +457,7 @@ impl UserRepository for MongoUserRepository {
             )
             .await
             .cvt()?;
+
         res.matched_count.into_bool().expect_true()?;
         Ok(res.modified_count.into_bool())
     }
@@ -465,6 +472,7 @@ impl UserRepository for MongoUserRepository {
             )
             .await
             .cvt()?;
+
         res.matched_count.into_bool().expect_true()?;
         Ok(res.modified_count.into_bool())
     }
