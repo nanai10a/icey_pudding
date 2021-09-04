@@ -15,6 +15,7 @@ use super::{
 };
 use crate::entities::{Content, User};
 
+// FIXME: mustn't use multiple documents. (no manually separate)
 pub struct MongoUserRepository {
     client: Client,
     main_coll: Collection<MongoUserModel>,
