@@ -355,10 +355,17 @@ impl UserRepository for MongoUserRepository {
             main_m.insert("sub_admin", val);
         }
 
-        self.main_coll
+        match self
+            .main_coll
             .update_one(doc! { "id": id.to_string() }, doc! { "$set": main_m }, None)
             .await
-            .cvt()?;
+            .cvt()?
+            .matched_count
+            .into_bool()
+        {
+            true => (),
+            false => return Err(RepositoryError::NotFound),
+        };
 
         self.find(id).await
     }
