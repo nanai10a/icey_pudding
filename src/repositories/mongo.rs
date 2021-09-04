@@ -406,14 +406,44 @@ impl UserRepository for MongoUserRepository {
         Ok(res.modified_count.into_bool())
     }
 
-    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
+    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        Ok(self
+            .bookmark_coll
+            .count_documents(
+                doc! { "id": id.to_string(), "set": { "$in": [content_id.to_string()] } },
+                None,
+            )
+            .await
+            .cvt()?
+            .into_bool())
+    }
 
     async fn insert_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        unimplemented!()
+        let res = self
+            .bookmark_coll
+            .update_one(
+                doc! { "id": id.to_string() },
+                doc! { "$addToSet": { "set": content_id.to_string() } },
+                None,
+            )
+            .await
+            .cvt()?;
+        res.matched_count.into_bool().expect_true()?;
+        Ok(res.modified_count.into_bool())
     }
 
     async fn delete_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        unimplemented!()
+        let res = self
+            .bookmark_coll
+            .update_one(
+                doc! { "id": id.to_string() },
+                doc! { "$pull": { "set": content_id.to_string() } },
+                None,
+            )
+            .await
+            .cvt()?;
+        res.matched_count.into_bool().expect_true()?;
+        Ok(res.modified_count.into_bool())
     }
 
     async fn delete(&self, id: u64) -> Result<User> { unimplemented!() }
