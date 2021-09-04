@@ -370,7 +370,17 @@ impl UserRepository for MongoUserRepository {
         self.find(id).await
     }
 
-    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
+    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+        Ok(self
+            .posted_coll
+            .count_documents(
+                doc! { "id": id.to_string(), "set": { "$in": [content_id.to_string()] } },
+                None,
+            )
+            .await
+            .cvt()?
+            .into_bool())
+    }
 
     async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> { unimplemented!() }
 
