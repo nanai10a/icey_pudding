@@ -446,7 +446,37 @@ impl UserRepository for MongoUserRepository {
         Ok(res.modified_count.into_bool())
     }
 
-    async fn delete(&self, id: u64) -> Result<User> { unimplemented!() }
+    async fn delete(&self, id: u64) -> Result<User> {
+        let user = self.find(id).await?;
+
+        self.main_coll
+            .delete_one(doc! { "id": id.to_string() }, None)
+            .await
+            .cvt()?
+            .deleted_count
+            .into_bool();
+        self.posted_coll
+            .delete_one(doc! { "id": id.to_string() }, None)
+            .await
+            .cvt()?
+            .deleted_count
+            .into_bool();
+        self.bookmark_coll
+            .delete_one(doc! { "id": id.to_string() }, None)
+            .await
+            .cvt()?
+            .deleted_count
+            .into_bool();
+
+        // `::into_bool` is checking "is `0 | 1`"
+
+        // ignoring partially delete.
+        // because `Self::is_exists` is cheking only `#main_coll`, so if failed to
+        // delete `#posted_coll` and `#bookmark_coll`, actually only some waste
+        // remains. system will do expected.
+
+        Ok(user)
+    }
 }
 
 #[async_trait]
