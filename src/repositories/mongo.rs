@@ -480,19 +480,22 @@ impl UserRepository for MongoUserRepository {
     async fn delete(&self, id: u64) -> Result<User> {
         let user = self.find(id).await?;
 
-        self.main_coll
+        let main_res = self
+            .main_coll
             .delete_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
             .deleted_count
             .into_bool();
-        self.posted_coll
+        let posted_res = self
+            .posted_coll
             .delete_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
             .deleted_count
             .into_bool();
-        self.bookmark_coll
+        let bookmark_res = self
+            .bookmark_coll
             .delete_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
@@ -501,7 +504,14 @@ impl UserRepository for MongoUserRepository {
 
         // `::into_bool` is checking "is `0 | 1`" (= "unique")
 
-        Ok(user)
+        match (main_res, posted_res, bookmark_res) {
+            (true, true, true) => Ok(user),
+            (false, false, false) => Err(RepositoryError::NotFound),
+            _ => unreachable!(
+                "delete was partially failed: [main: {}] [posted: {}] [bookmark: {}]",
+                main_res, posted_res, bookmark_res
+            ),
+        }
     }
 }
 
