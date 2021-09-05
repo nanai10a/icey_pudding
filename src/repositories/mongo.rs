@@ -333,9 +333,9 @@ impl UserRepository for MongoUserRepository {
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let res = self
-            .posted_coll
+            .coll
             .count_documents(
-                doc! { "id": id.to_string(), "set": { "$in": [content_id.to_string()] } },
+                doc! { "id": id.to_string(), "posted": { "$in": [content_id.to_string()] } },
                 None,
             )
             .await
@@ -377,9 +377,9 @@ impl UserRepository for MongoUserRepository {
 
     async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let res = self
-            .bookmark_coll
+            .coll
             .count_documents(
-                doc! { "id": id.to_string(), "set": { "$in": [content_id.to_string()] } },
+                doc! { "id": id.to_string(), "bookmark": { "$in": [content_id.to_string()] } },
                 None,
             )
             .await
