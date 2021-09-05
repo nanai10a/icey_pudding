@@ -551,7 +551,65 @@ impl ContentRepository for MongoContentRepository {
         Ok(res.modified_count.let_(to_bool))
     }
 
-    async fn delete(&self, id: Uuid) -> Result<Content> { unimplemented!() }
+    async fn delete(&self, id: Uuid) -> Result<Content> {
+        async fn transaction(
+            this: &MongoContentRepository,
+            id: Uuid,
+        ) -> ::mongodb::error::Result<Option<Content>> {
+            let mut session = this.client.start_session(None).await?;
+            let ta_opt = TransactionOptions::builder()
+                .read_concern(ReadConcern::snapshot())
+                .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
+                .build();
+            session.start_transaction(ta_opt).await?;
+
+            let content: Content = match this
+                .coll
+                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .await?
+                .map(|m| m.into())
+            {
+                Some(c) => c,
+                None => return Ok(None),
+            };
+            assert_eq!(content.id, id, "not matched id!");
+
+            match this
+                .coll
+                .delete_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .await?
+                .deleted_count
+                .let_(to_bool)
+            {
+                false => unreachable!("couldn't delete value"),
+                true => (),
+            }
+
+            loop {
+                let r = session.commit_transaction().await;
+                if let Err(ref e) = r {
+                    if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
+                        continue;
+                    }
+                }
+
+                break r.map(|_| Some(content));
+            }
+        }
+
+        let res = loop {
+            let r = transaction(self, id).await;
+            if let Err(ref e) = r {
+                if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
+                    continue;
+                }
+            }
+
+            break r;
+        };
+
+        Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
+    }
 }
 
 fn convert_repo_err<T, E>(result: ::core::result::Result<T, E>) -> Result<T>
