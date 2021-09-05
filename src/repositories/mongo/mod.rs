@@ -544,7 +544,7 @@ trait AlsoChain {
 }
 impl<T> AlsoChain for T {
     #[inline]
-    fn also_<F, R>(self, f: F) -> Self
+    fn also_<F, R>(mut self, f: F) -> Self
     where
         Self: Sized,
         F: FnOnce(&mut Self) -> R,
