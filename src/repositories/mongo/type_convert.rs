@@ -3,7 +3,7 @@ use std::ops::Bound;
 use mongodb::bson::{doc, Document};
 
 use super::{
-    dispose, ContentMutation, ContentQuery, LetChain, MongoContentAuthorModel, MongoContentModel,
+    ContentMutation, ContentQuery, LetChain, MongoContentAuthorModel, MongoContentModel,
     MongoContentPostedModel, MongoUserModel, UserMutation, UserQuery,
 };
 use crate::entities::{Author, Content, Posted, User};
@@ -31,14 +31,14 @@ impl From<UserQuery> for Document {
 
             match g {
                 Bound::Unbounded => (),
-                Bound::Included(n) => posted_num_q.insert("$gte", n).let_(dispose),
-                Bound::Excluded(n) => posted_num_q.insert("$gt", n).let_(dispose),
+                Bound::Included(n) => posted_num_q.insert("$gte", n).let_(::core::mem::drop),
+                Bound::Excluded(n) => posted_num_q.insert("$gt", n).let_(::core::mem::drop),
             }
 
             match l {
                 Bound::Unbounded => (),
-                Bound::Included(n) => posted_num_q.insert("$lte", n).let_(dispose),
-                Bound::Excluded(n) => posted_num_q.insert("$lt", n).let_(dispose),
+                Bound::Included(n) => posted_num_q.insert("$lte", n).let_(::core::mem::drop),
+                Bound::Excluded(n) => posted_num_q.insert("$lt", n).let_(::core::mem::drop),
             }
 
             if !posted_num_q.is_empty() {
@@ -58,14 +58,14 @@ impl From<UserQuery> for Document {
 
             match g {
                 Bound::Unbounded => (),
-                Bound::Included(n) => bookmark_num_q.insert("$gte", n).let_(dispose),
-                Bound::Excluded(n) => bookmark_num_q.insert("$gt", n).let_(dispose),
+                Bound::Included(n) => bookmark_num_q.insert("$gte", n).let_(::core::mem::drop),
+                Bound::Excluded(n) => bookmark_num_q.insert("$gt", n).let_(::core::mem::drop),
             }
 
             match l {
                 Bound::Unbounded => (),
-                Bound::Included(n) => bookmark_num_q.insert("$lte", n).let_(dispose),
-                Bound::Excluded(n) => bookmark_num_q.insert("$lt", n).let_(dispose),
+                Bound::Included(n) => bookmark_num_q.insert("$lte", n).let_(::core::mem::drop),
+                Bound::Excluded(n) => bookmark_num_q.insert("$lt", n).let_(::core::mem::drop),
             }
 
             if !bookmark_num_q.is_empty() {
