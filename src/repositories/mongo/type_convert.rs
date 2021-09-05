@@ -3,8 +3,8 @@ use std::ops::Bound;
 use mongodb::bson::{doc, Document};
 
 use super::{
-    ContentMutation, ContentQuery, LetChain, MongoContentAuthorModel, MongoContentModel,
-    MongoContentPostedModel, MongoUserModel, UserMutation, UserQuery,
+    LetChain, MongoContentAuthorModel, MongoContentModel, MongoContentPostedModel, MongoUserModel,
+    UserMutation, UserQuery,
 };
 use crate::entities::{Author, Content, Posted, User};
 
@@ -91,9 +91,6 @@ impl From<UserMutation> for Document {
         mutation
     }
 }
-
-impl From<ContentQuery> for Document {}
-impl From<ContentMutation> for Document {}
 
 impl From<MongoUserModel> for User {
     fn from(
