@@ -97,7 +97,11 @@ impl UserRepository for MongoUserRepository {
     async fn insert(&self, user: User) -> Result<bool> {
         let model: MongoUserModel = user.into();
 
-        let res = self.coll.insert_one(model, None).await.unique_check()?;
+        let res = self
+            .coll
+            .insert_one(model, None)
+            .await
+            .let_(try_unique_check)?;
 
         Ok(res)
     }
@@ -107,8 +111,8 @@ impl UserRepository for MongoUserRepository {
             .coll
             .count_documents(doc! { "id": id.to_string() }, None)
             .await
-            .cvt()?
-            .into_bool();
+            .let_(convert_repo_err)?
+            .let_(to_bool);
 
         Ok(res)
     }
@@ -118,8 +122,8 @@ impl UserRepository for MongoUserRepository {
             .coll
             .find_one(doc! { "id": id.to_string() }, None)
             .await
-            .cvt()?
-            .opt_cvt()?
+            .let_(convert_repo_err)?
+            .let_(convert_404_or)?
             .into();
         assert_eq!(user.id, id, "not matched id!");
 
@@ -133,10 +137,10 @@ impl UserRepository for MongoUserRepository {
             .coll
             .find(query_doc, None)
             .await
-            .cvt()?
+            .let_(convert_repo_err)?
             .try_collect::<Vec<_>>()
             .await
-            .cvt()?
+            .let_(convert_repo_err)?
             .drain(..)
             .map(|m| m.into())
             .collect();
@@ -166,7 +170,7 @@ impl UserRepository for MongoUserRepository {
                 )
                 .await?
                 .matched_count
-                .into_bool()
+                .let_(to_bool)
             {
                 false => return Ok(None),
                 true => (),
@@ -203,7 +207,7 @@ impl UserRepository for MongoUserRepository {
             break r;
         };
 
-        Ok(res.cvt()?.opt_cvt()?)
+        Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
@@ -217,8 +221,8 @@ impl UserRepository for MongoUserRepository {
                 None,
             )
             .await
-            .cvt()?
-            .into_bool();
+            .let_(convert_repo_err)?
+            .let_(to_bool);
 
         Ok(res)
     }
@@ -235,10 +239,10 @@ impl UserRepository for MongoUserRepository {
                 None,
             )
             .await
-            .cvt()?;
+            .let_(convert_repo_err)?;
 
-        res.matched_count.into_bool().expect_true()?;
-        Ok(res.modified_count.into_bool())
+        res.matched_count.let_(to_bool).let_(convert_404)?;
+        Ok(res.modified_count.let_(to_bool))
     }
 
     async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
@@ -253,10 +257,10 @@ impl UserRepository for MongoUserRepository {
                 None,
             )
             .await
-            .cvt()?;
+            .let_(convert_repo_err)?;
 
-        res.matched_count.into_bool().expect_true()?;
-        Ok(res.modified_count.into_bool())
+        res.matched_count.let_(to_bool).let_(convert_404)?;
+        Ok(res.modified_count.let_(to_bool))
     }
 
     async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
@@ -270,8 +274,8 @@ impl UserRepository for MongoUserRepository {
                 None,
             )
             .await
-            .cvt()?
-            .into_bool();
+            .let_(convert_repo_err)?
+            .let_(to_bool);
 
         Ok(res)
     }
@@ -288,10 +292,10 @@ impl UserRepository for MongoUserRepository {
                 None,
             )
             .await
-            .cvt()?;
+            .let_(convert_repo_err)?;
 
-        res.matched_count.into_bool().expect_true()?;
-        Ok(res.modified_count.into_bool())
+        res.matched_count.let_(to_bool).let_(convert_404)?;
+        Ok(res.modified_count.let_(to_bool))
     }
 
     async fn delete_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
@@ -306,10 +310,10 @@ impl UserRepository for MongoUserRepository {
                 None,
             )
             .await
-            .cvt()?;
+            .let_(convert_repo_err)?;
 
-        res.matched_count.into_bool().expect_true()?;
-        Ok(res.modified_count.into_bool())
+        res.matched_count.let_(to_bool).let_(convert_404)?;
+        Ok(res.modified_count.let_(to_bool))
     }
 
     async fn delete(&self, id: u64) -> Result<User> {
@@ -340,7 +344,7 @@ impl UserRepository for MongoUserRepository {
                 .delete_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
                 .await?
                 .deleted_count
-                .into_bool() // checking "is `0 | 1`" (= "unique")
+                .let_(to_bool) // checking "is `0 | 1`" (= "unique")
             {
                 false => unreachable!("couldn't delete value"),
                 true => (),
@@ -369,7 +373,7 @@ impl UserRepository for MongoUserRepository {
             }
         };
 
-        Ok(res.cvt()?.opt_cvt()?)
+        Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 }
 
