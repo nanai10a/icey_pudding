@@ -182,14 +182,12 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
-        // FIXME: transaction begin ---
         let res = self
             .coll
             .count_documents(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
             .into_bool();
-        // --- end
 
         Ok(res)
     }
