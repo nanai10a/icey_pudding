@@ -316,7 +316,7 @@ impl UserRepository for MongoUserRepository {
                 .coll
                 .update_one_with_session(
                     doc! { "id": id.to_string() },
-                    doc! { "set": mutation }, // FIXME: missing `$`
+                    doc! { "$set": mutation },
                     None,
                     &mut session,
                 )
