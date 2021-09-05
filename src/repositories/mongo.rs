@@ -17,50 +17,35 @@ use crate::entities::{Content, User};
 
 // FIXME: mustn't use multiple documents. (no manually separate)
 pub struct MongoUserRepository {
-    client: Client,
-    main_coll: Collection<MongoUserModel>,
-    posted_coll: Collection<MongoUserPostedModel>,
-    bookmark_coll: Collection<MongoUserBookmarkModel>,
+    coll: Collection<MongoUserModel>,
 }
 
 impl MongoUserRepository {
-    pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
-        for name in ["user#main", "user#posted", "user#bookmark"] {
-            db.run_command(
-                doc! {
-                    "createIndexes": name,
-                    "indexes": [{
-                        "name": "unique_id",
-                        "key": {
-                            "id": 1
-                        },
-                        "unique": true
-                    }],
-                },
-                None,
-            )
-            .await
-            .map_err(::anyhow::Error::new)?;
-        }
+    pub async fn new_with(db: Database) -> ::anyhow::Result<Self> {
+        db.run_command(
+            doc! {
+                "createIndexes": "user",
+                "indexes": [{
+                    "name": "unique_id",
+                    "key": {
+                        "id": 1
+                    },
+                    "unique": true
+                }],
+            },
+            None,
+        )
+        .await
+        .map_err(::anyhow::Error::new)?;
 
-        let main_coll = db.collection("user#main");
-        let posted_coll = db.collection("user#posted");
-        let bookmark_coll = db.collection("user#bookmark");
+        let coll = db.collection("user#main");
 
-        Ok(Self {
-            client,
-            main_coll,
-            posted_coll,
-            bookmark_coll,
-        })
+        Ok(Self { coll })
     }
 }
 
 pub struct MongoContentRepository {
-    client: Client,
-    main_coll: Collection<MongoContentModel>,
-    liked_coll: Collection<MongoContentLikedModel>,
-    pinned_coll: Collection<MongoContentPinnedModel>,
+    coll: Collection<MongoContentModel>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,20 +53,10 @@ struct MongoUserModel {
     id: String,
     admin: bool,
     sub_admin: bool,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct MongoUserPostedModel {
-    id: String,
-    set: HashSet<Uuid>,
-    size: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct MongoUserBookmarkModel {
-    id: String,
-    set: HashSet<Uuid>,
-    size: i64,
+    posted: HashSet<Uuid>,
+    posted_size: i64,
+    bookmark: HashSet<Uuid>,
+    bookmark_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,6 +65,10 @@ struct MongoContentModel {
     author: MongoContentAuthorModel,
     posted: String,
     content: String,
+    liked: HashSet<String>,
+    liked_size: i64,
+    pinned: HashSet<String>,
+    pinned_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,20 +79,6 @@ enum MongoContentAuthorModel {
         nick: Option<String>,
     },
     Virtual(String),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct MongoContentLikedModel {
-    id: Uuid,
-    set: HashSet<String>,
-    size: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct MongoContentPinnedModel {
-    id: Uuid,
-    set: HashSet<String>,
-    size: i64,
 }
 
 #[async_trait]
