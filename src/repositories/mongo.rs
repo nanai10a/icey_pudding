@@ -335,7 +335,10 @@ impl UserRepository for MongoUserRepository {
         let res = self
             .coll
             .count_documents(
-                doc! { "id": id.to_string(), "posted": { "$in": [content_id.to_string()] } },
+                doc! {
+                    "id": id.to_string(),
+                    "posted": { "$in": [content_id.to_string()] }
+                },
                 None,
             )
             .await
@@ -386,7 +389,10 @@ impl UserRepository for MongoUserRepository {
         let res = self
             .coll
             .count_documents(
-                doc! { "id": id.to_string(), "bookmark": { "$in": [content_id.to_string()] } },
+                doc! {
+                    "id": id.to_string(),
+                    "bookmark": { "$in": [content_id.to_string()] }
+                },
                 None,
             )
             .await
