@@ -350,7 +350,7 @@ impl UserRepository for MongoUserRepository {
 
         let res = loop {
             let r = transaction(self, id, mutation.clone()).await;
-            if let Err(ref e) = e {
+            if let Err(ref e) = r {
                 if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
                     continue;
                 }
