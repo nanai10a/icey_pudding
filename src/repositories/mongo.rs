@@ -59,9 +59,9 @@ struct MongoUserModel {
     bookmark: HashSet<Uuid>,
     bookmark_size: i64,
 }
-impl Into<User> for MongoUserModel {
-    fn into(self) -> User {
-        let MongoUserModel {
+impl From<MongoUserModel> for User {
+    fn from(
+        MongoUserModel {
             id,
             admin,
             sub_admin,
@@ -69,8 +69,8 @@ impl Into<User> for MongoUserModel {
             posted_size: _,
             bookmark,
             bookmark_size: _,
-        } = self;
-
+        }: MongoUserModel,
+    ) -> User {
         User {
             id: id.parse().unwrap(),
             admin,
@@ -92,9 +92,9 @@ struct MongoContentModel {
     pinned: HashSet<String>,
     pinned_size: i64,
 }
-impl Into<Content> for MongoContentModel {
-    fn into(self) -> Content {
-        let MongoContentModel {
+impl From<MongoContentModel> for Content {
+    fn from(
+        MongoContentModel {
             id,
             author,
             posted,
@@ -103,8 +103,8 @@ impl Into<Content> for MongoContentModel {
             liked_size: _,
             mut pinned,
             pinned_size: _,
-        } = self;
-
+        }: MongoContentModel,
+    ) -> Self {
         Content {
             id,
             author: author.into(),
@@ -125,9 +125,9 @@ enum MongoContentAuthorModel {
     },
     Virtual(String),
 }
-impl Into<Author> for MongoContentAuthorModel {
-    fn into(self) -> Author {
-        match self {
+impl From<MongoContentAuthorModel> for Author {
+    fn from(m: MongoContentAuthorModel) -> Self {
+        match m {
             MongoContentAuthorModel::User { id, name, nick } => Author::User {
                 id: id.parse().unwrap(),
                 name,
@@ -144,10 +144,8 @@ struct MongoContentPostedModel {
     name: String,
     nick: Option<String>,
 }
-impl Into<Posted> for MongoContentPostedModel {
-    fn into(self) -> Posted {
-        let MongoContentPostedModel { id, name, nick } = self;
-
+impl From<MongoContentPostedModel> for Posted {
+    fn from(MongoContentPostedModel { id, name, nick }: MongoContentPostedModel) -> Self {
         Posted {
             id: id.parse().unwrap(),
             name,
