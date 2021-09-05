@@ -1,5 +1,88 @@
-use super::{MongoContentAuthorModel, MongoContentModel, MongoContentPostedModel, MongoUserModel};
+use std::ops::Bound;
+
+use mongodb::bson::{doc, Document};
+
+use super::{
+    ContentMutation, ContentQuery, Dispose, MongoContentAuthorModel, MongoContentModel,
+    MongoContentPostedModel, MongoUserModel, UserMutation, UserQuery,
+};
 use crate::entities::{Author, Content, Posted, User};
+
+impl From<UserQuery> for Document {
+    fn from(
+        UserQuery {
+            posted,
+            posted_num,
+            bookmark,
+            bookmark_num,
+        }: UserQuery,
+    ) -> Self {
+        let mut query = doc! {};
+
+        if let Some(mut set_raw) = posted {
+            if !set_raw.is_empty() {
+                let set = set_raw.drain().map(|i| i.to_string()).collect::<Vec<_>>();
+                query.insert("posted", doc! { "$in": set });
+            }
+        }
+        if let Some((g, l)) = posted_num {
+            let mut posted_num_q = doc! {};
+            match g {
+                Bound::Unbounded => (),
+                Bound::Included(n) => posted_num_q.insert("$gte", n).dispose(),
+                Bound::Excluded(n) => posted_num_q.insert("$gt", n).dispose(),
+            }
+            match l {
+                Bound::Unbounded => (),
+                Bound::Included(n) => posted_num_q.insert("$lte", n).dispose(),
+                Bound::Excluded(n) => posted_num_q.insert("$lt", n).dispose(),
+            }
+            if !posted_num_q.is_empty() {
+                query.insert("posted_size", posted_num_q);
+            }
+        }
+        if let Some(mut set_raw) = bookmark {
+            if !set_raw.is_empty() {
+                let set = set_raw.drain().map(|i| i.to_string()).collect::<Vec<_>>();
+                query.insert("bookmark", doc! { "$in": set });
+            }
+        }
+        if let Some((g, l)) = bookmark_num {
+            let mut bookmark_num_q = doc! {};
+            match g {
+                Bound::Unbounded => (),
+                Bound::Included(n) => bookmark_num_q.insert("$gte", n).dispose(),
+                Bound::Excluded(n) => bookmark_num_q.insert("$gt", n).dispose(),
+            }
+            match l {
+                Bound::Unbounded => (),
+                Bound::Included(n) => bookmark_num_q.insert("$lte", n).dispose(),
+                Bound::Excluded(n) => bookmark_num_q.insert("$lt", n).dispose(),
+            }
+            if !bookmark_num_q.is_empty() {
+                query.insert("bookmark_size", bookmark_num_q);
+            }
+        }
+
+        query
+    }
+}
+impl From<UserMutation> for Document {
+    fn from(UserMutation { admin, sub_admin }: UserMutation) -> Self {
+        let mut mutation = doc! {};
+        if let Some(val) = admin {
+            mutation.insert("admin", val);
+        }
+        if let Some(val) = sub_admin {
+            mutation.insert("sub_admin", val);
+        }
+
+        mutation
+    }
+}
+
+impl From<ContentQuery> for Document {}
+impl From<ContentMutation> for Document {}
 
 impl From<MongoUserModel> for User {
     fn from(
