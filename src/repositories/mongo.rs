@@ -424,22 +424,7 @@ impl UserRepository for MongoUserRepository {
         // FIXME: transaction begin ---
         let user = self.find(id).await?;
 
-        let main_res = self
-            .main_coll
-            .delete_one(doc! { "id": id.to_string() }, None)
-            .await
-            .cvt()?
-            .deleted_count
-            .into_bool();
-        let posted_res = self
-            .posted_coll
-            .delete_one(doc! { "id": id.to_string() }, None)
-            .await
-            .cvt()?
-            .deleted_count
-            .into_bool();
-        let bookmark_res = self
-            .bookmark_coll
+        self.coll
             .delete_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
@@ -449,14 +434,7 @@ impl UserRepository for MongoUserRepository {
 
         // `::into_bool` is checking "is `0 | 1`" (= "unique")
 
-        match (main_res, posted_res, bookmark_res) {
-            (true, true, true) => Ok(user),
-            (false, false, false) => Err(RepositoryError::NotFound),
-            _ => unreachable!(
-                "delete was partially failed: [main: {}] [posted: {}] [bookmark: {}]",
-                main_res, posted_res, bookmark_res
-            ),
-        }
+        Ok(user)
     }
 }
 
