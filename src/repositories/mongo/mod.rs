@@ -1,5 +1,4 @@
 use std::collections::HashSet;
-use std::ops::Bound;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -127,65 +126,12 @@ impl UserRepository for MongoUserRepository {
         Ok(user)
     }
 
-    async fn finds(
-        &self,
-        UserQuery {
-            posted,
-            posted_num,
-            bookmark,
-            bookmark_num,
-        }: UserQuery,
-    ) -> Result<Vec<User>> {
-        let mut query = doc! {};
-
-        if let Some(mut set_raw) = posted {
-            if !set_raw.is_empty() {
-                let set = set_raw.drain().map(|i| i.to_string()).collect::<Vec<_>>();
-                query.insert("posted", doc! { "$in": set });
-            }
-        }
-        if let Some((g, l)) = posted_num {
-            let mut posted_num_q = doc! {};
-            match g {
-                Bound::Unbounded => (),
-                Bound::Included(n) => posted_num_q.insert("$gte", n).dispose(),
-                Bound::Excluded(n) => posted_num_q.insert("$gt", n).dispose(),
-            }
-            match l {
-                Bound::Unbounded => (),
-                Bound::Included(n) => posted_num_q.insert("$lte", n).dispose(),
-                Bound::Excluded(n) => posted_num_q.insert("$lt", n).dispose(),
-            }
-            if !posted_num_q.is_empty() {
-                query.insert("posted_size", posted_num_q);
-            }
-        }
-        if let Some(mut set_raw) = bookmark {
-            if !set_raw.is_empty() {
-                let set = set_raw.drain().map(|i| i.to_string()).collect::<Vec<_>>();
-                query.insert("bookmark", doc! { "$in": set });
-            }
-        }
-        if let Some((g, l)) = bookmark_num {
-            let mut bookmark_num_q = doc! {};
-            match g {
-                Bound::Unbounded => (),
-                Bound::Included(n) => bookmark_num_q.insert("$gte", n).dispose(),
-                Bound::Excluded(n) => bookmark_num_q.insert("$gt", n).dispose(),
-            }
-            match l {
-                Bound::Unbounded => (),
-                Bound::Included(n) => bookmark_num_q.insert("$lte", n).dispose(),
-                Bound::Excluded(n) => bookmark_num_q.insert("$lt", n).dispose(),
-            }
-            if !bookmark_num_q.is_empty() {
-                query.insert("bookmark_size", bookmark_num_q);
-            }
-        }
+    async fn finds(&self, query: UserQuery) -> Result<Vec<User>> {
+        let query_doc: Document = query.into();
 
         let res = self
             .coll
-            .find(query, None)
+            .find(query_doc, None)
             .await
             .cvt()?
             .try_collect::<Vec<_>>()
@@ -198,18 +144,8 @@ impl UserRepository for MongoUserRepository {
         Ok(res)
     }
 
-    async fn update(
-        &self,
-        id: u64,
-        UserMutation { admin, sub_admin }: UserMutation,
-    ) -> Result<User> {
-        let mut mutation = doc! {};
-        if let Some(val) = admin {
-            mutation.insert("admin", val);
-        }
-        if let Some(val) = sub_admin {
-            mutation.insert("sub_admin", val);
-        }
+    async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
+        let mutation_doc: Document = mutation.into();
 
         async fn transaction(
             this: &MongoUserRepository,
@@ -257,7 +193,7 @@ impl UserRepository for MongoUserRepository {
         }
 
         let res = loop {
-            let r = transaction(self, id, mutation.clone()).await;
+            let r = transaction(self, id, mutation_doc.clone()).await;
             if let Err(ref e) = r {
                 if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
                     continue;
