@@ -99,9 +99,9 @@ impl Into<Content> for MongoContentModel {
             author,
             posted,
             content,
-            liked,
+            mut liked,
             liked_size: _,
-            pinned,
+            mut pinned,
             pinned_size: _,
         } = self;
 
