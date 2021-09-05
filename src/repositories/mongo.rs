@@ -239,11 +239,12 @@ impl UserRepository for MongoUserRepository {
         }: UserQuery,
     ) -> Result<Vec<User>> {
         // FIXME: do transaction
-        let mut posted_q = doc! {};
+        let mut query = doc! {};
+
         if let Some(mut set_raw) = posted {
             if !set_raw.is_empty() {
                 let set = set_raw.drain().map(|i| i.to_string()).collect::<Vec<_>>();
-                posted_q.insert("set", doc! { "$in": set });
+                query.insert("posted", doc! { "$in": set });
             }
         }
         if let Some((g, l)) = posted_num {
@@ -259,23 +260,13 @@ impl UserRepository for MongoUserRepository {
                 Bound::Excluded(n) => posted_num_q.insert("$lt", n).dispose(),
             }
             if !posted_num_q.is_empty() {
-                posted_q.insert("size", posted_num_q);
+                query.insert("posted_size", posted_num_q);
             }
         }
-        let mut posted_res = self
-            .posted_coll
-            .find(posted_q, None)
-            .await
-            .cvt()?
-            .try_collect::<Vec<_>>()
-            .await
-            .cvt()?;
-
-        let mut bookmark_q = doc! {};
         if let Some(mut set_raw) = bookmark {
             if !set_raw.is_empty() {
                 let set = set_raw.drain().map(|i| i.to_string()).collect::<Vec<_>>();
-                bookmark_q.insert("set", doc! { "$in": set });
+                query.insert("bookmark", doc! { "$in": set });
             }
         }
         if let Some((g, l)) = bookmark_num {
@@ -291,76 +282,20 @@ impl UserRepository for MongoUserRepository {
                 Bound::Excluded(n) => bookmark_num_q.insert("$lt", n).dispose(),
             }
             if !bookmark_num_q.is_empty() {
-                bookmark_q.insert("size", bookmark_num_q);
+                query.insert("bookmark_size", bookmark_num_q);
             }
         }
 
-        let mut bookmark_res = self
-            .bookmark_coll
-            .find(bookmark_q, None)
+        let res = self
+            .coll
+            .find(query, None)
             .await
             .cvt()?
             .try_collect::<Vec<_>>()
             .await
-            .cvt()?;
-
-        let mut ids = posted_res
-            .iter()
-            .filter(|p| bookmark_res.iter().filter(|b| p.id == b.id).count() == 1)
-            .map(|p| &p.id)
-            .collect::<Vec<_>>();
-        if ids.is_empty() {
-            return Ok(vec![]);
-        }
-
-        let main_id_q = ids.drain(..).map(|i| doc! { "id": i }).collect::<Vec<_>>();
-        let mut mains = self
-            .main_coll
-            .find(doc! { "$or": main_id_q }, None)
-            .await
             .cvt()?
-            .try_collect::<Vec<_>>()
-            .await
-            .cvt()?;
-
-        let res = mains
             .drain(..)
-            .map(|m| {
-                (
-                    {
-                        let p = posted_res.drain_filter(|p| m.id == p.id).next().unwrap();
-                        p
-                    },
-                    m,
-                )
-            })
-            .map(|(p, m)| {
-                (
-                    p,
-                    {
-                        let b = bookmark_res.drain_filter(|b| m.id == b.id).next().unwrap();
-                        b
-                    },
-                    m,
-                )
-            })
-            .map(
-                |(
-                    MongoUserPostedModel { set: posted, .. },
-                    MongoUserBookmarkModel { set: bookmark, .. },
-                    MongoUserModel {
-                        id,
-                        admin,
-                        sub_admin,
-                    },
-                )| User {
-                    id: id.parse().unwrap(),
-                    admin,
-                    sub_admin,
-                    posted,
-                    bookmark,
-                },
-            )
+            .map(|m| m.into())
             .collect();
 
         Ok(res)
