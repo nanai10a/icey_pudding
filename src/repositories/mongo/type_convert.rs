@@ -25,40 +25,49 @@ impl From<UserQuery> for Document {
                 query.insert("posted", doc! { "$in": set });
             }
         }
+
         if let Some((g, l)) = posted_num {
             let mut posted_num_q = doc! {};
+
             match g {
                 Bound::Unbounded => (),
                 Bound::Included(n) => posted_num_q.insert("$gte", n).dispose(),
                 Bound::Excluded(n) => posted_num_q.insert("$gt", n).dispose(),
             }
+
             match l {
                 Bound::Unbounded => (),
                 Bound::Included(n) => posted_num_q.insert("$lte", n).dispose(),
                 Bound::Excluded(n) => posted_num_q.insert("$lt", n).dispose(),
             }
+
             if !posted_num_q.is_empty() {
                 query.insert("posted_size", posted_num_q);
             }
         }
+
         if let Some(mut set_raw) = bookmark {
             if !set_raw.is_empty() {
                 let set = set_raw.drain().map(|i| i.to_string()).collect::<Vec<_>>();
                 query.insert("bookmark", doc! { "$in": set });
             }
         }
+
         if let Some((g, l)) = bookmark_num {
             let mut bookmark_num_q = doc! {};
+
             match g {
                 Bound::Unbounded => (),
                 Bound::Included(n) => bookmark_num_q.insert("$gte", n).dispose(),
                 Bound::Excluded(n) => bookmark_num_q.insert("$gt", n).dispose(),
             }
+
             match l {
                 Bound::Unbounded => (),
                 Bound::Included(n) => bookmark_num_q.insert("$lte", n).dispose(),
                 Bound::Excluded(n) => bookmark_num_q.insert("$lt", n).dispose(),
             }
+
             if !bookmark_num_q.is_empty() {
                 query.insert("bookmark_size", bookmark_num_q);
             }
@@ -70,9 +79,11 @@ impl From<UserQuery> for Document {
 impl From<UserMutation> for Document {
     fn from(UserMutation { admin, sub_admin }: UserMutation) -> Self {
         let mut mutation = doc! {};
+
         if let Some(val) = admin {
             mutation.insert("admin", val);
         }
+
         if let Some(val) = sub_admin {
             mutation.insert("sub_admin", val);
         }
