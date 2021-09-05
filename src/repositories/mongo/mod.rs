@@ -409,6 +409,9 @@ impl<T, E: Sync + Send + ::std::error::Error + 'static> Convert<Result<T>> for S
     fn cvt(self) -> Result<T> { self.map_err(|e| RepositoryError::Internal(anyhow!(e))) }
 }
 
+fn dispose<T>(_: T) {}
+
+#[deprecated]
 trait Dispose {
     fn dispose(self);
 }
@@ -416,6 +419,23 @@ impl<T> Dispose for T {
     fn dispose(self) {}
 }
 
+fn try_unique_check<T>(result: StdResult<T, ::mongodb::error::Error>) -> Result<bool> {
+    match match match result {
+        Ok(_) => return Ok(true),
+        Err(e) => (*e.kind.clone(), e),
+    } {
+        (
+            ::mongodb::error::ErrorKind::Write(::mongodb::error::WriteFailure::WriteError(e)),
+            src,
+        ) => (e.code, src),
+        (_, src) => return Err(RepositoryError::Internal(anyhow!(src))),
+    } {
+        (11000, _) => Ok(false),
+        (_, src) => Err(RepositoryError::Internal(anyhow!(src))),
+    }
+}
+
+#[deprecated]
 trait DetectUniqueErr {
     fn unique_check(self) -> Result<bool>;
 }
@@ -437,6 +457,14 @@ impl<T> DetectUniqueErr for ::mongodb::error::Result<T> {
     }
 }
 
+fn convert_404_or<T>(option: Option<T>) -> Result<T> {
+    match option {
+        Some(t) => Ok(t),
+        None => Err(RepositoryError::NotFound),
+    }
+}
+
+#[deprecated]
 trait OptToErr<T> {
     fn opt_cvt(self) -> Result<T>;
 }
@@ -449,6 +477,19 @@ impl<T> OptToErr<T> for Option<T> {
     }
 }
 
+fn to_bool<N>(number: N) -> bool
+where N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Clone {
+    match match ::core::convert::TryInto::<i8>::try_into(number.clone()) {
+        Ok(n) => n,
+        Err(_) => unreachable!("expected 0 or 1, found: {:?}", number),
+    } {
+        0 => false,
+        1 => true,
+        n => unreachable!("expected 0 or 1, found: {}", n),
+    }
+}
+
+#[deprecated]
 trait NumToBool {
     fn into_bool(self) -> bool;
 }
@@ -465,6 +506,7 @@ impl<N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Copy> NumToBool for 
     }
 }
 
+#[deprecated]
 trait BoolToErr {
     fn expect_true(self) -> Result<()>;
 }
