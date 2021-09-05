@@ -402,6 +402,12 @@ impl ContentRepository for MongoContentRepository {
     async fn delete(&self, id: Uuid) -> Result<Content> { unimplemented!() }
 }
 
+fn convert_repo_err<T, E>(result: ::core::result::Result<T, E>) -> Result<T>
+where E: Sync + Send + ::std::error::Error + 'static {
+    result.map_err(|e| RepositoryError::Internal(anyhow!(e)))
+}
+
+#[deprecated]
 trait Convert<T> {
     fn cvt(self) -> T;
 }
