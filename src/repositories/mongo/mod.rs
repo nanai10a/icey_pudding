@@ -17,6 +17,8 @@ use super::{
 };
 use crate::entities::{Author, Content, Posted, User};
 
+mod type_convert;
+
 pub struct MongoUserRepository {
     client: Client,
     coll: Collection<MongoUserModel>,
