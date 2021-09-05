@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::ops::Bound;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
@@ -11,10 +12,10 @@ use serenity::futures::TryStreamExt;
 use uuid::Uuid;
 
 use super::{
-    ContentMutation, ContentQuery, ContentRepository, RepositoryError, Result, StdResult,
-    UserMutation, UserQuery, UserRepository,
+    AuthorQuery, ContentMutation, ContentQuery, ContentRepository, PostedQuery, RepositoryError,
+    Result, StdResult, UserMutation, UserQuery, UserRepository,
 };
-use crate::entities::{Content, User};
+use crate::entities::{Author, Content, User};
 
 mod type_convert;
 
@@ -439,7 +440,142 @@ impl ContentRepository for MongoContentRepository {
         Ok(content)
     }
 
-    async fn finds(&self, query: ContentQuery) -> Result<Vec<Content>> { unimplemented!() }
+    async fn finds(
+        &self,
+        ContentQuery {
+            author,
+            posted,
+            content,
+            liked,
+            liked_num,
+            pinned,
+            pinned_num,
+        }: ContentQuery,
+    ) -> Result<Vec<Content>> {
+        let query_doc = {
+            let mut doc = doc! {};
+
+            if let Some(mut set_raw) = liked {
+                if !set_raw.is_empty() {
+                    let set = set_raw.drain().map(|n| n.to_string()).collect::<Vec<_>>();
+                    doc.insert("liked", doc! { "$in": set });
+                }
+            }
+
+            if let Some((g, l)) = liked_num {
+                let mut num_q = doc! {};
+
+                match g {
+                    Bound::Unbounded => (),
+                    Bound::Included(n) => num_q.insert("$gte", n).let_(::core::mem::drop),
+                    Bound::Excluded(n) => num_q.insert("$gt", n).let_(::core::mem::drop),
+                }
+
+                match l {
+                    Bound::Unbounded => (),
+                    Bound::Included(n) => num_q.insert("$lte", n).let_(::core::mem::drop),
+                    Bound::Excluded(n) => num_q.insert("$lt", n).let_(::core::mem::drop),
+                }
+
+                if !num_q.is_empty() {
+                    doc.insert("liked_size", num_q);
+                }
+            }
+
+            if let Some(mut set_raw) = pinned {
+                if !set_raw.is_empty() {
+                    let set = set_raw.drain().map(|n| n.to_string()).collect::<Vec<_>>();
+                    doc.insert("pinned", doc! { "$in": set });
+                }
+            }
+
+            if let Some((g, l)) = pinned_num {
+                let mut num_q = doc! {};
+
+                match g {
+                    Bound::Unbounded => (),
+                    Bound::Included(n) => num_q.insert("$gte", n).let_(::core::mem::drop),
+                    Bound::Excluded(n) => num_q.insert("$gt", n).let_(::core::mem::drop),
+                }
+
+                match l {
+                    Bound::Unbounded => (),
+                    Bound::Included(n) => num_q.insert("$lte", n).let_(::core::mem::drop),
+                    Bound::Excluded(n) => num_q.insert("$lt", n).let_(::core::mem::drop),
+                }
+
+                if !num_q.is_empty() {
+                    doc.insert("pinned_size", num_q);
+                }
+            }
+
+            doc
+        };
+
+        let mut tmp_res = self
+            .coll
+            .find(query_doc, None)
+            .await
+            .let_(convert_repo_err)?
+            .try_collect::<Vec<_>>()
+            .await
+            .let_(convert_repo_err)?
+            .drain(..)
+            .map::<Content, _>(|m| m.into())
+            .collect::<Vec<_>>();
+
+        let res = tmp_res
+            .drain(..)
+            .filter(|c| match &author {
+                Some(AuthorQuery::UserId(id_q)) => match &c.author {
+                    Author::User { id, .. } => id_q == id,
+                    _ => false,
+                },
+                Some(AuthorQuery::UserName(name_q)) => match &c.author {
+                    Author::User { name, .. } => name_q.is_match(name.as_str()),
+                    _ => false,
+                },
+                Some(AuthorQuery::UserNick(nick_q)) => match &c.author {
+                    Author::User { nick, .. } =>
+                        nick.as_ref().map_or(false, |s| nick_q.is_match(s.as_str())),
+                    _ => false,
+                },
+                Some(AuthorQuery::Virtual(name_q)) => match &c.author {
+                    Author::Virtual(name) => name_q.is_match(name.as_str()),
+                    _ => false,
+                },
+                Some(AuthorQuery::Any(any_q)) => match &c.author {
+                    Author::User { name, nick, .. } =>
+                        any_q.is_match(name.as_str())
+                            || nick.as_ref().map_or(false, |s| any_q.is_match(s.as_str())),
+                    Author::Virtual(name) => any_q.is_match(name.as_str()),
+                },
+                None => true,
+            })
+            .filter(|c| match &posted {
+                Some(PostedQuery::UserId(id_q)) => &c.posted.id == id_q,
+                Some(PostedQuery::UserName(name_q)) => name_q.is_match(c.posted.name.as_str()),
+                Some(PostedQuery::UserNick(nick_q)) => c
+                    .posted
+                    .nick
+                    .as_ref()
+                    .map_or(false, |s| nick_q.is_match(s.as_str())),
+                Some(PostedQuery::Any(any_q)) =>
+                    any_q.is_match(c.posted.name.as_str())
+                        || c.posted
+                            .nick
+                            .as_ref()
+                            .map_or(false, |s| any_q.is_match(s.as_str())),
+                None => true,
+            })
+            .filter(|c| match &content {
+                Some(content_q) => content_q.is_match(c.content.as_str()),
+                None => true,
+            })
+            .collect();
+
+        Ok(res)
+    }
 
     async fn update(&self, id: Uuid, mutation: ContentMutation) -> Result<Content> {
         unimplemented!()
