@@ -82,6 +82,27 @@ impl From<MongoUserModel> for User {
         }
     }
 }
+impl From<User> for MongoUserModel {
+    fn from(
+        User {
+            id,
+            admin,
+            sub_admin,
+            posted,
+            bookmark,
+        }: User,
+    ) -> Self {
+        MongoUserModel {
+            id: id.to_string(),
+            admin,
+            sub_admin,
+            posted_size: posted.len() as i64,
+            posted,
+            bookmark_size: bookmark.len() as i64,
+            bookmark,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoContentModel {
@@ -117,6 +138,29 @@ impl From<MongoContentModel> for Content {
         }
     }
 }
+impl From<Content> for MongoContentModel {
+    fn from(
+        Content {
+            id,
+            author,
+            posted,
+            content,
+            mut liked,
+            mut pinned,
+        }: Content,
+    ) -> Self {
+        MongoContentModel {
+            id,
+            author: author.into(),
+            posted: posted.into(),
+            content,
+            liked_size: liked.len() as i64,
+            liked: liked.drain().map(|n| n.to_string()).collect(),
+            pinned_size: pinned.len() as i64,
+            pinned: pinned.drain().map(|n| n.to_string()).collect(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum MongoContentAuthorModel {
@@ -139,6 +183,18 @@ impl From<MongoContentAuthorModel> for Author {
         }
     }
 }
+impl From<Author> for MongoContentAuthorModel {
+    fn from(a: Author) -> Self {
+        match a {
+            Author::User { id, name, nick } => MongoContentAuthorModel::User {
+                id: id.to_string(),
+                name,
+                nick,
+            },
+            Author::Virtual(s) => MongoContentAuthorModel::Virtual(s),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoContentPostedModel {
@@ -155,28 +211,20 @@ impl From<MongoContentPostedModel> for Posted {
         }
     }
 }
+impl From<Posted> for MongoContentPostedModel {
+    fn from(Posted { id, name, nick }: Posted) -> Self {
+        MongoContentPostedModel {
+            id: id.to_string(),
+            name,
+            nick,
+        }
+    }
+}
 
 #[async_trait]
 impl UserRepository for MongoUserRepository {
-    async fn insert(
-        &self,
-        User {
-            id,
-            admin,
-            sub_admin,
-            posted,
-            bookmark,
-        }: User,
-    ) -> Result<bool> {
-        let model = MongoUserModel {
-            id: id.to_string(),
-            admin,
-            sub_admin,
-            posted_size: posted.len() as i64,
-            posted,
-            bookmark_size: bookmark.len() as i64,
-            bookmark,
-        };
+    async fn insert(&self, user: User) -> Result<bool> {
+        let model: MongoUserModel = user.into();
 
         let res = self.coll.insert_one(model, None).await.unique_check()?;
 
