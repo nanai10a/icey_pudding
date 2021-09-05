@@ -84,7 +84,7 @@ impl Into<User> for MongoUserModel {
 struct MongoContentModel {
     id: Uuid,
     author: MongoContentAuthorModel,
-    posted: String,
+    posted: MongoContentPostedModel,
     content: String,
     liked: HashSet<String>,
     liked_size: i64,
@@ -107,7 +107,7 @@ impl Into<Content> for MongoContentModel {
         Content {
             id,
             author: author.into(),
-            posted: posted.parse().unwrap(),
+            posted: posted.into(),
             content,
             liked: liked.drain().map(|s| s.parse().unwrap()).collect(),
             pinned: pinned.drain().map(|s| s.parse().unwrap()).collect(),
@@ -133,6 +133,24 @@ impl Into<Author> for MongoContentAuthorModel {
                 nick,
             },
             MongoContentAuthorModel::Virtual(s) => Author::Virtual(s),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct MongoContentPostedModel {
+    id: String,
+    name: String,
+    nick: Option<String>,
+}
+impl Into<Posted> for MongoContentPostedModel {
+    fn into(self) -> Posted {
+        let MongoContentPostedModel { id, name, nick } = self;
+
+        Posted {
+            id: id.parse().unwrap(),
+            name,
+            nick,
         }
     }
 }
