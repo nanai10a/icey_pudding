@@ -512,6 +512,13 @@ impl<N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Copy> NumToBool for 
     }
 }
 
+fn convert_404(b: bool) -> Result<()> {
+    match b {
+        true => Ok(()),
+        false => Err(RepositoryError::NotFound),
+    }
+}
+
 #[deprecated]
 trait BoolToErr {
     fn expect_true(self) -> Result<()>;
