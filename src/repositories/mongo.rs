@@ -206,7 +206,7 @@ impl UserRepository for MongoUserRepository {
             .await
             .cvt()?
             .opt_cvt()?;
-        assert_eq!(id_str, id.to_string(), "not matched id!"); // FIXME: checking only this?
+        assert_eq!(id_str, id.to_string(), "not matched id!");
 
         Ok(User {
             id,
