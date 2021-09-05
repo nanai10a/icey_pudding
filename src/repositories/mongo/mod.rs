@@ -115,28 +115,16 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn find(&self, id: u64) -> Result<User> {
-        let MongoUserModel {
-            id: id_str,
-            admin,
-            sub_admin,
-            posted,
-            bookmark,
-            ..
-        } = self
+        let user: User = self
             .coll
             .find_one(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
-            .opt_cvt()?;
-        assert_eq!(id_str, id.to_string(), "not matched id!");
+            .opt_cvt()?
+            .into();
+        assert_eq!(user.id, id, "not matched id!");
 
-        Ok(User {
-            id,
-            admin,
-            sub_admin,
-            posted,
-            bookmark,
-        })
+        Ok(user)
     }
 
     async fn finds(
