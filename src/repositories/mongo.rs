@@ -306,16 +306,21 @@ impl UserRepository for MongoUserRepository {
         id: u64,
         UserMutation { admin, sub_admin }: UserMutation,
     ) -> Result<User> {
-        let mut main_m = doc! {};
+        let mut mutation = doc! {};
         if let Some(val) = admin {
-            main_m.insert("admin", val);
+            mutation.insert("admin", val);
         }
         if let Some(val) = sub_admin {
-            main_m.insert("sub_admin", val);
+            mutation.insert("sub_admin", val);
         }
 
-        self.main_coll
-            .update_one(doc! { "id": id.to_string() }, doc! { "$set": main_m }, None)
+        // FIXME: transaction begin ---
+        self.coll
+            .update_one(
+                doc! { "id": id.to_string() },
+                doc! { "$set": mutation },
+                None,
+            )
             .await
             .cvt()?
             .matched_count
@@ -323,6 +328,7 @@ impl UserRepository for MongoUserRepository {
             .expect_true()?;
 
         self.find(id).await
+        // --- end
     }
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
