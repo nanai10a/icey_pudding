@@ -52,6 +52,30 @@ pub struct MongoContentRepository {
     coll: Collection<MongoContentModel>,
 }
 
+impl MongoContentRepository {
+    pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
+        db.run_command(
+            doc! {
+                "createIndexes": "content",
+                "indexes": [{
+                    "name": "unique_id",
+                    "key": {
+                        "id": 1
+                    },
+                    "unique": true
+                }],
+            },
+            None,
+        )
+        .await
+        .map_err(::anyhow::Error::new)?;
+
+        let coll = db.collection("content");
+
+        Ok(Self { client, coll })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoUserModel {
     id: String,
