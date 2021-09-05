@@ -345,12 +345,13 @@ impl UserRepository for MongoUserRepository {
         Ok(res)
     }
 
+    // FIXME: update count.
     async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let res = self
-            .posted_coll
+            .coll
             .update_one(
                 doc! { "id": id.to_string() },
-                doc! { "$addToSet": { "set": content_id.to_string() } },
+                doc! { "$addToSet": { "posted": content_id.to_string() } },
                 None,
             )
             .await
@@ -362,10 +363,10 @@ impl UserRepository for MongoUserRepository {
 
     async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let res = self
-            .posted_coll
+            .coll
             .update_one(
                 doc! { "id": id.to_string() },
-                doc! { "$pull": { "set": content_id.to_string() } },
+                doc! { "$pull": { "posted": content_id.to_string() } },
                 None,
             )
             .await
@@ -391,10 +392,10 @@ impl UserRepository for MongoUserRepository {
 
     async fn insert_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let res = self
-            .bookmark_coll
+            .coll
             .update_one(
                 doc! { "id": id.to_string() },
-                doc! { "$addToSet": { "set": content_id.to_string() } },
+                doc! { "$addToSet": { "bookmark": content_id.to_string() } },
                 None,
             )
             .await
@@ -406,10 +407,10 @@ impl UserRepository for MongoUserRepository {
 
     async fn delete_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let res = self
-            .bookmark_coll
+            .coll
             .update_one(
                 doc! { "id": id.to_string() },
-                doc! { "$pull": { "set": content_id.to_string() } },
+                doc! { "$pull": { "bookmark": content_id.to_string() } },
                 None,
             )
             .await
