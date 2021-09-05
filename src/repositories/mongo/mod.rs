@@ -403,11 +403,41 @@ impl UserRepository for MongoUserRepository {
 
 #[async_trait]
 impl ContentRepository for MongoContentRepository {
-    async fn insert(&self, item: Content) -> Result<bool> { unimplemented!() }
+    async fn insert(&self, content: Content) -> Result<bool> {
+        let model: MongoContentModel = content.into();
 
-    async fn is_exists(&self, id: Uuid) -> Result<bool> { unimplemented!() }
+        let res = self
+            .coll
+            .insert_one(model, None)
+            .await
+            .let_(try_unique_check)?;
 
-    async fn find(&self, id: Uuid) -> Result<Content> { unimplemented!() }
+        Ok(res)
+    }
+
+    async fn is_exists(&self, id: Uuid) -> Result<bool> {
+        let res = self
+            .coll
+            .count_documents(doc! { "id": id.to_string() }, None)
+            .await
+            .let_(convert_repo_err)?
+            .let_(to_bool);
+
+        Ok(res)
+    }
+
+    async fn find(&self, id: Uuid) -> Result<Content> {
+        let content: Content = self
+            .coll
+            .find_one(doc! { "id": id.to_string() }, None)
+            .await
+            .let_(convert_repo_err)?
+            .let_(convert_404_or)?
+            .into();
+        assert_eq!(content.id, id, "not matched id!");
+
+        Ok(content)
+    }
 
     async fn finds(&self, query: ContentQuery) -> Result<Vec<Content>> { unimplemented!() }
 
@@ -415,17 +445,111 @@ impl ContentRepository for MongoContentRepository {
         unimplemented!()
     }
 
-    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let res = self
+            .coll
+            .count_documents(
+                doc! {
+                    "id": id.to_string(),
+                    "liked": { "$in": [user_id.to_string()] }
+                },
+                None,
+            )
+            .await
+            .let_(convert_repo_err)?
+            .let_(to_bool);
 
-    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+        Ok(res)
+    }
 
-    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let res = self
+            .coll
+            .update_one(
+                doc! { "id": id.to_string() },
+                doc! {
+                    "$addToSet": { "liked": user_id.to_string() },
+                    "$inc": { "liked_size": 1 }
+                },
+                None,
+            )
+            .await
+            .let_(convert_repo_err)?;
 
-    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+        res.matched_count.let_(to_bool).let_(convert_404)?;
+        Ok(res.modified_count.let_(to_bool))
+    }
 
-    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let res = self
+            .coll
+            .update_one(
+                doc! { "id": id.to_string() },
+                doc! {
+                    "$pull": { "liked": user_id.to_string() },
+                    "$inc": { "liked_size": -1 }
+                },
+                None,
+            )
+            .await
+            .let_(convert_repo_err)?;
 
-    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> { unimplemented!() }
+        res.matched_count.let_(to_bool).let_(convert_404)?;
+        Ok(res.modified_count.let_(to_bool))
+    }
+
+    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let res = self
+            .coll
+            .count_documents(
+                doc! {
+                    "id": id.to_string(),
+                    "pinned": { "$in": [user_id.to_string()] }
+                },
+                None,
+            )
+            .await
+            .let_(convert_repo_err)?
+            .let_(to_bool);
+
+        Ok(res)
+    }
+
+    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let res = self
+            .coll
+            .update_one(
+                doc! { "id": id.to_string() },
+                doc! {
+                    "$addToSet": { "pinned": user_id.to_string() },
+                    "$inc": { "pinned_size": 1 }
+                },
+                None,
+            )
+            .await
+            .let_(convert_repo_err)?;
+
+        res.matched_count.let_(to_bool).let_(convert_404)?;
+        Ok(res.modified_count.let_(to_bool))
+    }
+
+    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+        let res = self
+            .coll
+            .update_one(
+                doc! { "id": id.to_string() },
+                doc! {
+                    "$pull": { "pinned": user_id.to_string() },
+                    "$inc": { "pinned_size": -1 }
+                },
+                None,
+            )
+            .await
+            .let_(convert_repo_err)?;
+
+        res.matched_count.let_(to_bool).let_(convert_404)?;
+        Ok(res.modified_count.let_(to_bool))
+    }
 
     async fn delete(&self, id: Uuid) -> Result<Content> { unimplemented!() }
 }
