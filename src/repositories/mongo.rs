@@ -37,7 +37,7 @@ impl MongoUserRepository {
         .await
         .map_err(::anyhow::Error::new)?;
 
-        let coll = db.collection("user#main");
+        let coll = db.collection("user");
 
         Ok(Self { coll })
     }
