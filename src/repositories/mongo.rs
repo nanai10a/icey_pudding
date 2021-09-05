@@ -93,45 +93,25 @@ impl UserRepository for MongoUserRepository {
             bookmark,
         }: User,
     ) -> Result<bool> {
-        let main_model = MongoUserModel {
+        let model = MongoUserModel {
             id: id.to_string(),
             admin,
             sub_admin,
-        };
-        let posted_model = MongoUserPostedModel {
-            id: id.to_string(),
-            size: posted.len() as i64,
-            set: posted,
-        };
-        let bookmark_model = MongoUserBookmarkModel {
-            id: id.to_string(),
-            size: bookmark.len() as i64,
-            set: bookmark,
+            posted_size: posted.len() as i64,
+            posted,
+            bookmark_size: bookmark.len() as i64,
+            bookmark,
         };
 
         // FIXME: transaction begin ---
-        let main_res = self
-            .main_coll
-            .insert_one(main_model, None)
-            .await
-            .unique_check()?;
-        let posted_res = self
-            .posted_coll
-            .insert_one(posted_model, None)
-            .await
-            .unique_check()?;
-        let bookmark_res = self
-            .bookmark_coll
-            .insert_one(bookmark_model, None)
-            .await
-            .unique_check()?;
+        let res = self.coll.insert_one(model, None).await.unique_check()?;
         // --- end
 
         // FIXME: if partially failed to insert doc, other logics will fall.
         // because "if can fetch data from `main_coll`, then must able to fetch
         // [sub_coll]" (logics)
 
-        Ok(main_res && posted_res && bookmark_res)
+        Ok(res)
     }
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
