@@ -351,7 +351,10 @@ impl UserRepository for MongoUserRepository {
             .coll
             .update_one(
                 doc! { "id": id.to_string() },
-                doc! { "$addToSet": { "posted": content_id.to_string() } },
+                doc! {
+                    "$addToSet": { "posted": content_id.to_string() },
+                    "$inc": { "posted_size": 1 }
+                },
                 None,
             )
             .await
@@ -366,7 +369,10 @@ impl UserRepository for MongoUserRepository {
             .coll
             .update_one(
                 doc! { "id": id.to_string() },
-                doc! { "$pull": { "posted": content_id.to_string() } },
+                doc! {
+                    "$pull": { "posted": content_id.to_string() },
+                    "$inc": { "posted_size": -1 }
+                },
                 None,
             )
             .await
@@ -395,7 +401,10 @@ impl UserRepository for MongoUserRepository {
             .coll
             .update_one(
                 doc! { "id": id.to_string() },
-                doc! { "$addToSet": { "bookmark": content_id.to_string() } },
+                doc! {
+                    "$addToSet": { "bookmark": content_id.to_string() },
+                    "$inc": { "bookmark_size": 1 }
+                },
                 None,
             )
             .await
@@ -410,7 +419,10 @@ impl UserRepository for MongoUserRepository {
             .coll
             .update_one(
                 doc! { "id": id.to_string() },
-                doc! { "$pull": { "bookmark": content_id.to_string() } },
+                doc! {
+                    "$pull": { "bookmark": content_id.to_string() },
+                    "$inc": { "bookmark_size": -1 }
+                },
                 None,
             )
             .await
