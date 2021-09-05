@@ -15,7 +15,6 @@ use super::{
 };
 use crate::entities::{Author, Content, Posted, User};
 
-// FIXME: mustn't use multiple documents. (no manually separate)
 pub struct MongoUserRepository {
     coll: Collection<MongoUserModel>,
 }
@@ -177,13 +176,7 @@ impl UserRepository for MongoUserRepository {
             bookmark,
         };
 
-        // FIXME: transaction begin ---
         let res = self.coll.insert_one(model, None).await.unique_check()?;
-        // --- end
-
-        // FIXME: if partially failed to insert doc, other logics will fall.
-        // because "if can fetch data from `main_coll`, then must able to fetch
-        // [sub_coll]" (logics)
 
         Ok(res)
     }
@@ -202,7 +195,6 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn find(&self, id: u64) -> Result<User> {
-        // FIXME: transaction begin ---
         let MongoUserModel {
             id: id_str,
             admin,
@@ -217,8 +209,6 @@ impl UserRepository for MongoUserRepository {
             .cvt()?
             .opt_cvt()?;
         assert_eq!(id_str, id.to_string(), "not matched id!"); // FIXME: checking only this?
-
-        // --- end
 
         Ok(User {
             id,
@@ -238,7 +228,6 @@ impl UserRepository for MongoUserRepository {
             bookmark_num,
         }: UserQuery,
     ) -> Result<Vec<User>> {
-        // FIXME: do transaction
         let mut query = doc! {};
 
         if let Some(mut set_raw) = posted {
@@ -348,7 +337,6 @@ impl UserRepository for MongoUserRepository {
         Ok(res)
     }
 
-    // FIXME: update count.
     async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let res = self
             .coll
