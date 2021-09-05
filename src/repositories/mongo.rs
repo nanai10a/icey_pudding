@@ -4,6 +4,8 @@ use std::ops::Bound;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use mongodb::bson::doc;
+use mongodb::error::{TRANSIENT_TRANSACTION_ERROR, UNKNOWN_TRANSACTION_COMMIT_RESULT};
+use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
 use mongodb::{Client, Collection, Database};
 use serde::{Deserialize, Serialize};
 use serenity::futures::TryStreamExt;
@@ -425,20 +427,63 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn delete(&self, id: u64) -> Result<User> {
-        // FIXME: transaction begin ---
-        let user = self.find(id).await?;
+        async fn transaction(
+            this: &MongoUserRepository,
+            id: u64,
+        ) -> ::mongodb::error::Result<Option<User>> {
+            let mut session = this.client.start_session(None).await?;
+            let ta_opt = TransactionOptions::builder()
+                .read_concern(ReadConcern::snapshot())
+                .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
+                .build();
+            session.start_transaction(ta_opt).await?;
 
-        self.coll
-            .delete_one(doc! { "id": id.to_string() }, None)
-            .await
-            .cvt()?
-            .deleted_count
-            .into_bool();
-        // --- end
+            let user: User = match this
+                .coll
+                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .await?
+                .map(|m| m.into())
+            {
+                Some(u) => u,
+                None => return Ok(None),
+            };
+            assert_eq!(user.id, id, "not matched id!");
 
-        // `::into_bool` is checking "is `0 | 1`" (= "unique")
+            match this
+                .coll
+                .delete_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .await?
+                .deleted_count
+                .into_bool() // checking "is `0 | 1`" (= "unique")
+            {
+                false => unreachable!("couldn't delete value"),
+                true => (),
+            };
 
-        Ok(user)
+            loop {
+                let r = session.commit_transaction().await;
+                if let Err(ref e) = r {
+                    if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
+                        continue;
+                    }
+                }
+
+                break r.map(|_| Some(user));
+            }
+        }
+
+        let res = loop {
+            let r = transaction(self, id).await;
+            if let Err(ref e) = r {
+                if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
+                    continue;
+                }
+
+                break r;
+            }
+        };
+
+        Ok(res.cvt()?.opt_cvt()?)
     }
 }
 
