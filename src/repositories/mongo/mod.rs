@@ -411,24 +411,6 @@ where E: Sync + Send + ::std::error::Error + 'static {
     result.map_err(|e| RepositoryError::Internal(anyhow!(e)))
 }
 
-#[deprecated]
-trait Convert<T> {
-    fn cvt(self) -> T;
-}
-impl<T, E: Sync + Send + ::std::error::Error + 'static> Convert<Result<T>> for StdResult<T, E> {
-    fn cvt(self) -> Result<T> { self.map_err(|e| RepositoryError::Internal(anyhow!(e))) }
-}
-
-fn dispose<T>(_: T) {}
-
-#[deprecated]
-trait Dispose {
-    fn dispose(self);
-}
-impl<T> Dispose for T {
-    fn dispose(self) {}
-}
-
 fn try_unique_check<T>(result: StdResult<T, ::mongodb::error::Error>) -> Result<bool> {
     match match match result {
         Ok(_) => return Ok(true),
@@ -445,45 +427,10 @@ fn try_unique_check<T>(result: StdResult<T, ::mongodb::error::Error>) -> Result<
     }
 }
 
-#[deprecated]
-trait DetectUniqueErr {
-    fn unique_check(self) -> Result<bool>;
-}
-impl<T> DetectUniqueErr for ::mongodb::error::Result<T> {
-    fn unique_check(self) -> Result<bool> {
-        match match match self {
-            Ok(_) => return Ok(true),
-            Err(e) => (*e.kind.clone(), e),
-        } {
-            (
-                ::mongodb::error::ErrorKind::Write(::mongodb::error::WriteFailure::WriteError(e)),
-                src,
-            ) => (e.code, src),
-            (_, src) => return Err(RepositoryError::Internal(anyhow!(src))),
-        } {
-            (11000, _) => Ok(false),
-            (_, src) => Err(RepositoryError::Internal(anyhow!(src))),
-        }
-    }
-}
-
 fn convert_404_or<T>(option: Option<T>) -> Result<T> {
     match option {
         Some(t) => Ok(t),
         None => Err(RepositoryError::NotFound),
-    }
-}
-
-#[deprecated]
-trait OptToErr<T> {
-    fn opt_cvt(self) -> Result<T>;
-}
-impl<T> OptToErr<T> for Option<T> {
-    fn opt_cvt(self) -> Result<T> {
-        match self {
-            Some(o) => Ok(o),
-            None => Err(RepositoryError::NotFound),
-        }
     }
 }
 
@@ -499,40 +446,10 @@ where N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Clone {
     }
 }
 
-#[deprecated]
-trait NumToBool {
-    fn into_bool(self) -> bool;
-}
-impl<N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Copy> NumToBool for N {
-    fn into_bool(self) -> bool {
-        match match ::core::convert::TryInto::<i8>::try_into(self) {
-            Ok(n) => n,
-            Err(_) => unreachable!("expected 0 or 1, found: {:?}", self),
-        } {
-            0 => false,
-            1 => true,
-            n => unreachable!("expected 0 or 1, found: {}", n),
-        }
-    }
-}
-
 fn convert_404(b: bool) -> Result<()> {
     match b {
         true => Ok(()),
         false => Err(RepositoryError::NotFound),
-    }
-}
-
-#[deprecated]
-trait BoolToErr {
-    fn expect_true(self) -> Result<()>;
-}
-impl BoolToErr for bool {
-    fn expect_true(self) -> Result<()> {
-        match self {
-            true => Ok(()),
-            false => Err(RepositoryError::NotFound),
-        }
     }
 }
 
