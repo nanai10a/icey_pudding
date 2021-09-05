@@ -295,7 +295,7 @@ impl UserRepository for MongoUserRepository {
         id: u64,
         UserMutation { admin, sub_admin }: UserMutation,
     ) -> Result<User> {
-        let mutation = doc! {};
+        let mut mutation = doc! {};
         if let Some(val) = admin {
             mutation.insert("admin", val);
         }
