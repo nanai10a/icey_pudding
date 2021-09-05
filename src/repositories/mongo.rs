@@ -116,34 +116,15 @@ impl UserRepository for MongoUserRepository {
 
     async fn is_exists(&self, id: u64) -> Result<bool> {
         // FIXME: transaction begin ---
-        let main_res = self
-            .main_coll
-            .count_documents(doc! { "id": id.to_string() }, None)
-            .await
-            .cvt()?
-            .into_bool();
-        let posted_res = self
-            .posted_coll
-            .count_documents(doc! { "id": id.to_string() }, None)
-            .await
-            .cvt()?
-            .into_bool();
-        let bookmark_res = self
-            .bookmark_coll
+        let res = self
+            .coll
             .count_documents(doc! { "id": id.to_string() }, None)
             .await
             .cvt()?
             .into_bool();
         // --- end
 
-        match (main_res, posted_res, bookmark_res) {
-            (true, true, true) => Ok(true),
-            (false, false, false) => Ok(false),
-            _ => unreachable!(
-                "fetching was partially failed: [main: {}] [posted: {}] [bookmark: {}]",
-                main_res, posted_res, bookmark_res
-            ),
-        }
+        Ok(res)
     }
 
     async fn find(&self, id: u64) -> Result<User> {
