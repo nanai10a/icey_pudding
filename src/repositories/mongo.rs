@@ -3,7 +3,7 @@ use std::ops::Bound;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
-use mongodb::bson::doc;
+use mongodb::bson::{doc, Document};
 use mongodb::error::{TRANSIENT_TRANSACTION_ERROR, UNKNOWN_TRANSACTION_COMMIT_RESULT};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
 use mongodb::{Client, Collection, Database};
@@ -295,7 +295,7 @@ impl UserRepository for MongoUserRepository {
         id: u64,
         UserMutation { admin, sub_admin }: UserMutation,
     ) -> Result<User> {
-        let mut mutation = doc! {};
+        let mutation = doc! {};
         if let Some(val) = admin {
             mutation.insert("admin", val);
         }
@@ -303,21 +303,63 @@ impl UserRepository for MongoUserRepository {
             mutation.insert("sub_admin", val);
         }
 
-        // FIXME: transaction begin ---
-        self.coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! { "$set": mutation },
-                None,
-            )
-            .await
-            .cvt()?
-            .matched_count
-            .into_bool()
-            .expect_true()?;
+        async fn transaction(
+            this: &MongoUserRepository,
+            id: u64,
+            mutation: Document,
+        ) -> ::mongodb::error::Result<Option<User>> {
+            let mut session = this.client.start_session(None).await?;
+            let ta_opt = None;
+            session.start_transaction(ta_opt).await?;
 
-        self.find(id).await
-        // --- end
+            match this
+                .coll
+                .update_one_with_session(
+                    doc! { "id": id.to_string() },
+                    doc! { "set": mutation }, // FIXME: missing `$`
+                    None,
+                    &mut session,
+                )
+                .await?
+                .matched_count
+                .into_bool()
+            {
+                false => return Ok(None),
+                true => (),
+            };
+
+            let user: User = this
+                .coll
+                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .await?
+                .unwrap()
+                .into();
+            assert_eq!(user.id, id, "not matched id!");
+
+            loop {
+                let r = session.commit_transaction().await;
+                if let Err(ref e) = r {
+                    if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
+                        continue;
+                    }
+                }
+
+                break r.map(|_| Some(user));
+            }
+        }
+
+        let res = loop {
+            let r = transaction(self, id, mutation.clone()).await;
+            if let Err(ref e) = e {
+                if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
+                    continue;
+                }
+            }
+
+            break r;
+        };
+
+        Ok(res.cvt()?.opt_cvt()?)
     }
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
