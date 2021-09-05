@@ -13,7 +13,7 @@ use super::{
     ContentMutation, ContentQuery, ContentRepository, RepositoryError, Result, StdResult,
     UserMutation, UserQuery, UserRepository,
 };
-use crate::entities::{Content, User};
+use crate::entities::{Author, Content, Posted, User};
 
 // FIXME: mustn't use multiple documents. (no manually separate)
 pub struct MongoUserRepository {
@@ -58,6 +58,27 @@ struct MongoUserModel {
     bookmark: HashSet<Uuid>,
     bookmark_size: i64,
 }
+impl Into<User> for MongoUserModel {
+    fn into(self) -> User {
+        let MongoUserModel {
+            id,
+            admin,
+            sub_admin,
+            posted,
+            posted_size: _,
+            bookmark,
+            bookmark_size: _,
+        } = self;
+
+        User {
+            id: id.parse().unwrap(),
+            admin,
+            sub_admin,
+            posted,
+            bookmark,
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoContentModel {
@@ -70,6 +91,29 @@ struct MongoContentModel {
     pinned: HashSet<String>,
     pinned_size: i64,
 }
+impl Into<Content> for MongoContentModel {
+    fn into(self) -> Content {
+        let MongoContentModel {
+            id,
+            author,
+            posted,
+            content,
+            liked,
+            liked_size: _,
+            pinned,
+            pinned_size: _,
+        } = self;
+
+        Content {
+            id,
+            author: author.into(),
+            posted: posted.parse().unwrap(),
+            content,
+            liked: liked.drain().map(|s| s.parse().unwrap()).collect(),
+            pinned: pinned.drain().map(|s| s.parse().unwrap()).collect(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 enum MongoContentAuthorModel {
@@ -79,6 +123,18 @@ enum MongoContentAuthorModel {
         nick: Option<String>,
     },
     Virtual(String),
+}
+impl Into<Author> for MongoContentAuthorModel {
+    fn into(self) -> Author {
+        match self {
+            MongoContentAuthorModel::User { id, name, nick } => Author::User {
+                id: id.parse().unwrap(),
+                name,
+                nick,
+            },
+            MongoContentAuthorModel::Virtual(s) => Author::Virtual(s),
+        }
+    }
 }
 
 #[async_trait]
