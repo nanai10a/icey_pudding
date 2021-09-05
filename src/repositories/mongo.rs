@@ -16,11 +16,12 @@ use super::{
 use crate::entities::{Author, Content, Posted, User};
 
 pub struct MongoUserRepository {
+    client: Client,
     coll: Collection<MongoUserModel>,
 }
 
 impl MongoUserRepository {
-    pub async fn new_with(db: Database) -> ::anyhow::Result<Self> {
+    pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
         db.run_command(
             doc! {
                 "createIndexes": "user",
@@ -39,11 +40,12 @@ impl MongoUserRepository {
 
         let coll = db.collection("user");
 
-        Ok(Self { coll })
+        Ok(Self { client, coll })
     }
 }
 
 pub struct MongoContentRepository {
+    client: Client,
     coll: Collection<MongoContentModel>,
 }
 
