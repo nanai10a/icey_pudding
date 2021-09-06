@@ -181,7 +181,7 @@ impl Conductor {
                         .collect()
                 },
                 CommandV2::User(UserCommandV2::Update { id, mutation }) => {
-                    let user = self.handler.update_user_v2(id, mutation).await?;
+                    let user = self.handler.update_user_v2(id, mutation).await?; // FIXME: don't able to use this from users (must limit to admin).
 
                     vec![helper::resp_from_user(
                         "updated user",
@@ -267,7 +267,7 @@ impl Conductor {
                     };
 
                     let mutation = ContentMutation { author, content };
-                    let content = self.handler.update_content_v2(id, mutation).await?;
+                    let content = self.handler.update_content_v2(id, mutation).await?; // FIXME: limit to posted user and admin and sub_admin
 
                     vec![helper::resp_from_content(
                         "updated user",
@@ -277,7 +277,7 @@ impl Conductor {
                     )]
                 },
                 CommandV2::Content(ContentCommandV2::Delete { id }) => {
-                    let content = self.handler.delete_content_v2(id).await?;
+                    let content = self.handler.delete_content_v2(id).await?; // FIXME: limit to posted user and admin
 
                     vec![helper::resp_from_content(
                         "deleted content",
