@@ -1,9 +1,6 @@
 use std::env::{args, var};
 
-use icey_pudding::conductors::Conductor;
-use icey_pudding::entities::{Content, User};
-use icey_pudding::handlers::Handler;
-use icey_pudding::repositories::mock::InMemoryRepository;
+use icey_pudding::in_memory;
 use serenity::client::bridge::gateway::GatewayIntents;
 use serenity::client::ClientBuilder;
 
@@ -13,16 +10,9 @@ async fn async_main() {
         Err(e) => return e,
     };
 
-    let eh = Conductor {
-        handler: Handler {
-            user_repository: Box::new(InMemoryRepository::<User>::new()),
-            content_repository: Box::new(InMemoryRepository::<Content>::new()),
-        },
-    };
-
     let mut c = match ClientBuilder::new(token)
         .intents(GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES)
-        .event_handler(eh)
+        .event_handler(in_memory())
         .await
     {
         Ok(c) => c,
