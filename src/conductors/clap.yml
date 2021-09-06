@@ -22,7 +22,6 @@ subcommands:
               - page:
                   help: "must satisfies `1..`"
                   value_name: "PAGE: u32"
-                  required: true
               - posted:
                   short: "p"
                   long: "posted"
@@ -67,7 +66,6 @@ subcommands:
               - page:
                   help: "must satisfies `1..`"
                   value_name: "PAGE: u32"
-                  required: true
               - author:
                   short: "a"
                   long: "author"

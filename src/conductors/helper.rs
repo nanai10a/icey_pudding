@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::io::Cursor;
+use std::num::NonZeroU32;
 use std::ops::Bound;
 use std::str::FromStr;
 
@@ -57,8 +58,13 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                 ("reads", Some(ams2)) => {
                     let page = ams2
                         .value_of("page")
-                        .map(|s| parse_num(s, &mut errs))
-                        .unwrap();
+                        .map(|s| {
+                            NonZeroU32::new(parse_num(s, &mut errs)).unwrap_or_else(|| {
+                                errs.push("page is not accept `0`".to_string());
+                                NonZeroU32::new(1).unwrap() // tmp value
+                            })
+                        })
+                        .unwrap_or_else(|| NonZeroU32::new(1).unwrap());
                     let mut query = Default::default();
 
                     let UserQuery {
@@ -109,8 +115,13 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                 ("reads", Some(ams2)) => {
                     let page = ams2
                         .value_of("page")
-                        .map(|s| parse_num(s, &mut errs))
-                        .unwrap();
+                        .map(|s| {
+                            NonZeroU32::new(parse_num(s, &mut errs)).unwrap_or_else(|| {
+                                errs.push("page is not accept `0`".to_string());
+                                NonZeroU32::new(1).unwrap() // tmp value
+                            })
+                        })
+                        .unwrap_or_else(|| NonZeroU32::new(1).unwrap());
                     let mut query = Default::default();
 
                     let ContentQuery {
