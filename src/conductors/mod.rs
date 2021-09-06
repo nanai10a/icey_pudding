@@ -421,6 +421,7 @@ impl<T> ConvertRange<T> for RangeToInclusive<T> {
 #[async_trait]
 impl EventHandler for Conductor {
     async fn message(&self, ctx: Context, msg: Message) {
+        // FIXME: don't accept msg from myself(bot).
         let parse_res = match helper::parse_msg_v2(msg.content.as_str()).await {
             Some(o) => o,
             None => return,
