@@ -4,7 +4,9 @@ use std::fmt::Display;
 use uuid::Uuid;
 
 // TODO: replace to this structures
+#[allow(dead_code)]
 pub(crate) struct UserId(u64);
+#[allow(dead_code)]
 pub(crate) struct ContentId(Uuid);
 
 #[derive(Debug, Clone)]
