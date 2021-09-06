@@ -19,7 +19,7 @@ fn user_err_fmt(e: RepositoryError) -> Error {
     use anyhow::anyhow;
 
     match e {
-        RepositoryError::NotFound => anyhow!("cannot find user. not registered?"),
+        RepositoryError::NotFound => unreachable!("illegal error. (impl error)"),
         e => anyhow!("repository error: {}", e),
     }
 }
