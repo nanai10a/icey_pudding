@@ -117,9 +117,8 @@ struct MongoContentPostedModel {
     nick: Option<String>,
 }
 
-// FIXME: return "success" but not modified `$addToSet`, actually modified `$inc`.
-//        `*_size` don't inc if failed `$addToSet` ops.
-//        (to `fn insert_*`)
+// FIXME: return "success" but not modified `$addToSet`, actually modified
+// `$inc`. `*_size` don't inc if failed `$addToSet` ops. (to `fn insert_*`)
 
 #[async_trait]
 impl UserRepository for MongoUserRepository {
