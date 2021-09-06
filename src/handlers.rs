@@ -249,6 +249,8 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
+    // FIXME: unsyncronized `user#posted`
+    // rename to `withdraw` (<=?=> `post`)
     pub(crate) async fn delete_content_v2(&self, content_id: Uuid) -> Result<Content> {
         self.content_repository
             .delete(content_id)
