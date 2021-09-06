@@ -149,7 +149,9 @@ impl Conductor {
                             (ITEMS * (page as usize - 1))..(ITEMS + ITEMS * (page as usize - 1));
 
                         if !full.contains(&lim.start) {
-                            Err(anyhow!("out of range (0..{} !< {:?})", users.len(), lim))?  // FIXME: illegal range shows: `18446744073709551611..0`
+                            Err(anyhow!("out of range (0..{} !< {:?})", users.len(), lim))?
+                            // FIXME: illegal range shows:
+                            // `18446744073709551611..0`
                         }
 
                         if !full.contains(&lim.end) {
