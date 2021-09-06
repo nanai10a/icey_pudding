@@ -15,16 +15,19 @@ pub fn in_memory() -> impl EventHandler {
     }
 }
 
-pub async fn mongo(uri_str: impl AsRef<str>, db_name: impl AsRef<str>) -> impl EventHandler {
-    let c = ::mongodb::Client::with_uri_str(uri_str).await.unwrap();
+pub async fn mongo(
+    uri_str: impl AsRef<str>,
+    db_name: impl AsRef<str>,
+) -> ::anyhow::Result<impl EventHandler> {
+    let c = ::mongodb::Client::with_uri_str(uri_str).await?;
     let db = c.database(db_name.as_ref());
 
-    Conductor {
+    let eh = Conductor {
         handler: Handler {
-            user_repository: box MongoUserRepository::new_with(c.clone(), db.clone())
-                .await
-                .unwrap(),
-            content_repository: box MongoContentRepository::new_with(c, db).await.unwrap(),
+            user_repository: box MongoUserRepository::new_with(c.clone(), db.clone()).await?,
+            content_repository: box MongoContentRepository::new_with(c, db).await?,
         },
-    }
+    };
+
+    Ok(eh)
 }
