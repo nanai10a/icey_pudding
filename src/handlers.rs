@@ -123,13 +123,13 @@ impl Handler {
         posted: Posted,
         author: Author,
     ) -> Result<Content> {
-        let user_is_exists = !self
+        let user_is_exists = self
             .user_repository
             .is_exists(posted.id)
             .await
             .map_err(user_err_fmt)?;
         if !user_is_exists {
-            bail!("cannot find user. not registered?"); // FIXME: always failied this point.
+            bail!("cannot find user. not registered?");
         }
 
         let posted_id = posted.id;
