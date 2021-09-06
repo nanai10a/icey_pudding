@@ -1,3 +1,4 @@
+use std::num::NonZeroU32;
 use std::ops::{
     Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
@@ -26,8 +27,6 @@ mod helper;
 pub(crate) struct Conductor {
     pub(crate) handler: Handler,
 }
-
-// TODO: do "-reads#page" to optional (default: `0`)
 
 /// command data.
 #[derive(Debug, Clone)]
@@ -59,7 +58,7 @@ pub(crate) enum UserCommand {
     Read { id: Option<u64> },
     /// read users with query.
     /// page **must** satisfies `1..`.
-    Reads { page: u32, query: UserQuery },
+    Reads { page: NonZeroU32, query: UserQuery },
     /// update user with id and mutation.
     /// it's **must** given id.
     Update { id: u64, mutation: UserMutation },
@@ -74,7 +73,10 @@ pub(crate) enum ContentCommand {
     Read { id: Uuid },
     /// read contents with query.
     /// page **must** satisfies `1..`.
-    Reads { page: u32, query: ContentQuery },
+    Reads {
+        page: NonZeroU32,
+        query: ContentQuery,
+    },
     /// update content with id and mutation.
     Update {
         id: Uuid,
@@ -139,7 +141,6 @@ impl Conductor {
                     )]
                 },
                 Command::User(UserCommand::Reads { page, query }) => {
-                    // FIXME: don't accept `page == 0`
                     let mut users = self.handler.read_users(query).await?;
 
                     if users.is_empty() {
@@ -150,13 +151,11 @@ impl Conductor {
 
                     let lim = {
                         let full = ..users.len();
-                        let lim =
-                            (ITEMS * (page as usize - 1))..(ITEMS + ITEMS * (page as usize - 1));
+                        let lim = (ITEMS * (page.get() as usize - 1))
+                            ..(ITEMS + ITEMS * (page.get() as usize - 1));
 
                         if !full.contains(&lim.start) {
                             Err(anyhow!("out of range (0..{} !< {:?})", users.len(), lim))?
-                            // FIXME: illegal range shows:
-                            // `18446744073709551611..0`
                         }
 
                         if !full.contains(&lim.end) {
@@ -203,7 +202,6 @@ impl Conductor {
                     )]
                 },
                 Command::Content(ContentCommand::Reads { page, query }) => {
-                    // FIXME: don't accept `page == 0`
                     let mut contents = self.handler.read_contents(query).await?;
 
                     if contents.is_empty() {
@@ -214,8 +212,8 @@ impl Conductor {
 
                     let lim = {
                         let full = ..contents.len();
-                        let lim =
-                            (ITEMS * (page as usize - 1))..(ITEMS + ITEMS * (page as usize - 1));
+                        let lim = (ITEMS * (page.get() as usize - 1))
+                            ..(ITEMS + ITEMS * (page.get() as usize - 1));
 
                         if !full.contains(&lim.start) {
                             Err(anyhow!("out of range (0..{} !< {:?})", contents.len(), lim))?
