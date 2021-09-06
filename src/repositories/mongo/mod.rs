@@ -258,7 +258,6 @@ impl UserRepository for MongoUserRepository {
         .await
     }
 
-    // FIXME: rename to `bookmark`
     async fn is_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
         is_contains(
             "bookmark",
@@ -269,7 +268,6 @@ impl UserRepository for MongoUserRepository {
         .await
     }
 
-    // FIXME: rename to `bookmark`
     async fn insert_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
         modify_set(
             "bookmark",
@@ -282,7 +280,6 @@ impl UserRepository for MongoUserRepository {
         .await
     }
 
-    // FIXME: rename to `bookmark`
     async fn delete_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
         modify_set(
             "bookmark",
