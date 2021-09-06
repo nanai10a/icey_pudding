@@ -18,23 +18,6 @@ use crate::entities::{Author, Content, User};
 
 mod type_convert;
 
-macro_rules! exec_transaction {
-    ($f:expr $( , $a:expr )*) => {
-        async {
-            loop {
-                let r = $f($( $a, )*).await;
-                if let Err(ref e) = r {
-                    if e.contains_label(::mongodb::error::TRANSIENT_TRANSACTION_ERROR) {
-                        continue;
-                    }
-
-                    break r;
-                }
-            }
-        }
-    };
-}
-
 pub(crate) struct MongoUserRepository {
     client: Client,
     coll: Collection<MongoUserModel>,
@@ -131,6 +114,23 @@ struct MongoContentPostedModel {
     id: String,
     name: String,
     nick: Option<String>,
+}
+
+macro_rules! exec_transaction {
+    ($f:expr $( , $a:expr )*) => {
+        async {
+            loop {
+                let r = $f($( $a, )*).await;
+                if let Err(ref e) = r {
+                    if e.contains_label(::mongodb::error::TRANSIENT_TRANSACTION_ERROR) {
+                        continue;
+                    }
+
+                    break r;
+                }
+            }
+        }
+    };
 }
 
 // FIXME: return "success" but not modified `$addToSet`, actually modified
