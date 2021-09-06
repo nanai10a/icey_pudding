@@ -55,7 +55,7 @@ pub(crate) enum UserCommandV2 {
     /// if not given id, fallback to executed user's id.
     Read { id: Option<u64> },
     /// read users with query.
-    /// page must satisfies `1..`.
+    /// page **must** satisfies `1..`.
     Reads { page: u32, query: UserQuery },
     /// update user with id and mutation.
     /// it's **must** given id.
