@@ -861,3 +861,112 @@ async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<
         break r;
     }
 }
+
+#[inline]
+async fn is_contains<T>(
+    name: impl AsRef<str>,
+    coll: &Collection<T>,
+    id: impl Into<::mongodb::bson::Bson>,
+    target: impl Into<::mongodb::bson::Bson>,
+) -> Result<bool> {
+    let res = coll
+        .count_documents(
+            doc! {
+                "id": id.into(),
+                name.as_ref(): { "$in": [target.into()] }
+            },
+            None,
+        )
+        .await
+        .let_(convert_repo_err)?
+        .let_(to_bool);
+
+    Ok(res)
+}
+
+#[derive(Clone, Copy)]
+enum ModifyOpTy {
+    Push,
+    Pull,
+}
+async fn modify_set<T>(
+    name: impl AsRef<str>,
+    coll: &Collection<T>,
+    client: &Client,
+    id: impl Into<::mongodb::bson::Bson>,
+    target: impl Into<::mongodb::bson::Bson>,
+    ty: ModifyOpTy,
+) -> Result<bool> {
+    async fn transaction<T>(
+        name: &str,
+        coll: &Collection<T>,
+        client: &Client,
+        id: &::mongodb::bson::Bson,
+        target: &::mongodb::bson::Bson,
+        ty: ModifyOpTy,
+    ) -> ::mongodb::error::Result<Option<bool>> {
+        let mut session = make_session(client).await?;
+
+        let operation = match ty {
+            ModifyOpTy::Push => "$addToSet",
+            ModifyOpTy::Pull => "$pull",
+        };
+        let res = coll
+            .update_one_with_session(
+                doc! { "id": id },
+                doc! { operation: { name: target } },
+                None,
+                &mut session,
+            )
+            .await?;
+
+        if !res.matched_count.let_(to_bool) {
+            return Ok(None);
+        };
+        if !res.modified_count.let_(to_bool) {
+            return Ok(Some(false));
+        }
+
+        let inc_name = &format!("{}_size", name);
+        let inc_value = match ty {
+            ModifyOpTy::Push => 1,
+            ModifyOpTy::Pull => -1,
+        };
+        let res = coll
+            .update_one_with_session(
+                doc! { "id": id },
+                doc! { "$inc": { inc_name: inc_value } },
+                None,
+                &mut session,
+            )
+            .await?;
+
+        if !res.matched_count.let_(to_bool) {
+            unreachable!("not found value");
+        }
+        if !res.modified_count.let_(to_bool) {
+            let op = match ty {
+                ModifyOpTy::Push => "inc",
+                ModifyOpTy::Pull => "dec",
+            };
+            unreachable!("cannot {} {} field", op, inc_name);
+        }
+
+        process_transaction(&mut session).await.map(|_| Some(true))
+    }
+
+    let id_bson = id.into();
+    let target_bson = target.into();
+
+    let res = exec_transaction!(
+        transaction,
+        name.as_ref(),
+        coll,
+        client,
+        &id_bson,
+        &target_bson,
+        ty
+    )
+    .await;
+    Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
+}
