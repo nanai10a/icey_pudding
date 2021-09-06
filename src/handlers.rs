@@ -129,7 +129,7 @@ impl Handler {
             .await
             .map_err(user_err_fmt)?;
         if !user_is_exists {
-            bail!("cannot find user. not registered?");
+            bail!("cannot find user. not registered?"); // FIXME: always failied this point.
         }
 
         let posted_id = posted.id;
