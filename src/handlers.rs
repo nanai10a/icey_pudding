@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
 use anyhow::{bail, Error, Result};
-use serenity::model::id::UserId;
 use uuid::Uuid;
 
 use crate::entities::{Author, Content, Posted, User};
@@ -37,9 +36,6 @@ fn content_err_fmt(e: RepositoryError) -> Error {
 
 // FIXME: `v2`の接尾辞を削除
 impl Handler {
-    #[deprecated]
-    pub async fn create_user(&self, _: UserId) -> Result<User> { unimplemented!() }
-
     pub async fn create_user_v2(&self, user_id: u64) -> Result<User> {
         let new_user = User {
             id: user_id,
@@ -58,9 +54,6 @@ impl Handler {
         Ok(new_user)
     }
 
-    #[deprecated]
-    pub async fn read_user(&self, _: UserId) -> Result<User> { unimplemented!() }
-
     pub async fn read_user_v2(&self, user_id: u64) -> Result<User> {
         self.user_repository
             .find(user_id)
@@ -75,26 +68,11 @@ impl Handler {
             .map_err(user_err_fmt)
     }
 
-    #[deprecated]
-    pub async fn update_user(&self, _: UserId, _: Option<bool>, _: Option<bool>) -> Result<User> {
-        unimplemented!()
-    }
-
     pub async fn update_user_v2(&self, user_id: u64, mutation: UserMutation) -> Result<User> {
         self.user_repository
             .update(user_id, mutation)
             .await
             .map_err(user_err_fmt)
-    }
-
-    #[deprecated]
-    pub async fn bookmark_update_user(
-        &self,
-        _: UserId,
-        _: Uuid,
-        _: bool,
-    ) -> Result<(User, Content)> {
-        unimplemented!()
     }
 
     pub async fn bookmark_v2(
@@ -133,27 +111,6 @@ impl Handler {
             .map_err(content_err_fmt)?;
 
         Ok((user, content))
-    }
-
-    #[deprecated]
-    pub async fn delete_user(&self, _: UserId) -> Result<()> { unimplemented!() }
-
-    #[deprecated]
-    pub async fn delete_user_v2(&self, user_id: u64) -> Result<User> {
-        self.user_repository
-            .delete(user_id)
-            .await
-            .map_err(user_err_fmt)
-    }
-
-    #[deprecated]
-    pub async fn create_content_and_posted_update_user(
-        &self,
-        _: String,
-        _: UserId,
-        _: String,
-    ) -> Result<Content> {
-        unimplemented!()
     }
 
     pub async fn post_v2(
@@ -203,11 +160,6 @@ impl Handler {
         Ok(new_content)
     }
 
-    #[deprecated]
-    pub async fn read_content(&self, _: Vec<ContentQuery>) -> Result<Vec<Content>> {
-        unimplemented!()
-    }
-
     pub async fn read_content_v2(&self, content_id: Uuid) -> Result<Content> {
         self.content_repository
             .find(content_id)
@@ -222,9 +174,6 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    #[deprecated]
-    pub async fn update_content(&self, _: Uuid, _: String) -> Result<Content> { unimplemented!() }
-
     pub async fn update_content_v2(
         &self,
         content_id: Uuid,
@@ -234,11 +183,6 @@ impl Handler {
             .update(content_id, mutation)
             .await
             .map_err(content_err_fmt)
-    }
-
-    #[deprecated]
-    pub async fn like_update_content(&self, _: Uuid, _: UserId, _: bool) -> Result<Content> {
-        unimplemented!()
     }
 
     pub async fn like_v2(&self, content_id: Uuid, user_id: u64, undo: bool) -> Result<Content> {
@@ -266,11 +210,6 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    #[deprecated]
-    pub async fn pin_update_content(&self, _: Uuid, _: UserId, _: bool) -> Result<Content> {
-        unimplemented!()
-    }
-
     pub async fn pin_v2(&self, content_id: Uuid, user_id: u64, undo: bool) -> Result<Content> {
         let can_insert = match undo {
             false =>
@@ -295,9 +234,6 @@ impl Handler {
             .await
             .map_err(content_err_fmt)
     }
-
-    #[deprecated]
-    pub async fn delete_content(&self, _: Uuid) -> Result<()> { unimplemented!() }
 
     pub async fn delete_content_v2(&self, content_id: Uuid) -> Result<Content> {
         self.content_repository
