@@ -702,13 +702,6 @@ where N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Clone {
     }
 }
 
-fn convert_404(b: bool) -> Result<()> {
-    match b {
-        true => Ok(()),
-        false => Err(RepositoryError::NotFound),
-    }
-}
-
 trait LetChain {
     fn let_<F, R>(self, f: F) -> R
     where
