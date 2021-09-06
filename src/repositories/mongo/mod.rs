@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use mongodb::bson::{doc, Document};
 use mongodb::error::{TRANSIENT_TRANSACTION_ERROR, UNKNOWN_TRANSACTION_COMMIT_RESULT};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
-use mongodb::{bson, Client, Collection, Database};
+use mongodb::{bson, Client, ClientSession, Collection, Database};
 use serde::{Deserialize, Serialize};
 use serenity::futures::TryStreamExt;
 use uuid::Uuid;
@@ -18,6 +18,23 @@ use super::{
 use crate::entities::{Author, Content, User};
 
 mod type_convert;
+
+macro_rules! exec_transaction {
+    ($f:expr $( , $a:expr )*) => {
+        async {
+            loop {
+                let r = $f($( $a, )*).await;
+                if let Err(ref e) = r {
+                    if e.contains_label(::mongodb::error::TRANSIENT_TRANSACTION_ERROR) {
+                        continue;
+                    }
+
+                    break r;
+                }
+            }
+        }
+    };
+}
 
 pub(crate) struct MongoUserRepository {
     client: Client,
@@ -352,12 +369,7 @@ impl UserRepository for MongoUserRepository {
             this: &MongoUserRepository,
             id: u64,
         ) -> ::mongodb::error::Result<Option<User>> {
-            let mut session = this.client.start_session(None).await?;
-            let ta_opt = TransactionOptions::builder()
-                .read_concern(ReadConcern::snapshot())
-                .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
-                .build();
-            session.start_transaction(ta_opt).await?;
+            let mut session = make_session(&this.client).await?;
 
             let user: User = match this
                 .coll
@@ -381,29 +393,10 @@ impl UserRepository for MongoUserRepository {
                 true => (),
             };
 
-            loop {
-                let r = session.commit_transaction().await;
-                if let Err(ref e) = r {
-                    if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
-                        continue;
-                    }
-                }
-
-                break r.map(|_| Some(user));
-            }
+            process_transaction(&mut session).await.map(|_| Some(user))
         }
 
-        let res = loop {
-            let r = transaction(self, id).await;
-            if let Err(ref e) = r {
-                if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
-                    continue;
-                }
-
-                break r;
-            }
-        };
-
+        let res = exec_transaction!(transaction, self, id).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 }
@@ -908,5 +901,32 @@ impl<T> AlsoChain for T {
     {
         f(&mut self);
         self
+    }
+}
+
+#[inline]
+async fn make_session(c: &Client) -> ::mongodb::error::Result<ClientSession> {
+    let mut s = c.start_session(None).await?;
+
+    let ta_opt = TransactionOptions::builder()
+        .read_concern(ReadConcern::snapshot())
+        .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
+        .build();
+    s.start_transaction(ta_opt).await?;
+
+    Ok(s)
+}
+
+#[inline]
+async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<()> {
+    loop {
+        let r = s.commit_transaction().await;
+        if let Err(ref e) = r {
+            if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
+                continue;
+            }
+        }
+
+        break r;
     }
 }
