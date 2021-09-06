@@ -6,14 +6,14 @@ use async_trait::async_trait;
 use mongodb::bson::{doc, Document};
 use mongodb::error::{TRANSIENT_TRANSACTION_ERROR, UNKNOWN_TRANSACTION_COMMIT_RESULT};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
-use mongodb::{Client, Collection, Database};
+use mongodb::{bson, Client, Collection, Database};
 use serde::{Deserialize, Serialize};
 use serenity::futures::TryStreamExt;
 use uuid::Uuid;
 
 use super::{
-    AuthorQuery, ContentMutation, ContentQuery, ContentRepository, PostedQuery, RepositoryError,
-    Result, StdResult, UserMutation, UserQuery, UserRepository,
+    AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, ContentRepository,
+    PostedQuery, RepositoryError, Result, StdResult, UserMutation, UserQuery, UserRepository,
 };
 use crate::entities::{Author, Content, User};
 
@@ -578,7 +578,82 @@ impl ContentRepository for MongoContentRepository {
     }
 
     async fn update(&self, id: Uuid, mutation: ContentMutation) -> Result<Content> {
-        unimplemented!()
+        async fn transaction(
+            this: &MongoContentRepository,
+            id: Uuid,
+            ContentMutation { author, content }: ContentMutation,
+        ) -> ::mongodb::error::Result<Option<Content>> {
+            let mut session = this.client.start_session(None).await?;
+            let ta_opt = TransactionOptions::builder()
+                .read_concern(ReadConcern::snapshot())
+                .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
+                .build();
+            session.start_transaction(ta_opt).await?;
+
+            let mut target_content: Content = match this
+                .coll
+                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .await?
+            {
+                Some(c) => c.into(),
+                None => return Ok(None),
+            };
+
+            if let Some(a) = author {
+                target_content.author = a;
+            }
+
+            if let Some(c) = content {
+                match c {
+                    ContentContentMutation::Sed { capture, replace } =>
+                        target_content.content = capture
+                            .replace(target_content.content.as_str(), replace)
+                            .to_string(),
+                    ContentContentMutation::Complete(s) => target_content.content = s,
+                }
+            }
+
+            let target_model: MongoContentModel = target_content.into();
+            this.coll
+                .update_one_with_session(
+                    doc! { "id": id.to_string() },
+                    bson::to_document(&target_model).unwrap(),
+                    None,
+                    &mut session,
+                )
+                .await?;
+
+            let new_content = this
+                .coll
+                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .await?
+                .unwrap()
+                .into();
+
+            loop {
+                let r = session.commit_transaction().await;
+                if let Err(ref e) = r {
+                    if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
+                        continue;
+                    }
+                }
+
+                break r.map(|_| Some(new_content));
+            }
+        }
+
+        let res = loop {
+            let r = transaction(self, id, mutation.clone()).await;
+            if let Err(ref e) = r {
+                if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
+                    continue;
+                }
+            }
+
+            break r;
+        };
+
+        Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
     async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
