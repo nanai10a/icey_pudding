@@ -4,9 +4,9 @@
 #![feature(fn_traits)]
 #![feature(label_break_value)]
 
-pub mod conductors;
-pub mod entities;
-pub mod handlers;
-pub mod repositories;
+pub(crate) mod conductors;
+pub(crate) mod entities;
+pub(crate) mod handlers;
+pub(crate) mod repositories;
 
 // FIXME: Resultの多用が酷いのでpanic!を検討しましょう

@@ -4,39 +4,39 @@ use std::fmt::Display;
 use uuid::Uuid;
 
 // TODO: replace to this structures
-pub struct UserId(u64);
-pub struct ContentId(Uuid);
+pub(crate) struct UserId(u64);
+pub(crate) struct ContentId(Uuid);
 
 #[derive(Debug, Clone)]
 pub struct User {
-    pub id: u64,
-    pub admin: bool,
-    pub sub_admin: bool,
-    pub posted: HashSet<Uuid>,
-    pub bookmark: HashSet<Uuid>,
+    pub(crate) id: u64,
+    pub(crate) admin: bool,
+    pub(crate) sub_admin: bool,
+    pub(crate) posted: HashSet<Uuid>,
+    pub(crate) bookmark: HashSet<Uuid>,
 }
 
 // TODO: rename to `Post`
 // TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
 pub struct Content {
-    pub id: Uuid,
-    pub author: Author,
-    pub posted: Posted,
-    pub content: String,
-    pub liked: HashSet<u64>,
-    pub pinned: HashSet<u64>,
+    pub(crate) id: Uuid,
+    pub(crate) author: Author,
+    pub(crate) posted: Posted,
+    pub(crate) content: String,
+    pub(crate) liked: HashSet<u64>,
+    pub(crate) pinned: HashSet<u64>,
 }
 
 #[derive(Debug, Clone)]
-pub struct Posted {
-    pub id: u64,
-    pub name: String,
-    pub nick: Option<String>,
+pub(crate) struct Posted {
+    pub(crate) id: u64,
+    pub(crate) name: String,
+    pub(crate) nick: Option<String>,
 }
 
 #[derive(Debug, Clone)]
-pub enum Author {
+pub(crate) enum Author {
     User {
         id: u64,
         name: String,
@@ -46,7 +46,7 @@ pub enum Author {
 }
 
 #[derive(Debug, Clone)]
-pub enum PartialAuthor {
+pub(crate) enum PartialAuthor {
     User(u64),
     Virtual(String),
 }

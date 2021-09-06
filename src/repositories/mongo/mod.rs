@@ -19,13 +19,13 @@ use crate::entities::{Author, Content, User};
 
 mod type_convert;
 
-pub struct MongoUserRepository {
+pub(crate) struct MongoUserRepository {
     client: Client,
     coll: Collection<MongoUserModel>,
 }
 
 impl MongoUserRepository {
-    pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
+    pub(crate) async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
         db.run_command(
             doc! {
                 "createIndexes": "user",
@@ -48,13 +48,13 @@ impl MongoUserRepository {
     }
 }
 
-pub struct MongoContentRepository {
+pub(crate) struct MongoContentRepository {
     client: Client,
     coll: Collection<MongoContentModel>,
 }
 
 impl MongoContentRepository {
-    pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
+    pub(crate) async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
         db.run_command(
             doc! {
                 "createIndexes": "content",

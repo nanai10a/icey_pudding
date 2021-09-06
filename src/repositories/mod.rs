@@ -7,14 +7,14 @@ use uuid::Uuid;
 
 use crate::entities::{Author, Content, User};
 
-pub mod mock;
-pub mod mongo;
+pub(crate) mod mock;
+pub(crate) mod mongo;
 
 type StdResult<T, E> = ::std::result::Result<T, E>;
 type Result<T> = ::std::result::Result<T, RepositoryError>;
 
 #[async_trait]
-pub trait UserRepository {
+pub(crate) trait UserRepository {
     async fn insert(&self, item: User) -> Result<bool>;
     async fn is_exists(&self, id: u64) -> Result<bool>;
 
@@ -35,7 +35,7 @@ pub trait UserRepository {
 }
 
 #[async_trait]
-pub trait ContentRepository {
+pub(crate) trait ContentRepository {
     async fn insert(&self, item: Content) -> Result<bool>;
     async fn is_exists(&self, id: Uuid) -> Result<bool>;
 
@@ -56,26 +56,26 @@ pub trait ContentRepository {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct UserQuery {
-    pub posted: Option<HashSet<Uuid>>,
-    pub posted_num: Option<(Bound<u32>, Bound<u32>)>,
-    pub bookmark: Option<HashSet<Uuid>>,
-    pub bookmark_num: Option<(Bound<u32>, Bound<u32>)>,
+pub(crate) struct UserQuery {
+    pub(crate) posted: Option<HashSet<Uuid>>,
+    pub(crate) posted_num: Option<(Bound<u32>, Bound<u32>)>,
+    pub(crate) bookmark: Option<HashSet<Uuid>>,
+    pub(crate) bookmark_num: Option<(Bound<u32>, Bound<u32>)>,
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct ContentQuery {
-    pub author: Option<AuthorQuery>,
-    pub posted: Option<PostedQuery>,
-    pub content: Option<Regex>,
-    pub liked: Option<HashSet<u64>>,
-    pub liked_num: Option<(Bound<u32>, Bound<u32>)>,
-    pub pinned: Option<HashSet<u64>>,
-    pub pinned_num: Option<(Bound<u32>, Bound<u32>)>,
+pub(crate) struct ContentQuery {
+    pub(crate) author: Option<AuthorQuery>,
+    pub(crate) posted: Option<PostedQuery>,
+    pub(crate) content: Option<Regex>,
+    pub(crate) liked: Option<HashSet<u64>>,
+    pub(crate) liked_num: Option<(Bound<u32>, Bound<u32>)>,
+    pub(crate) pinned: Option<HashSet<u64>>,
+    pub(crate) pinned_num: Option<(Bound<u32>, Bound<u32>)>,
 }
 
 #[derive(Debug, Clone)]
-pub enum PostedQuery {
+pub(crate) enum PostedQuery {
     UserId(u64),
     UserName(Regex),
     UserNick(Regex),
@@ -83,7 +83,7 @@ pub enum PostedQuery {
 }
 
 #[derive(Debug, Clone)]
-pub enum AuthorQuery {
+pub(crate) enum AuthorQuery {
     UserId(u64),
     UserName(Regex),
     UserNick(Regex),
@@ -92,7 +92,7 @@ pub enum AuthorQuery {
 }
 
 #[derive(Debug)]
-pub enum RepositoryError {
+pub(crate) enum RepositoryError {
     NotFound,
     NoUnique { matched: u32 },
     Internal(anyhow::Error),
@@ -114,7 +114,7 @@ impl ::std::fmt::Display for RepositoryError {
 
 impl ::std::error::Error for RepositoryError {}
 
-pub fn try_remove_target_from_vec<T>(
+pub(crate) fn try_remove_target_from_vec<T>(
     vec: &mut Vec<T>,
     is_target: impl Fn(&T) -> bool,
 ) -> StdResult<T, usize> {
@@ -134,19 +134,19 @@ pub fn try_remove_target_from_vec<T>(
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct UserMutation {
-    pub admin: Option<bool>,
-    pub sub_admin: Option<bool>,
+pub(crate) struct UserMutation {
+    pub(crate) admin: Option<bool>,
+    pub(crate) sub_admin: Option<bool>,
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct ContentMutation {
-    pub author: Option<Author>,
-    pub content: Option<ContentContentMutation>,
+pub(crate) struct ContentMutation {
+    pub(crate) author: Option<Author>,
+    pub(crate) content: Option<ContentContentMutation>,
 }
 
 #[derive(Debug, Clone)]
-pub enum ContentContentMutation {
+pub(crate) enum ContentContentMutation {
     Complete(String),
     Sed { capture: Regex, replace: String },
 }

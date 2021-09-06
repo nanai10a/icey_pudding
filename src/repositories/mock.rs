@@ -10,10 +10,10 @@ use super::{
 };
 use crate::entities::{Author, Content, User};
 
-pub struct InMemoryRepository<T>(Mutex<Vec<T>>);
+pub(crate) struct InMemoryRepository<T>(Mutex<Vec<T>>);
 
 impl<T> InMemoryRepository<T> {
-    pub fn new() -> Self { Self(Mutex::new(vec![])) }
+    pub(crate) fn new() -> Self { Self(Mutex::new(vec![])) }
 }
 impl<T> Default for InMemoryRepository<T> {
     fn default() -> Self { Self::new() }
