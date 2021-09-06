@@ -479,7 +479,6 @@ fn parse_uuid(s: &str, errs: &mut Vec<String>) -> Uuid {
 
 #[inline]
 fn parse_bool(s: &str, errs: &mut Vec<String>) -> bool {
-    // FIXME: allows few differences
     match s.parse() {
         Ok(o) => o,
         Err(e) => {
