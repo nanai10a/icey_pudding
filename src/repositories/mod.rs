@@ -27,9 +27,9 @@ pub(crate) trait UserRepository {
     async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool>;
     async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool>;
 
-    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool>;
-    async fn insert_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool>;
-    async fn delete_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn is_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn insert_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool>;
+    async fn delete_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool>;
 
     async fn delete(&self, id: u64) -> Result<User>;
 }

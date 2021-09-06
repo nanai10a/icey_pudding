@@ -167,7 +167,7 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(item.posted.remove(&content_id))
     }
 
-    async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn is_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let item = self.find(id).await?;
 
         match item.bookmark.iter().filter(|v| **v == content_id).count() {
@@ -177,14 +177,14 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn insert_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn insert_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |u| u.id == id)?;
 
         Ok(item.bookmark.insert(content_id))
     }
 
-    async fn delete_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn delete_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |u| u.id == id)?;
 
