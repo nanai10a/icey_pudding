@@ -137,6 +137,7 @@ impl Conductor {
                     )]
                 },
                 CommandV2::User(UserCommandV2::Reads { page, query }) => {
+                    // FIXME: don't accept `page == 0`
                     let mut users = self.handler.read_users_v2(query).await?;
 
                     if users.is_empty() {
@@ -200,6 +201,7 @@ impl Conductor {
                     )]
                 },
                 CommandV2::Content(ContentCommandV2::Reads { page, query }) => {
+                    // FIXME: don't accept `page == 0`
                     let mut contents = self.handler.read_contents_v2(query).await?;
 
                     if contents.is_empty() {
