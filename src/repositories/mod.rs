@@ -111,27 +111,7 @@ impl ::std::fmt::Display for RepositoryError {
         }
     }
 }
-
 impl ::std::error::Error for RepositoryError {}
-
-pub(crate) fn try_remove_target_from_vec<T>(
-    vec: &mut Vec<T>,
-    is_target: impl Fn(&T) -> bool,
-) -> StdResult<T, usize> {
-    let mut indexes: Vec<_> = vec
-        .iter()
-        .enumerate()
-        .filter_map(|(i, v)| match is_target(v) {
-            true => Some(i),
-            false => None,
-        })
-        .collect();
-
-    match indexes.len() {
-        1 => Ok(vec.remove(indexes.remove(0))),
-        _ => Err(indexes.len()),
-    }
-}
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct UserMutation {
