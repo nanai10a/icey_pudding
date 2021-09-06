@@ -22,48 +22,9 @@ use crate::repositories::{
 mod clapcmd;
 mod command_colors;
 mod helper;
-mod macros;
 
 pub struct Conductor {
     pub handler: Handler,
-}
-
-#[derive(Debug)]
-pub enum Command {
-    UserRegister,
-    UserRead,
-    UserUpdate {
-        admin: Option<bool>,
-        sub_admin: Option<bool>,
-    },
-    Bookmark {
-        content_id: Uuid,
-        undo: bool,
-    },
-    UserDelete,
-    ContentPost {
-        content: String,
-        author: String,
-    },
-    ContentRead {
-        queries: Vec<ContentQuery>,
-        page: u32,
-    },
-    ContentUpdate {
-        content_id: Uuid,
-        new_content: String,
-    },
-    Like {
-        content_id: Uuid,
-        undo: bool,
-    },
-    Pin {
-        content_id: Uuid,
-        undo: bool,
-    },
-    ContentDelete {
-        content_id: Uuid,
-    },
 }
 
 /// command data.
@@ -123,12 +84,6 @@ pub enum ContentCommandV2 {
 pub struct PartialContentMutation {
     pub author: Option<PartialAuthor>,
     pub content: Option<ContentContentMutation>,
-}
-
-#[derive(Debug)]
-pub enum MsgCommand {
-    Command(Command),
-    Showing(String),
 }
 
 #[derive(Debug)]
