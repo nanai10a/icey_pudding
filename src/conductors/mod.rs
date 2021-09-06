@@ -31,11 +31,11 @@ pub(crate) struct Conductor {
 
 /// command data.
 #[derive(Debug, Clone)]
-pub(crate) enum CommandV2 {
+pub(crate) enum Command {
     /// commands about user.
-    User(UserCommandV2),
+    User(UserCommand),
     /// commands about content.
-    Content(ContentCommandV2),
+    Content(ContentCommand),
     /// post content with executed user's id.
     Post {
         author: PartialAuthor,
@@ -51,7 +51,7 @@ pub(crate) enum CommandV2 {
 
 // TODO: can show user's bookmark and posted
 #[derive(Debug, Clone)]
-pub(crate) enum UserCommandV2 {
+pub(crate) enum UserCommand {
     /// create user with executed user's id.
     Create,
     /// read user with id.
@@ -69,7 +69,7 @@ pub(crate) enum UserCommandV2 {
 
 // TODO: can show content's liked and pinned
 #[derive(Debug, Clone)]
-pub(crate) enum ContentCommandV2 {
+pub(crate) enum ContentCommand {
     /// read content with id.
     Read { id: Uuid },
     /// read contents with query.
@@ -101,7 +101,7 @@ pub(crate) struct Response {
 impl Conductor {
     pub(crate) async fn handle(
         &self,
-        cmd: CommandV2,
+        cmd: Command,
         user_id: UserId,
         user_name: String,
         user_nick: Option<String>,
@@ -118,8 +118,8 @@ impl Conductor {
 
         let res: Result<Vec<Response>> = try {
             match cmd {
-                CommandV2::User(UserCommandV2::Create) => {
-                    let user = self.handler.create_user_v2(*user_id.as_u64()).await?;
+                Command::User(UserCommand::Create) => {
+                    let user = self.handler.create_user(*user_id.as_u64()).await?;
 
                     vec![helper::resp_from_user(
                         "registered user",
@@ -128,8 +128,8 @@ impl Conductor {
                         user,
                     )]
                 },
-                CommandV2::User(UserCommandV2::Read { id }) => {
-                    let user = self.handler.read_user_v2(id.unwrap_or(user_id.0)).await?;
+                Command::User(UserCommand::Read { id }) => {
+                    let user = self.handler.read_user(id.unwrap_or(user_id.0)).await?;
 
                     vec![helper::resp_from_user(
                         "showing user",
@@ -138,9 +138,9 @@ impl Conductor {
                         user,
                     )]
                 },
-                CommandV2::User(UserCommandV2::Reads { page, query }) => {
+                Command::User(UserCommand::Reads { page, query }) => {
                     // FIXME: don't accept `page == 0`
-                    let mut users = self.handler.read_users_v2(query).await?;
+                    let mut users = self.handler.read_users(query).await?;
 
                     if users.is_empty() {
                         Err(anyhow!("matched: {}", users.len()))?
@@ -182,8 +182,8 @@ impl Conductor {
                         })
                         .collect()
                 },
-                CommandV2::User(UserCommandV2::Update { id, mutation }) => {
-                    let user = self.handler.update_user_v2(id, mutation).await?; // FIXME: don't able to use this from users (must limit to admin).
+                Command::User(UserCommand::Update { id, mutation }) => {
+                    let user = self.handler.update_user(id, mutation).await?; // FIXME: don't able to use this from users (must limit to admin).
 
                     vec![helper::resp_from_user(
                         "updated user",
@@ -192,8 +192,8 @@ impl Conductor {
                         user,
                     )]
                 },
-                CommandV2::Content(ContentCommandV2::Read { id }) => {
-                    let content = self.handler.read_content_v2(id).await?;
+                Command::Content(ContentCommand::Read { id }) => {
+                    let content = self.handler.read_content(id).await?;
 
                     vec![helper::resp_from_content(
                         "showing content",
@@ -202,9 +202,9 @@ impl Conductor {
                         content,
                     )]
                 },
-                CommandV2::Content(ContentCommandV2::Reads { page, query }) => {
+                Command::Content(ContentCommand::Reads { page, query }) => {
                     // FIXME: don't accept `page == 0`
-                    let mut contents = self.handler.read_contents_v2(query).await?;
+                    let mut contents = self.handler.read_contents(query).await?;
 
                     if contents.is_empty() {
                         Err(anyhow!("matched: {}", contents.len()))?
@@ -244,7 +244,7 @@ impl Conductor {
                         })
                         .collect()
                 },
-                CommandV2::Content(ContentCommandV2::Update {
+                Command::Content(ContentCommand::Update {
                     id,
                     mutation:
                         PartialContentMutation {
@@ -269,7 +269,7 @@ impl Conductor {
                     };
 
                     let mutation = ContentMutation { author, content };
-                    let content = self.handler.update_content_v2(id, mutation).await?; // FIXME: limit to posted user and admin and sub_admin
+                    let content = self.handler.update_content(id, mutation).await?; // FIXME: limit to posted user and admin and sub_admin
 
                     vec![helper::resp_from_content(
                         "updated user",
@@ -278,8 +278,8 @@ impl Conductor {
                         content,
                     )]
                 },
-                CommandV2::Content(ContentCommandV2::Delete { id }) => {
-                    let content = self.handler.delete_content_v2(id).await?; // FIXME: limit to posted user and admin
+                Command::Content(ContentCommand::Delete { id }) => {
+                    let content = self.handler.delete_content(id).await?; // FIXME: limit to posted user and admin
 
                     vec![helper::resp_from_content(
                         "deleted content",
@@ -288,7 +288,7 @@ impl Conductor {
                         content,
                     )]
                 },
-                CommandV2::Post {
+                Command::Post {
                     author: partial_author,
                     content,
                 } => {
@@ -311,7 +311,7 @@ impl Conductor {
 
                     let content = self
                         .handler
-                        .post_v2(
+                        .post(
                             content,
                             Posted {
                                 id: user_id.0,
@@ -329,8 +329,8 @@ impl Conductor {
                         content,
                     )]
                 },
-                CommandV2::Like { content_id, undo } => {
-                    let content = self.handler.like_v2(content_id, user_id.0, undo).await?;
+                Command::Like { content_id, undo } => {
+                    let content = self.handler.like(content_id, user_id.0, undo).await?;
 
                     let title = match undo {
                         false => "liked",
@@ -343,8 +343,8 @@ impl Conductor {
                         content,
                     )]
                 },
-                CommandV2::Pin { content_id, undo } => {
-                    let content = self.handler.pin_v2(content_id, user_id.0, undo).await?;
+                Command::Pin { content_id, undo } => {
+                    let content = self.handler.pin(content_id, user_id.0, undo).await?;
 
                     let title = match undo {
                         false => "pinned",
@@ -357,11 +357,8 @@ impl Conductor {
                         content,
                     )]
                 },
-                CommandV2::Bookmark { content_id, undo } => {
-                    let (user, _) = self
-                        .handler
-                        .bookmark_v2(user_id.0, content_id, undo)
-                        .await?;
+                Command::Bookmark { content_id, undo } => {
+                    let (user, _) = self.handler.bookmark(user_id.0, content_id, undo).await?;
 
                     let title = match undo {
                         false => "bookmarked",
@@ -430,7 +427,7 @@ impl<T> ConvertRange<T> for RangeToInclusive<T> {
 impl EventHandler for Conductor {
     async fn message(&self, ctx: Context, msg: Message) {
         // FIXME: don't accept msg from myself(bot).
-        let parse_res = match helper::parse_msg_v2(msg.content.as_str()).await {
+        let parse_res = match helper::parse_msg(msg.content.as_str()).await {
             Some(o) => o,
             None => return,
         };
