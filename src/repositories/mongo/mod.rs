@@ -4,7 +4,6 @@ use std::ops::Bound;
 use anyhow::anyhow;
 use async_trait::async_trait;
 use mongodb::bson::{doc, Document};
-use mongodb::error::{TRANSIENT_TRANSACTION_ERROR, UNKNOWN_TRANSACTION_COMMIT_RESULT};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
 use mongodb::{bson, Client, ClientSession, Collection, Database};
 use serde::{Deserialize, Serialize};
@@ -201,12 +200,7 @@ impl UserRepository for MongoUserRepository {
             id: u64,
             mutation: Document,
         ) -> ::mongodb::error::Result<Option<User>> {
-            let mut session = this.client.start_session(None).await?;
-            let ta_opt = TransactionOptions::builder()
-                .read_concern(ReadConcern::snapshot())
-                .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
-                .build();
-            session.start_transaction(ta_opt).await?;
+            let mut session = make_session(&this.client).await?;
 
             match this
                 .coll
@@ -232,29 +226,10 @@ impl UserRepository for MongoUserRepository {
                 .into();
             assert_eq!(user.id, id, "not matched id!");
 
-            loop {
-                let r = session.commit_transaction().await;
-                if let Err(ref e) = r {
-                    if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
-                        continue;
-                    }
-                }
-
-                break r.map(|_| Some(user));
-            }
+            process_transaction(&mut session).await.map(|_| Some(user))
         }
 
-        let res = loop {
-            let r = transaction(self, id, mutation_doc.clone()).await;
-            if let Err(ref e) = r {
-                if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
-                    continue;
-                }
-            }
-
-            break r;
-        };
-
+        let res = exec_transaction!(transaction, self, id, mutation_doc.clone()).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
@@ -582,12 +557,7 @@ impl ContentRepository for MongoContentRepository {
             id: Uuid,
             ContentMutation { author, content }: ContentMutation,
         ) -> ::mongodb::error::Result<Option<Content>> {
-            let mut session = this.client.start_session(None).await?;
-            let ta_opt = TransactionOptions::builder()
-                .read_concern(ReadConcern::snapshot())
-                .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
-                .build();
-            session.start_transaction(ta_opt).await?;
+            let mut session = make_session(&this.client).await?;
 
             let mut target_content: Content = match this
                 .coll
@@ -629,29 +599,12 @@ impl ContentRepository for MongoContentRepository {
                 .unwrap()
                 .into();
 
-            loop {
-                let r = session.commit_transaction().await;
-                if let Err(ref e) = r {
-                    if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
-                        continue;
-                    }
-                }
-
-                break r.map(|_| Some(new_content));
-            }
+            process_transaction(&mut session)
+                .await
+                .map(|_| Some(new_content))
         }
 
-        let res = loop {
-            let r = transaction(self, id, mutation.clone()).await;
-            if let Err(ref e) = r {
-                if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
-                    continue;
-                }
-            }
-
-            break r;
-        };
-
+        let res = exec_transaction!(transaction, self, id, mutation.clone()).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
@@ -766,12 +719,7 @@ impl ContentRepository for MongoContentRepository {
             this: &MongoContentRepository,
             id: Uuid,
         ) -> ::mongodb::error::Result<Option<Content>> {
-            let mut session = this.client.start_session(None).await?;
-            let ta_opt = TransactionOptions::builder()
-                .read_concern(ReadConcern::snapshot())
-                .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
-                .build();
-            session.start_transaction(ta_opt).await?;
+            let mut session = make_session(&this.client).await?;
 
             let content: Content = match this
                 .coll
@@ -795,29 +743,12 @@ impl ContentRepository for MongoContentRepository {
                 true => (),
             }
 
-            loop {
-                let r = session.commit_transaction().await;
-                if let Err(ref e) = r {
-                    if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
-                        continue;
-                    }
-                }
-
-                break r.map(|_| Some(content));
-            }
+            process_transaction(&mut session)
+                .await
+                .map(|_| Some(content))
         }
 
-        let res = loop {
-            let r = transaction(self, id).await;
-            if let Err(ref e) = r {
-                if e.contains_label(TRANSIENT_TRANSACTION_ERROR) {
-                    continue;
-                }
-            }
-
-            break r;
-        };
-
+        let res = exec_transaction!(transaction, self, id).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 }
@@ -922,7 +853,7 @@ async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<
     loop {
         let r = s.commit_transaction().await;
         if let Err(ref e) = r {
-            if e.contains_label(UNKNOWN_TRANSACTION_COMMIT_RESULT) {
+            if e.contains_label(::mongodb::error::UNKNOWN_TRANSACTION_COMMIT_RESULT) {
                 continue;
             }
         }
