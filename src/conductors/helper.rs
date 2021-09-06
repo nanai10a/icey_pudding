@@ -483,7 +483,7 @@ fn parse_bool(s: &str, errs: &mut Vec<String>) -> bool {
         Ok(o) => o,
         Err(e) => {
             errs.push(e.to_string());
-            Default::default() //tmp value
+            Default::default() // tmp value
         },
     }
 }
