@@ -21,7 +21,7 @@ use crate::repositories::{
     AuthorQuery, ContentContentMutation, ContentQuery, PostedQuery, UserMutation, UserQuery,
 };
 
-pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
+pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
     let res: Result<_> = try {
         let splitted = shell_words::split(msg)?;
 
@@ -312,7 +312,7 @@ pub async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
     Some(tmp)
 }
 
-pub fn resp_from_user(
+pub(crate) fn resp_from_user(
     title: impl ToString,
     description: impl ToString,
     rgb: (u8, u8, u8),
@@ -338,7 +338,7 @@ pub fn resp_from_user(
     }
 }
 
-pub fn resp_from_content(
+pub(crate) fn resp_from_content(
     title: impl ToString,
     description: impl ToString,
     rgb: (u8, u8, u8),
@@ -366,7 +366,7 @@ pub fn resp_from_content(
     }
 }
 
-pub fn build_embed_from_resp(
+pub(crate) fn build_embed_from_resp(
     ce: &mut CreateEmbed,
     Response {
         title,
@@ -388,7 +388,7 @@ pub fn build_embed_from_resp(
         )
 }
 
-pub fn append_message_reference(
+pub(crate) fn append_message_reference(
     raw: &mut HashMap<&str, Value>,
     id: MessageId,
     channel_id: ChannelId,
@@ -406,7 +406,7 @@ pub fn append_message_reference(
     raw.insert("message_reference", mr);
 }
 
-pub fn range_syntax_parser_v2<N>(src: String) -> Result<(Bound<N>, Bound<N>)>
+pub(crate) fn range_syntax_parser_v2<N>(src: String) -> Result<(Bound<N>, Bound<N>)>
 where
     N: range_parser::Num + FromStr + Debug,
     <N as FromStr>::Err: Debug + PartialEq + Eq,

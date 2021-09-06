@@ -23,13 +23,13 @@ mod clapcmd;
 mod command_colors;
 mod helper;
 
-pub struct Conductor {
-    pub handler: Handler,
+pub(crate) struct Conductor {
+    pub(crate) handler: Handler,
 }
 
 /// command data.
 #[derive(Debug, Clone)]
-pub enum CommandV2 {
+pub(crate) enum CommandV2 {
     /// commands about user.
     User(UserCommandV2),
     /// commands about content.
@@ -48,7 +48,7 @@ pub enum CommandV2 {
 }
 
 #[derive(Debug, Clone)]
-pub enum UserCommandV2 {
+pub(crate) enum UserCommandV2 {
     /// create user with executed user's id.
     Create,
     /// read user with id.
@@ -65,7 +65,7 @@ pub enum UserCommandV2 {
 }
 
 #[derive(Debug, Clone)]
-pub enum ContentCommandV2 {
+pub(crate) enum ContentCommandV2 {
     /// read content with id.
     Read { id: Uuid },
     /// read contents with query.
@@ -81,13 +81,13 @@ pub enum ContentCommandV2 {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct PartialContentMutation {
-    pub author: Option<PartialAuthor>,
-    pub content: Option<ContentContentMutation>,
+pub(crate) struct PartialContentMutation {
+    pub(crate) author: Option<PartialAuthor>,
+    pub(crate) content: Option<ContentContentMutation>,
 }
 
 #[derive(Debug)]
-pub struct Response {
+pub(crate) struct Response {
     title: String,
     rgb: (u8, u8, u8),
     description: String,
@@ -95,7 +95,7 @@ pub struct Response {
 }
 
 impl Conductor {
-    pub async fn handle(
+    pub(crate) async fn handle(
         &self,
         cmd: CommandV2,
         user_id: UserId,

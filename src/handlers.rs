@@ -9,9 +9,9 @@ use crate::repositories::{
     UserRepository,
 };
 
-pub struct Handler {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub content_repository: Box<dyn ContentRepository + Sync + Send>,
+pub(crate) struct Handler {
+    pub(crate) user_repository: Box<dyn UserRepository + Sync + Send>,
+    pub(crate) content_repository: Box<dyn ContentRepository + Sync + Send>,
 }
 
 #[inline]
@@ -36,7 +36,7 @@ fn content_err_fmt(e: RepositoryError) -> Error {
 
 // FIXME: `v2`の接尾辞を削除
 impl Handler {
-    pub async fn create_user_v2(&self, user_id: u64) -> Result<User> {
+    pub(crate) async fn create_user_v2(&self, user_id: u64) -> Result<User> {
         let new_user = User {
             id: user_id,
             admin: false,
@@ -54,28 +54,32 @@ impl Handler {
         Ok(new_user)
     }
 
-    pub async fn read_user_v2(&self, user_id: u64) -> Result<User> {
+    pub(crate) async fn read_user_v2(&self, user_id: u64) -> Result<User> {
         self.user_repository
             .find(user_id)
             .await
             .map_err(user_err_fmt)
     }
 
-    pub async fn read_users_v2(&self, query: UserQuery) -> Result<Vec<User>> {
+    pub(crate) async fn read_users_v2(&self, query: UserQuery) -> Result<Vec<User>> {
         self.user_repository
             .finds(query)
             .await
             .map_err(user_err_fmt)
     }
 
-    pub async fn update_user_v2(&self, user_id: u64, mutation: UserMutation) -> Result<User> {
+    pub(crate) async fn update_user_v2(
+        &self,
+        user_id: u64,
+        mutation: UserMutation,
+    ) -> Result<User> {
         self.user_repository
             .update(user_id, mutation)
             .await
             .map_err(user_err_fmt)
     }
 
-    pub async fn bookmark_v2(
+    pub(crate) async fn bookmark_v2(
         &self,
         user_id: u64,
         content_id: Uuid,
@@ -113,7 +117,7 @@ impl Handler {
         Ok((user, content))
     }
 
-    pub async fn post_v2(
+    pub(crate) async fn post_v2(
         &self,
         content: String,
         posted: Posted,
@@ -160,21 +164,21 @@ impl Handler {
         Ok(new_content)
     }
 
-    pub async fn read_content_v2(&self, content_id: Uuid) -> Result<Content> {
+    pub(crate) async fn read_content_v2(&self, content_id: Uuid) -> Result<Content> {
         self.content_repository
             .find(content_id)
             .await
             .map_err(content_err_fmt)
     }
 
-    pub async fn read_contents_v2(&self, query: ContentQuery) -> Result<Vec<Content>> {
+    pub(crate) async fn read_contents_v2(&self, query: ContentQuery) -> Result<Vec<Content>> {
         self.content_repository
             .finds(query)
             .await
             .map_err(content_err_fmt)
     }
 
-    pub async fn update_content_v2(
+    pub(crate) async fn update_content_v2(
         &self,
         content_id: Uuid,
         mutation: ContentMutation,
@@ -185,7 +189,12 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub async fn like_v2(&self, content_id: Uuid, user_id: u64, undo: bool) -> Result<Content> {
+    pub(crate) async fn like_v2(
+        &self,
+        content_id: Uuid,
+        user_id: u64,
+        undo: bool,
+    ) -> Result<Content> {
         let can_insert = match undo {
             false =>
                 self.content_repository
@@ -210,7 +219,12 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub async fn pin_v2(&self, content_id: Uuid, user_id: u64, undo: bool) -> Result<Content> {
+    pub(crate) async fn pin_v2(
+        &self,
+        content_id: Uuid,
+        user_id: u64,
+        undo: bool,
+    ) -> Result<Content> {
         let can_insert = match undo {
             false =>
                 self.content_repository
@@ -235,7 +249,7 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub async fn delete_content_v2(&self, content_id: Uuid) -> Result<Content> {
+    pub(crate) async fn delete_content_v2(&self, content_id: Uuid) -> Result<Content> {
         self.content_repository
             .delete(content_id)
             .await
