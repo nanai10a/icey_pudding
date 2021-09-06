@@ -27,6 +27,8 @@ pub(crate) struct Conductor {
     pub(crate) handler: Handler,
 }
 
+// TODO: do "-reads#page" to optional (default: `0`)
+
 /// command data.
 #[derive(Debug, Clone)]
 pub(crate) enum CommandV2 {
