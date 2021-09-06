@@ -624,7 +624,7 @@ impl ContentRepository for MongoContentRepository {
             this.coll
                 .update_one_with_session(
                     doc! { "id": id.to_string() },
-                    bson::to_document(&target_model).unwrap(),
+                    bson::to_document(&target_model).unwrap(), // FIXME: to `doc! { "$set": ... }`
                     None,
                     &mut session,
                 )
