@@ -293,7 +293,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                 CommandV2::Bookmark { content_id, undo }
             },
             sc => unreachable!(
-                "unrecognized subcommand on `(root)`. (impl error): {:?}",
+                "unrecognized subcommand on `(root)`. (impl error): {:?}", // FIXME: reachable this point.
                 sc
             ),
         };
