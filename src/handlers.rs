@@ -83,11 +83,11 @@ impl Handler {
         let can_insert = match undo {
             false =>
                 self.user_repository
-                    .insert_bookmarked(user_id, content_id)
+                    .insert_bookmark(user_id, content_id)
                     .await,
             true =>
                 self.user_repository
-                    .delete_bookmarked(user_id, content_id)
+                    .delete_bookmark(user_id, content_id)
                     .await,
         }
         .map_err(user_err_fmt)?;
