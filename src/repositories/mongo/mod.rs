@@ -234,109 +234,68 @@ impl UserRepository for MongoUserRepository {
     }
 
     async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let res = self
-            .coll
-            .count_documents(
-                doc! {
-                    "id": id.to_string(),
-                    "posted": { "$in": [content_id.to_string()] }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?
-            .let_(to_bool);
-
-        Ok(res)
+        is_contains("posted", &self.coll, id.to_string(), content_id.to_string()).await
     }
 
     async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let res = self
-            .coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! {
-                    "$addToSet": { "posted": content_id.to_string() },
-                    "$inc": { "posted_size": 1 }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?;
-
-        res.matched_count.let_(to_bool).let_(convert_404)?;
-        Ok(res.modified_count.let_(to_bool))
+        modify_set(
+            "posted",
+            &self.coll,
+            &self.client,
+            id.to_string(),
+            content_id.to_string(),
+            ModifyOpTy::Push,
+        )
+        .await
     }
 
     async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let res = self
-            .coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! {
-                    "$pull": { "posted": content_id.to_string() },
-                    "$inc": { "posted_size": -1 }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?;
-
-        res.matched_count.let_(to_bool).let_(convert_404)?;
-        Ok(res.modified_count.let_(to_bool))
+        modify_set(
+            "posted",
+            &self.coll,
+            &self.client,
+            id.to_string(),
+            content_id.to_string(),
+            ModifyOpTy::Pull,
+        )
+        .await
     }
 
+    // FIXME: rename to `bookmark`
     async fn is_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let res = self
-            .coll
-            .count_documents(
-                doc! {
-                    "id": id.to_string(),
-                    "bookmark": { "$in": [content_id.to_string()] }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?
-            .let_(to_bool);
-
-        Ok(res)
+        is_contains(
+            "bookmark",
+            &self.coll,
+            id.to_string(),
+            content_id.to_string(),
+        )
+        .await
     }
 
+    // FIXME: rename to `bookmark`
     async fn insert_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let res = self
-            .coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! {
-                    "$addToSet": { "bookmark": content_id.to_string() },
-                    "$inc": { "bookmark_size": 1 }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?;
-
-        res.matched_count.let_(to_bool).let_(convert_404)?;
-        Ok(res.modified_count.let_(to_bool))
+        modify_set(
+            "bookmark",
+            &self.coll,
+            &self.client,
+            id.to_string(),
+            content_id.to_string(),
+            ModifyOpTy::Push,
+        )
+        .await
     }
 
+    // FIXME: rename to `bookmark`
     async fn delete_bookmarked(&self, id: u64, content_id: Uuid) -> Result<bool> {
-        let res = self
-            .coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! {
-                    "$pull": { "bookmark": content_id.to_string() },
-                    "$inc": { "bookmark_size": -1 }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?;
-
-        res.matched_count.let_(to_bool).let_(convert_404)?;
-        Ok(res.modified_count.let_(to_bool))
+        modify_set(
+            "bookmark",
+            &self.coll,
+            &self.client,
+            id.to_string(),
+            content_id.to_string(),
+            ModifyOpTy::Pull,
+        )
+        .await
     }
 
     async fn delete(&self, id: u64) -> Result<User> {
@@ -609,109 +568,59 @@ impl ContentRepository for MongoContentRepository {
     }
 
     async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        let res = self
-            .coll
-            .count_documents(
-                doc! {
-                    "id": id.to_string(),
-                    "liked": { "$in": [user_id.to_string()] }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?
-            .let_(to_bool);
-
-        Ok(res)
+        is_contains("liked", &self.coll, id.to_string(), user_id.to_string()).await
     }
 
     async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        let res = self
-            .coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! {
-                    "$addToSet": { "liked": user_id.to_string() },
-                    "$inc": { "liked_size": 1 }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?;
-
-        res.matched_count.let_(to_bool).let_(convert_404)?;
-        Ok(res.modified_count.let_(to_bool))
+        modify_set(
+            "liked",
+            &self.coll,
+            &self.client,
+            id.to_string(),
+            user_id.to_string(),
+            ModifyOpTy::Push,
+        )
+        .await
     }
 
     async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        let res = self
-            .coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! {
-                    "$pull": { "liked": user_id.to_string() },
-                    "$inc": { "liked_size": -1 }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?;
-
-        res.matched_count.let_(to_bool).let_(convert_404)?;
-        Ok(res.modified_count.let_(to_bool))
+        modify_set(
+            "liked",
+            &self.coll,
+            &self.client,
+            id.to_string(),
+            user_id.to_string(),
+            ModifyOpTy::Pull,
+        )
+        .await
     }
 
     async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        let res = self
-            .coll
-            .count_documents(
-                doc! {
-                    "id": id.to_string(),
-                    "pinned": { "$in": [user_id.to_string()] }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?
-            .let_(to_bool);
-
-        Ok(res)
+        is_contains("pinned", &self.coll, id.to_string(), user_id.to_string()).await
     }
 
     async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        let res = self
-            .coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! {
-                    "$addToSet": { "pinned": user_id.to_string() },
-                    "$inc": { "pinned_size": 1 }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?;
-
-        res.matched_count.let_(to_bool).let_(convert_404)?;
-        Ok(res.modified_count.let_(to_bool))
+        modify_set(
+            "pinned",
+            &self.coll,
+            &self.client,
+            id.to_string(),
+            user_id.to_string(),
+            ModifyOpTy::Push,
+        )
+        .await
     }
 
     async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
-        let res = self
-            .coll
-            .update_one(
-                doc! { "id": id.to_string() },
-                doc! {
-                    "$pull": { "pinned": user_id.to_string() },
-                    "$inc": { "pinned_size": -1 }
-                },
-                None,
-            )
-            .await
-            .let_(convert_repo_err)?;
-
-        res.matched_count.let_(to_bool).let_(convert_404)?;
-        Ok(res.modified_count.let_(to_bool))
+        modify_set(
+            "pinned",
+            &self.coll,
+            &self.client,
+            id.to_string(),
+            user_id.to_string(),
+            ModifyOpTy::Pull,
+        )
+        .await
     }
 
     async fn delete(&self, id: Uuid) -> Result<Content> {
@@ -889,6 +798,7 @@ enum ModifyOpTy {
     Push,
     Pull,
 }
+#[inline]
 async fn modify_set<T>(
     name: impl AsRef<str>,
     coll: &Collection<T>,
