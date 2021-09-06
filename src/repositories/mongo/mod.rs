@@ -182,7 +182,10 @@ impl UserRepository for MongoUserRepository {
             mutation: Document,
         ) -> ::mongodb::error::Result<Option<User>> {
             let mut session = this.client.start_session(None).await?;
-            let ta_opt = None;
+            let ta_opt = TransactionOptions::builder()
+                .read_concern(ReadConcern::snapshot())
+                .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
+                .build();
             session.start_transaction(ta_opt).await?;
 
             match this
