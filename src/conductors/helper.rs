@@ -95,7 +95,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
 
                     UserCommandV2::Update { id, mutation }
                 },
-                sc => unreachable!("unrecognized subcommand on `user`. (impl error): {:?}", sc),
+                _ => return None,
             }),
             ("content", Some(ams1)) => CommandV2::Content(match ams1.subcommand() {
                 ("read", Some(ams2)) => {
@@ -238,10 +238,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
 
                     ContentCommandV2::Delete { id }
                 },
-                sc => unreachable!(
-                    "unrecognized subcommand on `content`. (impl error): {:?}",
-                    sc
-                ),
+                _ => return None,
             }),
             ("post", Some(ams1)) => {
                 let author = ams1
@@ -292,11 +289,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
 
                 CommandV2::Bookmark { content_id, undo }
             },
-            sc => unreachable!(
-                "unrecognized subcommand on `(root)`. (impl error): {:?}", /* FIXME: reachable
-                                                                            * this point. */
-                sc
-            ),
+            _ => return None,
         };
         if !errs.is_empty() {
             Err(anyhow!(combine_errs(errs)))?
