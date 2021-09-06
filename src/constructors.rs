@@ -9,8 +9,8 @@ use crate::repositories::mongo::{MongoContentRepository, MongoUserRepository};
 pub fn in_memory() -> impl EventHandler {
     Conductor {
         handler: Handler {
-            user_repository: Box::new(InMemoryRepository::<User>::new()),
-            content_repository: Box::new(InMemoryRepository::<Content>::new()),
+            user_repository: box InMemoryRepository::<User>::new(),
+            content_repository: box InMemoryRepository::<Content>::new(),
         },
     }
 }
