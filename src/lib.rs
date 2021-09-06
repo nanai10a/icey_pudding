@@ -1,8 +1,5 @@
 #![feature(try_blocks)]
-#![feature(drain_filter)]
 #![feature(box_syntax)]
-#![feature(fn_traits)]
-#![feature(label_break_value)]
 
 pub(crate) mod conductors;
 mod constructors;
