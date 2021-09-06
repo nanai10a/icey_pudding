@@ -14,14 +14,14 @@ use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use super::{clapcmd, CommandV2, ContentCommandV2, Response, UserCommandV2};
+use super::{clapcmd, Command, ContentCommand, Response, UserCommand};
 use crate::conductors::PartialContentMutation;
 use crate::entities::{Content, PartialAuthor, User};
 use crate::repositories::{
     AuthorQuery, ContentContentMutation, ContentQuery, PostedQuery, UserMutation, UserQuery,
 };
 
-pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>> {
+pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     let res: Result<_> = try {
         let splitted = shell_words::split(msg)?;
 
@@ -31,12 +31,12 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
             }
         }
 
-        let ams0 = match clapcmd::create_clap_app_v2().get_matches_from_safe(splitted) {
+        let ams0 = match clapcmd::create_clap_app().get_matches_from_safe(splitted) {
             Ok(o) => o,
             Err(e) => match e.kind {
                 ErrorKind::VersionDisplayed => Err(anyhow!({
                     let mut buf = Cursor::new(vec![]);
-                    clapcmd::create_clap_app_v2()
+                    clapcmd::create_clap_app()
                         .write_long_version(&mut buf)
                         .unwrap();
                     String::from_utf8(buf.into_inner()).unwrap()
@@ -47,12 +47,12 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
 
         let mut errs = vec![];
         let cmd = match ams0.subcommand() {
-            ("user", Some(ams1)) => CommandV2::User(match ams1.subcommand() {
-                ("create", Some(_)) => UserCommandV2::Create,
+            ("user", Some(ams1)) => Command::User(match ams1.subcommand() {
+                ("create", Some(_)) => UserCommand::Create,
                 ("read", Some(ams2)) => {
                     let id = ams2.value_of("id").map(|s| parse_num(s, &mut errs));
 
-                    UserCommandV2::Read { id }
+                    UserCommand::Read { id }
                 },
                 ("reads", Some(ams2)) => {
                     let page = ams2
@@ -80,7 +80,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                         .value_of("bookmark_num")
                         .map(|s| parse_range(s, &mut errs));
 
-                    UserCommandV2::Reads { page, query }
+                    UserCommand::Reads { page, query }
                 },
                 ("update", Some(ams2)) => {
                     let id = ams2
@@ -93,18 +93,18 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                     *admin = ams2.value_of("admin").map(|s| parse_bool(s, &mut errs));
                     *sub_admin = ams2.value_of("sub_admin").map(|s| parse_bool(s, &mut errs));
 
-                    UserCommandV2::Update { id, mutation }
+                    UserCommand::Update { id, mutation }
                 },
                 _ => return None,
             }),
-            ("content", Some(ams1)) => CommandV2::Content(match ams1.subcommand() {
+            ("content", Some(ams1)) => Command::Content(match ams1.subcommand() {
                 ("read", Some(ams2)) => {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_uuid(s, &mut errs))
                         .unwrap();
 
-                    ContentCommandV2::Read { id }
+                    ContentCommand::Read { id }
                 },
                 ("reads", Some(ams2)) => {
                     let page = ams2
@@ -181,7 +181,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                         .value_of("pinned_num")
                         .map(|s| parse_range(s, &mut errs));
 
-                    ContentCommandV2::Reads { page, query }
+                    ContentCommand::Reads { page, query }
                 },
                 ("update", Some(ams2)) => {
                     let id = ams2
@@ -228,7 +228,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                             replace: val1.to_string(),
                         });
 
-                    ContentCommandV2::Update { id, mutation }
+                    ContentCommand::Update { id, mutation }
                 },
                 ("delete", Some(ams2)) => {
                     let id = ams2
@@ -236,7 +236,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                         .map(|s| parse_uuid(s, &mut errs))
                         .unwrap();
 
-                    ContentCommandV2::Delete { id }
+                    ContentCommand::Delete { id }
                 },
                 _ => return None,
             }),
@@ -260,7 +260,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                     .unwrap();
                 let content = ams1.value_of("content").map(|s| s.to_string()).unwrap();
 
-                CommandV2::Post { author, content }
+                Command::Post { author, content }
             },
             ("like", Some(ams1)) => {
                 let content_id = ams1
@@ -269,7 +269,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                     .unwrap();
                 let undo = ams1.values_of("undo").is_some();
 
-                CommandV2::Like { content_id, undo }
+                Command::Like { content_id, undo }
             },
             ("pin", Some(ams1)) => {
                 let content_id = ams1
@@ -278,7 +278,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                     .unwrap();
                 let undo = ams1.values_of("undo").is_some();
 
-                CommandV2::Pin { content_id, undo }
+                Command::Pin { content_id, undo }
             },
             ("bookmark", Some(ams1)) => {
                 let content_id = ams1
@@ -287,7 +287,7 @@ pub(crate) async fn parse_msg_v2(msg: &str) -> Option<Result<CommandV2, String>>
                     .unwrap();
                 let undo = ams1.values_of("undo").is_some();
 
-                CommandV2::Bookmark { content_id, undo }
+                Command::Bookmark { content_id, undo }
             },
             _ => return None,
         };
@@ -400,7 +400,7 @@ pub(crate) fn append_message_reference(
     raw.insert("message_reference", mr);
 }
 
-pub(crate) fn range_syntax_parser_v2<N>(src: String) -> Result<(Bound<N>, Bound<N>)>
+pub(crate) fn range_syntax_parser<N>(src: String) -> Result<(Bound<N>, Bound<N>)>
 where
     N: range_parser::Num + FromStr + Debug,
     <N as FromStr>::Err: Debug + PartialEq + Eq,
@@ -445,7 +445,7 @@ where
     N: range_parser::Num + Default + FromStr + Debug,
     <N as FromStr>::Err: Debug + PartialEq + Eq,
 {
-    match range_syntax_parser_v2(s.to_string()) {
+    match range_syntax_parser(s.to_string()) {
         Ok(o) => o,
         Err(e) => {
             errs.push(e.to_string());
