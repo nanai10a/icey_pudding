@@ -361,16 +361,17 @@ impl Conductor {
     }
 
     async fn authorize_cmd(&self, cmd: Command, user_id: UserId) -> Result<Command, String> {
-        let user = self
+        let user_res = self
             .handler
             .read_user(user_id)
             .await
-            .map_err(|e| format!("auth error: {}", e))?;
+            .map_err(|e| format!("auth error: {}", e));
 
         let res = match &cmd {
-            Command::User(UserCommand::Update { .. }) => user.admin,
+            Command::User(UserCommand::Update { .. }) => user_res?.admin,
             // Command::User(UserComamnd::Delete { id }) => unimplemented!(),
             Command::Content(ContentCommand::Update { id, .. }) => {
+                let user = user_res?;
                 let content = self
                     .handler
                     .read_content(*id)
@@ -380,6 +381,7 @@ impl Conductor {
                 content.posted.id == user_id || user.admin || user.sub_admin
             },
             Command::Content(ContentCommand::Delete { id }) => {
+                let user = user_res?;
                 let content = self
                     .handler
                     .read_content(*id)
