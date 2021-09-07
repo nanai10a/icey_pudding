@@ -1,12 +1,12 @@
 use std::ops::Bound;
 
-use mongodb::bson::{doc, Document};
+use mongodb::bson::{doc, Bson, Document};
 
 use super::{
     LetChain, MongoContentAuthorModel, MongoContentModel, MongoContentPostedModel, MongoUserModel,
     UserMutation, UserQuery,
 };
-use crate::entities::{Author, Content, Posted, User};
+use crate::entities::{Author, Content, ContentId, Posted, User, UserId};
 
 impl From<UserQuery> for Document {
     fn from(
@@ -230,4 +230,11 @@ impl From<Posted> for MongoContentPostedModel {
             nick,
         }
     }
+}
+
+impl From<UserId> for Bson {
+    fn from(i: UserId) -> Self { Self::String(i.to_string()) }
+}
+impl From<ContentId> for Bson {
+    fn from(i: ContentId) -> Self { Self::String(i.to_string()) }
 }
