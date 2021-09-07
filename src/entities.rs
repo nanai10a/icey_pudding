@@ -1,34 +1,37 @@
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+use uuid::Uuid;
+
+// TODO: replace to this structures
+#[allow(dead_code)]
 pub(crate) struct UserId(u64);
+#[allow(dead_code)]
+pub(crate) struct ContentId(Uuid);
 
 #[derive(Debug, Clone)]
-pub(crate) struct User {
-    pub(crate) id: UserId,
+pub struct User {
+    pub(crate) id: u64,
     pub(crate) admin: bool,
     pub(crate) sub_admin: bool,
     pub(crate) posted: HashSet<PostId>,
     pub(crate) bookmark: HashSet<PostId>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct PostId(::uuid::Uuid);
-
+// TODO: rename to `Post`
 // TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
-pub(crate) struct Post {
-    pub(crate) id: PostId,
+pub struct Content {
+    pub(crate) id: Uuid,
     pub(crate) author: Author,
-    pub(crate) from: PostFrom,
+    pub(crate) posted: Posted,
     pub(crate) content: String,
     pub(crate) liked: HashSet<UserId>,
     pub(crate) pinned: HashSet<UserId>,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct PostFrom {
-    pub(crate) id: UserId,
+pub(crate) struct Posted {
+    pub(crate) id: u64,
     pub(crate) name: String,
     pub(crate) nick: Option<String>,
 }
@@ -36,7 +39,7 @@ pub(crate) struct PostFrom {
 #[derive(Debug, Clone)]
 pub(crate) enum Author {
     User {
-        id: UserId,
+        id: u64,
         name: String,
         nick: Option<String>,
     },
@@ -45,7 +48,7 @@ pub(crate) enum Author {
 
 #[derive(Debug, Clone)]
 pub(crate) enum PartialAuthor {
-    User(UserId),
+    User(u64),
     Virtual(String),
 }
 
@@ -77,8 +80,8 @@ impl ::core::fmt::Display for Author {
     }
 }
 
-impl ::core::fmt::Display for PostFrom {
-    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+impl Display for Posted {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{} ({} | {})",
