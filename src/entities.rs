@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct UserId(u64);
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub(crate) struct User {
     pub(crate) bookmark: HashSet<PostId>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct PostId(::uuid::Uuid);
 
 // TODO: add `created` and `edited`
