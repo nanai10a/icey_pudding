@@ -19,6 +19,7 @@ use crate::handlers::Handler;
 use crate::repositories::{
     ContentContentMutation, ContentMutation, ContentQuery, UserMutation, UserQuery,
 };
+use crate::utils::LetChain;
 
 mod clapcmd;
 mod command_colors;
@@ -123,22 +124,14 @@ impl Conductor {
                 Command::User(UserCommand::Create) => {
                     let user = self.handler.create_user(*user_id.as_u64()).await?;
 
-                    vec![helper::resp_from_user(
-                        "registered user",
-                        from_user_shows,
-                        USER_CREATE,
-                        user,
-                    )]
+                    helper::resp_from_user("registered user", from_user_shows, USER_CREATE, user)
+                        .let_(|r| vec![r])
                 },
                 Command::User(UserCommand::Read { id }) => {
                     let user = self.handler.read_user(id.unwrap_or(user_id.0)).await?;
 
-                    vec![helper::resp_from_user(
-                        "showing user",
-                        from_user_shows,
-                        USER_READ,
-                        user,
-                    )]
+                    helper::resp_from_user("showing user", from_user_shows, USER_READ, user)
+                        .let_(|r| vec![r])
                 },
                 Command::User(UserCommand::Reads { page, query }) => {
                     let mut users = self.handler.read_users(query).await?;
@@ -184,22 +177,19 @@ impl Conductor {
                 Command::User(UserCommand::Update { id, mutation }) => {
                     let user = self.handler.update_user(id, mutation).await?; // FIXME: don't able to use this from users (must limit to admin).
 
-                    vec![helper::resp_from_user(
-                        "updated user",
-                        from_user_shows,
-                        USER_UPDATE,
-                        user,
-                    )]
+                    helper::resp_from_user("updated user", from_user_shows, USER_UPDATE, user)
+                        .let_(|r| vec![r])
                 },
                 Command::Content(ContentCommand::Read { id }) => {
                     let content = self.handler.read_content(id).await?;
 
-                    vec![helper::resp_from_content(
+                    helper::resp_from_content(
                         "showing content",
                         from_user_shows,
                         CONTENT_READ,
                         content,
-                    )]
+                    )
+                    .let_(|r| vec![r])
                 },
                 Command::Content(ContentCommand::Reads { page, query }) => {
                     let mut contents = self.handler.read_contents(query).await?;
@@ -269,22 +259,24 @@ impl Conductor {
                     let mutation = ContentMutation { author, content };
                     let content = self.handler.update_content(id, mutation).await?; // FIXME: limit to posted user and admin and sub_admin
 
-                    vec![helper::resp_from_content(
+                    helper::resp_from_content(
                         "updated user",
                         from_user_shows,
                         CONTENT_UPDATE,
                         content,
-                    )]
+                    )
+                    .let_(|r| vec![r])
                 },
                 Command::Content(ContentCommand::Delete { id }) => {
                     let content = self.handler.delete_content(id).await?; // FIXME: limit to posted user and admin
 
-                    vec![helper::resp_from_content(
+                    helper::resp_from_content(
                         "deleted content",
                         from_user_shows,
                         CONTENT_DELETE,
                         content,
-                    )]
+                    )
+                    .let_(|r| vec![r])
                 },
                 Command::Post {
                     author: partial_author,
@@ -320,12 +312,8 @@ impl Conductor {
                         )
                         .await?;
 
-                    vec![helper::resp_from_content(
-                        "posted content",
-                        from_user_shows,
-                        POST,
-                        content,
-                    )]
+                    helper::resp_from_content("posted content", from_user_shows, POST, content)
+                        .let_(|r| vec![r])
                 },
                 Command::Like { content_id, undo } => {
                     let content = self.handler.like(content_id, user_id.0, undo).await?;
@@ -334,12 +322,8 @@ impl Conductor {
                         false => "liked",
                         true => "unliked",
                     };
-                    vec![helper::resp_from_content(
-                        title,
-                        from_user_shows,
-                        LIKE,
-                        content,
-                    )]
+                    helper::resp_from_content(title, from_user_shows, LIKE, content)
+                        .let_(|r| vec![r])
                 },
                 Command::Pin { content_id, undo } => {
                     let content = self.handler.pin(content_id, user_id.0, undo).await?;
@@ -348,12 +332,8 @@ impl Conductor {
                         false => "pinned",
                         true => "unpinned",
                     };
-                    vec![helper::resp_from_content(
-                        title,
-                        from_user_shows,
-                        PIN,
-                        content,
-                    )]
+                    helper::resp_from_content(title, from_user_shows, PIN, content)
+                        .let_(|r| vec![r])
                 },
                 Command::Bookmark { content_id, undo } => {
                     let (user, _) = self.handler.bookmark(user_id.0, content_id, undo).await?;
@@ -362,24 +342,20 @@ impl Conductor {
                         false => "bookmarked",
                         true => "unbookmarked",
                     };
-                    vec![helper::resp_from_user(
-                        title,
-                        from_user_shows,
-                        BOOKMARK,
-                        user,
-                    )]
+                    helper::resp_from_user(title, from_user_shows, BOOKMARK, user).let_(|r| vec![r])
                 },
             }
         };
 
         match res {
             Ok(r) => r,
-            Err(e) => vec![Response {
+            Err(e) => Response {
                 title: "response".to_string(),
                 rgb: ERROR,
                 description: format!("{}", e),
                 fields: vec![],
-            }],
+            }
+            .let_(|r| vec![r]),
         }
     }
 }
