@@ -2,20 +2,20 @@ use std::collections::HashSet;
 
 use uuid::Uuid;
 
-// TODO: replace to this structures
-#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct UserId(u64);
-#[allow(dead_code)]
-pub(crate) struct ContentId(Uuid);
 
 #[derive(Debug, Clone)]
 pub struct User {
     pub(crate) id: u64,
     pub(crate) admin: bool,
     pub(crate) sub_admin: bool,
-    pub(crate) posted: HashSet<PostId>,
-    pub(crate) bookmark: HashSet<PostId>,
+    pub(crate) posted: HashSet<ContentId>,
+    pub(crate) bookmark: HashSet<ContentId>,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct ContentId(Uuid);
 
 // TODO: rename to `Post`
 // TODO: add `created` and `edited`
@@ -58,7 +58,7 @@ impl ::core::fmt::Display for UserId {
     }
 }
 
-impl ::core::fmt::Display for PostId {
+impl ::core::fmt::Display for ContentId {
     fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(f, "{}", self.0)
     }
@@ -80,7 +80,7 @@ impl ::core::fmt::Display for Author {
     }
 }
 
-impl Display for Posted {
+impl ::core::fmt::Display for Posted {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
