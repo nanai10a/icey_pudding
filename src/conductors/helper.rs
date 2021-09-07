@@ -411,14 +411,6 @@ pub(crate) fn append_message_reference(
     raw.insert("message_reference", mr);
 }
 
-pub(crate) fn range_syntax_parser<N>(src: String) -> Result<(Bound<N>, Bound<N>)>
-where
-    N: range_parser::Num + FromStr + Debug,
-    <N as FromStr>::Err: Debug + PartialEq + Eq,
-{
-    range_parser::parse(src).map_err(|e| anyhow::anyhow!("{:?}", e))
-}
-
 #[inline]
 fn combine_errs(mut errs: Vec<String>) -> String {
     let mut s = vec![];
@@ -456,7 +448,7 @@ where
     N: range_parser::Num + Default + FromStr + Debug,
     <N as FromStr>::Err: Debug + PartialEq + Eq,
 {
-    match range_syntax_parser(s.to_string()) {
+    match range_parser::parse(s.to_string()).map_err(|e| anyhow::anyhow!("{:?}", e)) {
         Ok(o) => o,
         Err(e) => {
             errs.push(e.to_string());
