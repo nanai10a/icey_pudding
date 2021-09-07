@@ -101,7 +101,7 @@ pub(crate) struct Response {
 }
 
 impl Conductor {
-    pub(crate) async fn handle(
+    pub(crate) async fn conduct(
         &self,
         cmd: Command,
         user_id: UserId,
@@ -450,7 +450,7 @@ impl EventHandler for Conductor {
         } = author;
 
         let mut resps = self
-            .handle(
+            .conduct(
                 cmd,
                 user_id,
                 user_name,
