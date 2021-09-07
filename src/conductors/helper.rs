@@ -97,7 +97,7 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                     UserCommand::Update { id, mutation }
                 },
-                _ => return None,
+                _ => Err(anyhow!(CLAP_HELP.clone()))?,
             }),
             ("content", Some(ams1)) => Command::Content(match ams1.subcommand() {
                 ("read", Some(ams2)) => {
@@ -249,7 +249,7 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                     ContentCommand::Delete { id }
                 },
-                _ => return None,
+                _ => Err(anyhow!(CLAP_HELP.clone()))?,
             }),
             ("post", Some(ams1)) => {
                 let author = ams1
@@ -303,7 +303,7 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                 Command::Bookmark { content_id, undo }
             },
-            _ => return None,
+            _ => Err(anyhow!(CLAP_HELP.clone()))?,
         };
         if !errs.is_empty() {
             Err(anyhow!(combine_errs(errs)))?
