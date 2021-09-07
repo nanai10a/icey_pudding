@@ -17,7 +17,6 @@ pub struct User {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct ContentId(Uuid);
 
-// TODO: rename to `Post`
 // TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
 pub struct Content {
