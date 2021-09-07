@@ -35,13 +35,7 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
         let ams0 = match clapcmd::create_clap_app().get_matches_from_safe(splitted) {
             Ok(o) => o,
             Err(e) => match e.kind {
-                ErrorKind::VersionDisplayed => Err(anyhow!({
-                    let mut buf = Cursor::new(vec![]);
-                    clapcmd::create_clap_app()
-                        .write_long_version(&mut buf)
-                        .unwrap();
-                    String::from_utf8(buf.into_inner()).unwrap()
-                }))?,
+                ErrorKind::VersionDisplayed => Err(anyhow!(CLAP_VERSION.clone()))?,
                 _ => Err(anyhow!(e))?,
             },
         };
@@ -509,4 +503,24 @@ fn parse_regex(s: &str, errs: &mut Vec<String>) -> Regex {
             "".parse().unwrap() // tmp value
         },
     }
+}
+
+lazy_static::lazy_static! {
+    static ref CLAP_HELP: String = {
+        let mut buf = Cursor::new(vec![]);
+        clapcmd::create_clap_app()
+            .write_long_help(&mut buf)
+            .unwrap();
+
+        String::from_utf8(buf.into_inner()).unwrap()
+    };
+
+    static ref CLAP_VERSION: String = {
+        let mut buf = Cursor::new(vec![]);
+        clapcmd::create_clap_app()
+            .write_long_version(&mut buf)
+            .unwrap();
+
+        String::from_utf8(buf.into_inner()).unwrap()
+    };
 }
