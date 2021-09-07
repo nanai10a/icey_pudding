@@ -150,7 +150,7 @@ impl UserRepository for MongoUserRepository {
     async fn is_exists(&self, id: UserId) -> Result<bool> {
         let res = self
             .coll
-            .count_documents(doc! { "id": id.to_string() }, None)
+            .count_documents(doc! { "id": id }, None)
             .await
             .let_(convert_repo_err)?
             .let_(to_bool);
@@ -161,7 +161,7 @@ impl UserRepository for MongoUserRepository {
     async fn find(&self, id: UserId) -> Result<User> {
         let user: User = self
             .coll
-            .find_one(doc! { "id": id.to_string() }, None)
+            .find_one(doc! { "id": id }, None)
             .await
             .let_(convert_repo_err)?
             .let_(convert_404_or)?
@@ -202,7 +202,7 @@ impl UserRepository for MongoUserRepository {
             match this
                 .coll
                 .update_one_with_session(
-                    doc! { "id": id.to_string() },
+                    doc! { "id": id },
                     doc! { "$set": mutation },
                     None,
                     &mut session,
@@ -217,7 +217,7 @@ impl UserRepository for MongoUserRepository {
 
             let user: User = this
                 .coll
-                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .find_one_with_session(doc! { "id": id }, None, &mut session)
                 .await?
                 .unwrap()
                 .into();
@@ -301,7 +301,7 @@ impl UserRepository for MongoUserRepository {
 
             let user: User = match this
                 .coll
-                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .find_one_with_session(doc! { "id": id }, None, &mut session)
                 .await?
                 .map(|m| m.into())
             {
@@ -312,7 +312,7 @@ impl UserRepository for MongoUserRepository {
 
             match this
                 .coll
-                .delete_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .delete_one_with_session(doc! { "id": id }, None, &mut session)
                 .await?
                 .deleted_count
                 .let_(to_bool) // checking "is `0 | 1`" (= "unique")
@@ -346,7 +346,7 @@ impl ContentRepository for MongoContentRepository {
     async fn is_exists(&self, id: ContentId) -> Result<bool> {
         let res = self
             .coll
-            .count_documents(doc! { "id": id.to_string() }, None)
+            .count_documents(doc! { "id": id }, None)
             .await
             .let_(convert_repo_err)?
             .let_(to_bool);
@@ -357,7 +357,7 @@ impl ContentRepository for MongoContentRepository {
     async fn find(&self, id: ContentId) -> Result<Content> {
         let content: Content = self
             .coll
-            .find_one(doc! { "id": id.to_string() }, None)
+            .find_one(doc! { "id": id }, None)
             .await
             .let_(convert_repo_err)?
             .let_(convert_404_or)?
@@ -382,10 +382,9 @@ impl ContentRepository for MongoContentRepository {
         let query_doc = {
             let mut doc = doc! {};
 
-            if let Some(mut set_raw) = liked {
-                if !set_raw.is_empty() {
-                    let set = set_raw.drain().map(|n| n.to_string()).collect::<Vec<_>>();
-                    doc.insert("liked", doc! { "$in": set });
+            if let Some(mut set) = liked {
+                if !set.is_empty() {
+                    doc.insert("liked", doc! { "$in": set.drain().collect::<Vec<_>>() });
                 }
             }
 
@@ -409,10 +408,9 @@ impl ContentRepository for MongoContentRepository {
                 }
             }
 
-            if let Some(mut set_raw) = pinned {
-                if !set_raw.is_empty() {
-                    let set = set_raw.drain().map(|n| n.to_string()).collect::<Vec<_>>();
-                    doc.insert("pinned", doc! { "$in": set });
+            if let Some(mut set) = pinned {
+                if !set.is_empty() {
+                    doc.insert("pinned", doc! { "$in": set.drain().collect::<Vec<_>>() });
                 }
             }
 
@@ -514,7 +512,7 @@ impl ContentRepository for MongoContentRepository {
 
             let mut target_content: Content = match this
                 .coll
-                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .find_one_with_session(doc! { "id": id }, None, &mut session)
                 .await?
             {
                 Some(c) => c.into(),
@@ -538,7 +536,7 @@ impl ContentRepository for MongoContentRepository {
             let target_model: MongoContentModel = target_content.into();
             this.coll
                 .update_one_with_session(
-                    doc! { "id": id.to_string() },
+                    doc! { "id": id },
                     doc! { "$set": bson::to_document(&target_model).unwrap() },
                     None,
                     &mut session,
@@ -547,7 +545,7 @@ impl ContentRepository for MongoContentRepository {
 
             let new_content = this
                 .coll
-                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .find_one_with_session(doc! { "id": id }, None, &mut session)
                 .await?
                 .unwrap()
                 .into();
@@ -626,7 +624,7 @@ impl ContentRepository for MongoContentRepository {
 
             let content: Content = match this
                 .coll
-                .find_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .find_one_with_session(doc! { "id": id }, None, &mut session)
                 .await?
                 .map(|m| m.into())
             {
@@ -637,7 +635,7 @@ impl ContentRepository for MongoContentRepository {
 
             match this
                 .coll
-                .delete_one_with_session(doc! { "id": id.to_string() }, None, &mut session)
+                .delete_one_with_session(doc! { "id": id }, None, &mut session)
                 .await?
                 .deleted_count
                 .let_(to_bool)
