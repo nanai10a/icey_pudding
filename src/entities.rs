@@ -1,7 +1,4 @@
 use std::collections::HashSet;
-use std::fmt::Display;
-
-use uuid::Uuid;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct UserId(u64);
@@ -11,12 +8,12 @@ pub(crate) struct User {
     pub(crate) id: UserId,
     pub(crate) admin: bool,
     pub(crate) sub_admin: bool,
-    pub(crate) posted: HashSet<Uuid>,
-    pub(crate) bookmark: HashSet<Uuid>,
+    pub(crate) posted: HashSet<PostId>,
+    pub(crate) bookmark: HashSet<PostId>,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct PostId(Uuid);
+pub(crate) struct PostId(::uuid::Uuid);
 
 // TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
@@ -25,8 +22,8 @@ pub(crate) struct Post {
     pub(crate) author: Author,
     pub(crate) from: PostFrom,
     pub(crate) content: String,
-    pub(crate) liked: HashSet<u64>,
-    pub(crate) pinned: HashSet<u64>,
+    pub(crate) liked: HashSet<UserId>,
+    pub(crate) pinned: HashSet<UserId>,
 }
 
 #[derive(Debug, Clone)]
@@ -52,16 +49,20 @@ pub(crate) enum PartialAuthor {
     Virtual(String),
 }
 
-impl Display for UserId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.0) }
+impl ::core::fmt::Display for UserId {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
-impl Display for PostId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.0) }
+impl ::core::fmt::Display for PostId {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
-impl Display for Author {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl ::core::fmt::Display for Author {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         match self {
             Author::User { id, name, nick } => {
                 let mut nick_fmt = &String::new();
@@ -76,8 +77,8 @@ impl Display for Author {
     }
 }
 
-impl Display for PostFrom {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl ::core::fmt::Display for PostFrom {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         write!(
             f,
             "{} ({} | {})",
