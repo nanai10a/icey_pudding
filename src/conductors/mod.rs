@@ -11,7 +11,6 @@ use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
 use serenity::model::id::UserId;
 use serenity::model::prelude::User;
-use serenity::utils::Colour;
 use uuid::Uuid;
 
 use crate::entities::{Author, PartialAuthor, Posted};
@@ -417,7 +416,7 @@ impl EventHandler for Conductor {
                     .send_message(ctx.http, |cm| {
                         cm.add_embed(|ce| {
                             ce.title("response")
-                                .colour(Colour::RED)
+                                .colour(command_colors::ERROR)
                                 .description(format!("```{}```", e))
                         });
 
