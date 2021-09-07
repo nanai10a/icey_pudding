@@ -8,13 +8,12 @@ use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteCon
 use mongodb::{bson, Client, ClientSession, Collection, Database};
 use serde::{Deserialize, Serialize};
 use serenity::futures::TryStreamExt;
-use uuid::Uuid;
 
 use super::{
     AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, ContentRepository,
     PostedQuery, RepositoryError, Result, StdResult, UserMutation, UserQuery, UserRepository,
 };
-use crate::entities::{Author, Content, User};
+use crate::entities::{Author, Content, ContentId, User, UserId};
 use crate::utils::LetChain;
 
 mod type_convert;
@@ -82,15 +81,15 @@ struct MongoUserModel {
     id: String,
     admin: bool,
     sub_admin: bool,
-    posted: HashSet<Uuid>,
+    posted: HashSet<ContentId>,
     posted_size: i64,
-    bookmark: HashSet<Uuid>,
+    bookmark: HashSet<ContentId>,
     bookmark_size: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct MongoContentModel {
-    id: Uuid,
+    id: ContentId,
     author: MongoContentAuthorModel,
     posted: MongoContentPostedModel,
     content: String,
@@ -148,7 +147,7 @@ impl UserRepository for MongoUserRepository {
         Ok(res)
     }
 
-    async fn is_exists(&self, id: u64) -> Result<bool> {
+    async fn is_exists(&self, id: UserId) -> Result<bool> {
         let res = self
             .coll
             .count_documents(doc! { "id": id.to_string() }, None)
@@ -159,7 +158,7 @@ impl UserRepository for MongoUserRepository {
         Ok(res)
     }
 
-    async fn find(&self, id: u64) -> Result<User> {
+    async fn find(&self, id: UserId) -> Result<User> {
         let user: User = self
             .coll
             .find_one(doc! { "id": id.to_string() }, None)
@@ -190,12 +189,12 @@ impl UserRepository for MongoUserRepository {
         Ok(res)
     }
 
-    async fn update(&self, id: u64, mutation: UserMutation) -> Result<User> {
+    async fn update(&self, id: UserId, mutation: UserMutation) -> Result<User> {
         let mutation_doc: Document = mutation.into();
 
         async fn transaction(
             this: &MongoUserRepository,
-            id: u64,
+            id: UserId,
             mutation: Document,
         ) -> ::mongodb::error::Result<Option<User>> {
             let mut session = make_session(&this.client).await?;
@@ -231,11 +230,11 @@ impl UserRepository for MongoUserRepository {
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
-    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn is_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         is_contains("posted", &self.coll, id.to_string(), content_id.to_string()).await
     }
 
-    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn insert_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         modify_set(
             "posted",
             &self.coll,
@@ -247,7 +246,7 @@ impl UserRepository for MongoUserRepository {
         .await
     }
 
-    async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn delete_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         modify_set(
             "posted",
             &self.coll,
@@ -259,7 +258,7 @@ impl UserRepository for MongoUserRepository {
         .await
     }
 
-    async fn is_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn is_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         is_contains(
             "bookmark",
             &self.coll,
@@ -269,7 +268,7 @@ impl UserRepository for MongoUserRepository {
         .await
     }
 
-    async fn insert_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn insert_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         modify_set(
             "bookmark",
             &self.coll,
@@ -281,7 +280,7 @@ impl UserRepository for MongoUserRepository {
         .await
     }
 
-    async fn delete_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn delete_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         modify_set(
             "bookmark",
             &self.coll,
@@ -293,10 +292,10 @@ impl UserRepository for MongoUserRepository {
         .await
     }
 
-    async fn delete(&self, id: u64) -> Result<User> {
+    async fn delete(&self, id: UserId) -> Result<User> {
         async fn transaction(
             this: &MongoUserRepository,
-            id: u64,
+            id: UserId,
         ) -> ::mongodb::error::Result<Option<User>> {
             let mut session = make_session(&this.client).await?;
 
@@ -344,7 +343,7 @@ impl ContentRepository for MongoContentRepository {
         Ok(res)
     }
 
-    async fn is_exists(&self, id: Uuid) -> Result<bool> {
+    async fn is_exists(&self, id: ContentId) -> Result<bool> {
         let res = self
             .coll
             .count_documents(doc! { "id": id.to_string() }, None)
@@ -355,7 +354,7 @@ impl ContentRepository for MongoContentRepository {
         Ok(res)
     }
 
-    async fn find(&self, id: Uuid) -> Result<Content> {
+    async fn find(&self, id: ContentId) -> Result<Content> {
         let content: Content = self
             .coll
             .find_one(doc! { "id": id.to_string() }, None)
@@ -505,10 +504,10 @@ impl ContentRepository for MongoContentRepository {
         Ok(res)
     }
 
-    async fn update(&self, id: Uuid, mutation: ContentMutation) -> Result<Content> {
+    async fn update(&self, id: ContentId, mutation: ContentMutation) -> Result<Content> {
         async fn transaction(
             this: &MongoContentRepository,
-            id: Uuid,
+            id: ContentId,
             ContentMutation { author, content }: ContentMutation,
         ) -> ::mongodb::error::Result<Option<Content>> {
             let mut session = make_session(&this.client).await?;
@@ -562,11 +561,11 @@ impl ContentRepository for MongoContentRepository {
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
-    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn is_liked(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         is_contains("liked", &self.coll, id.to_string(), user_id.to_string()).await
     }
 
-    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn insert_liked(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         modify_set(
             "liked",
             &self.coll,
@@ -578,7 +577,7 @@ impl ContentRepository for MongoContentRepository {
         .await
     }
 
-    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn delete_liked(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         modify_set(
             "liked",
             &self.coll,
@@ -590,11 +589,11 @@ impl ContentRepository for MongoContentRepository {
         .await
     }
 
-    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn is_pinned(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         is_contains("pinned", &self.coll, id.to_string(), user_id.to_string()).await
     }
 
-    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn insert_pinned(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         modify_set(
             "pinned",
             &self.coll,
@@ -606,7 +605,7 @@ impl ContentRepository for MongoContentRepository {
         .await
     }
 
-    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn delete_pinned(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         modify_set(
             "pinned",
             &self.coll,
@@ -618,10 +617,10 @@ impl ContentRepository for MongoContentRepository {
         .await
     }
 
-    async fn delete(&self, id: Uuid) -> Result<Content> {
+    async fn delete(&self, id: ContentId) -> Result<Content> {
         async fn transaction(
             this: &MongoContentRepository,
-            id: Uuid,
+            id: ContentId,
         ) -> ::mongodb::error::Result<Option<Content>> {
             let mut session = make_session(&this.client).await?;
 

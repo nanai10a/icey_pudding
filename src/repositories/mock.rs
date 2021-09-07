@@ -2,13 +2,12 @@ use std::ops::RangeBounds;
 
 use async_trait::async_trait;
 use tokio::sync::Mutex;
-use uuid::Uuid;
 
 use super::{
     AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, ContentRepository,
     PostedQuery, RepositoryError, Result, UserMutation, UserQuery, UserRepository,
 };
-use crate::entities::{Author, Content, User};
+use crate::entities::{Author, Content, ContentId, User, UserId};
 
 pub(crate) struct InMemoryRepository<T>(Mutex<Vec<T>>);
 
@@ -58,7 +57,7 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(true)
     }
 
-    async fn is_exists(&self, id: u64) -> Result<bool> {
+    async fn is_exists(&self, id: UserId) -> Result<bool> {
         let guard = self.0.lock().await;
 
         match find_ref(&guard, |v| v.id == id) {
@@ -68,7 +67,7 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn find(&self, id: u64) -> Result<User> {
+    async fn find(&self, id: UserId) -> Result<User> {
         let guard = self.0.lock().await;
 
         Ok(find_ref(&guard, |v| v.id == id)?.clone())
@@ -120,7 +119,7 @@ impl UserRepository for InMemoryRepository<User> {
 
     async fn update(
         &self,
-        id: u64,
+        id: UserId,
         UserMutation { admin, sub_admin }: UserMutation,
     ) -> Result<User> {
         let mut guard = self.0.lock().await;
@@ -142,7 +141,7 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(item.clone())
     }
 
-    async fn is_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn is_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         let guard = self.0.lock().await;
         let item = find_ref(&guard, |u| u.id == id)?;
 
@@ -153,21 +152,21 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn insert_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn insert_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |u| u.id == id)?;
 
         Ok(item.posted.insert(content_id))
     }
 
-    async fn delete_posted(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn delete_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |u| u.id == id)?;
 
         Ok(item.posted.remove(&content_id))
     }
 
-    async fn is_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn is_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         let item = self.find(id).await?;
 
         match item.bookmark.iter().filter(|v| **v == content_id).count() {
@@ -177,21 +176,21 @@ impl UserRepository for InMemoryRepository<User> {
         }
     }
 
-    async fn insert_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn insert_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |u| u.id == id)?;
 
         Ok(item.bookmark.insert(content_id))
     }
 
-    async fn delete_bookmark(&self, id: u64, content_id: Uuid) -> Result<bool> {
+    async fn delete_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |u| u.id == id)?;
 
         Ok(item.bookmark.remove(&content_id))
     }
 
-    async fn delete(&self, id: u64) -> Result<User> {
+    async fn delete(&self, id: UserId) -> Result<User> {
         let mut guard = self.0.lock().await;
         let mut res = guard
             .iter()
@@ -225,7 +224,7 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(true)
     }
 
-    async fn is_exists(&self, id: Uuid) -> Result<bool> {
+    async fn is_exists(&self, id: ContentId) -> Result<bool> {
         let guard = self.0.lock().await;
 
         match find_ref(&guard, |v| v.id == id) {
@@ -235,7 +234,7 @@ impl ContentRepository for InMemoryRepository<Content> {
         }
     }
 
-    async fn find(&self, id: Uuid) -> Result<Content> {
+    async fn find(&self, id: ContentId) -> Result<Content> {
         let guard = self.0.lock().await;
 
         Ok(find_ref(&guard, |v| v.id == id)?.clone())
@@ -345,7 +344,7 @@ impl ContentRepository for InMemoryRepository<Content> {
 
     async fn update(
         &self,
-        id: Uuid,
+        id: ContentId,
         ContentMutation { author, content }: ContentMutation,
     ) -> Result<Content> {
         let mut guard = self.0.lock().await;
@@ -367,7 +366,7 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(item.clone())
     }
 
-    async fn is_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn is_liked(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         let guard = self.0.lock().await;
         let item = find_ref(&guard, |c| c.id == id)?;
 
@@ -378,21 +377,21 @@ impl ContentRepository for InMemoryRepository<Content> {
         }
     }
 
-    async fn insert_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn insert_liked(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |c| c.id == id)?;
 
         Ok(item.liked.insert(user_id))
     }
 
-    async fn delete_liked(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn delete_liked(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |c| c.id == id)?;
 
         Ok(item.liked.remove(&user_id))
     }
 
-    async fn is_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn is_pinned(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         let guard = self.0.lock().await;
         let item = find_ref(&guard, |c| c.id == id)?;
 
@@ -403,21 +402,21 @@ impl ContentRepository for InMemoryRepository<Content> {
         }
     }
 
-    async fn insert_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn insert_pinned(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |c| c.id == id)?;
 
         Ok(item.pinned.insert(user_id))
     }
 
-    async fn delete_pinned(&self, id: Uuid, user_id: u64) -> Result<bool> {
+    async fn delete_pinned(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |c| c.id == id)?;
 
         Ok(item.pinned.remove(&user_id))
     }
 
-    async fn delete(&self, id: Uuid) -> Result<Content> {
+    async fn delete(&self, id: ContentId) -> Result<Content> {
         let mut guard = self.0.lock().await;
         let mut res = guard
             .iter()
