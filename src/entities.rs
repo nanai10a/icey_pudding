@@ -3,13 +3,11 @@ use std::fmt::Display;
 
 use uuid::Uuid;
 
-#[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct UserId(u64);
-#[allow(dead_code)]
-pub(crate) struct PostId(Uuid);
 
 #[derive(Debug, Clone)]
-pub struct User {
+pub(crate) struct User {
     pub(crate) id: UserId,
     pub(crate) admin: bool,
     pub(crate) sub_admin: bool,
@@ -17,9 +15,12 @@ pub struct User {
     pub(crate) bookmark: HashSet<Uuid>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct PostId(Uuid);
+
 // TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
-pub struct Post {
+pub(crate) struct Post {
     pub(crate) id: PostId,
     pub(crate) author: Author,
     pub(crate) from: PostFrom,
@@ -49,6 +50,14 @@ pub(crate) enum Author {
 pub(crate) enum PartialAuthor {
     User(UserId),
     Virtual(String),
+}
+
+impl Display for UserId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.0) }
+}
+
+impl Display for PostId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result { write!(f, "{}", self.0) }
 }
 
 impl Display for Author {
