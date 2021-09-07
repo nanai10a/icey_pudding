@@ -3,36 +3,34 @@ use std::fmt::Display;
 
 use uuid::Uuid;
 
-// TODO: replace to this structures
 #[allow(dead_code)]
 pub(crate) struct UserId(u64);
 #[allow(dead_code)]
-pub(crate) struct ContentId(Uuid);
+pub(crate) struct PostId(Uuid);
 
 #[derive(Debug, Clone)]
 pub struct User {
-    pub(crate) id: u64,
+    pub(crate) id: UserId,
     pub(crate) admin: bool,
     pub(crate) sub_admin: bool,
     pub(crate) posted: HashSet<Uuid>,
     pub(crate) bookmark: HashSet<Uuid>,
 }
 
-// TODO: rename to `Post`
 // TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
-pub struct Content {
-    pub(crate) id: Uuid,
+pub struct Post {
+    pub(crate) id: PostId,
     pub(crate) author: Author,
-    pub(crate) posted: Posted,
+    pub(crate) from: PostFrom,
     pub(crate) content: String,
     pub(crate) liked: HashSet<u64>,
     pub(crate) pinned: HashSet<u64>,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Posted {
-    pub(crate) id: u64,
+pub(crate) struct PostFrom {
+    pub(crate) id: UserId,
     pub(crate) name: String,
     pub(crate) nick: Option<String>,
 }
@@ -40,7 +38,7 @@ pub(crate) struct Posted {
 #[derive(Debug, Clone)]
 pub(crate) enum Author {
     User {
-        id: u64,
+        id: UserId,
         name: String,
         nick: Option<String>,
     },
@@ -49,7 +47,7 @@ pub(crate) enum Author {
 
 #[derive(Debug, Clone)]
 pub(crate) enum PartialAuthor {
-    User(u64),
+    User(UserId),
     Virtual(String),
 }
 
@@ -69,7 +67,7 @@ impl Display for Author {
     }
 }
 
-impl Display for Posted {
+impl Display for PostFrom {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
