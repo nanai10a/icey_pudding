@@ -105,7 +105,7 @@ impl From<MongoUserModel> for User {
         }: MongoUserModel,
     ) -> User {
         User {
-            id: id.parse().unwrap(),
+            id: id.parse::<u64>().unwrap().into(),
             admin,
             sub_admin,
             posted,
@@ -153,8 +153,14 @@ impl From<MongoContentModel> for Content {
             author: author.into(),
             posted: posted.into(),
             content,
-            liked: liked.drain().map(|s| s.parse().unwrap()).collect(),
-            pinned: pinned.drain().map(|s| s.parse().unwrap()).collect(),
+            liked: liked
+                .drain()
+                .map(|s| s.parse::<u64>().unwrap().into())
+                .collect(),
+            pinned: pinned
+                .drain()
+                .map(|s| s.parse::<u64>().unwrap().into())
+                .collect(),
         }
     }
 }
@@ -186,7 +192,7 @@ impl From<MongoContentAuthorModel> for Author {
     fn from(m: MongoContentAuthorModel) -> Self {
         match m {
             MongoContentAuthorModel::User { id, name, nick } => Author::User {
-                id: id.parse().unwrap(),
+                id: id.parse::<u64>().unwrap().into(),
                 name,
                 nick,
             },
@@ -210,7 +216,7 @@ impl From<Author> for MongoContentAuthorModel {
 impl From<MongoContentPostedModel> for Posted {
     fn from(MongoContentPostedModel { id, name, nick }: MongoContentPostedModel) -> Self {
         Posted {
-            id: id.parse().unwrap(),
+            id: id.parse::<u64>().unwrap().into(),
             name,
             nick,
         }

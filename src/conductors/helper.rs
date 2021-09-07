@@ -13,14 +13,14 @@ use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::utils::Colour;
-use uuid::Uuid;
 
 use super::{clapcmd, Command, ContentCommand, Response, UserCommand};
 use crate::conductors::PartialContentMutation;
-use crate::entities::{Content, PartialAuthor, User};
+use crate::entities::{Content, ContentId, PartialAuthor, User};
 use crate::repositories::{
     AuthorQuery, ContentContentMutation, ContentQuery, PostedQuery, UserMutation, UserQuery,
 };
+use crate::utils::LetChain;
 
 pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     let res: Result<_> = try {
@@ -51,7 +51,9 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
             ("user", Some(ams1)) => Command::User(match ams1.subcommand() {
                 ("create", Some(_)) => UserCommand::Create,
                 ("read", Some(ams2)) => {
-                    let id = ams2.value_of("id").map(|s| parse_num(s, &mut errs));
+                    let id = ams2
+                        .value_of("id")
+                        .map(|s| parse_num::<u64>(s, &mut errs).into());
 
                     UserCommand::Read { id }
                 },
@@ -59,7 +61,7 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                     let page = ams2
                         .value_of("page")
                         .map(|s| {
-                            NonZeroU32::new(parse_num(s, &mut errs)).unwrap_or_else(|| {
+                            NonZeroU32::new(parse_num::<u32>(s, &mut errs)).unwrap_or_else(|| {
                                 errs.push("page is not accept `0`".to_string());
                                 NonZeroU32::new(1).unwrap() // tmp value
                             })
@@ -91,7 +93,7 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                 ("update", Some(ams2)) => {
                     let id = ams2
                         .value_of("id")
-                        .map(|s| parse_num(s, &mut errs))
+                        .map(|s| parse_num::<u64>(s, &mut errs).into())
                         .unwrap();
                     let mut mutation = Default::default();
 
@@ -108,7 +110,8 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_uuid(s, &mut errs))
-                        .unwrap();
+                        .unwrap()
+                        .let_(ContentId);
 
                     ContentCommand::Read { id }
                 },
@@ -116,7 +119,7 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                     let page = ams2
                         .value_of("page")
                         .map(|s| {
-                            NonZeroU32::new(parse_num(s, &mut errs)).unwrap_or_else(|| {
+                            NonZeroU32::new(parse_num::<u32>(s, &mut errs)).unwrap_or_else(|| {
                                 errs.push("page is not accept `0`".to_string());
                                 NonZeroU32::new(1).unwrap() // tmp value
                             })
@@ -146,14 +149,15 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                         })
                         .map(|(ty, val)| {
                             match ty {
-                                "id" => AuthorQuery::UserId(parse_num(val, &mut errs)),
+                                "id" =>
+                                    AuthorQuery::UserId(parse_num::<u64>(val, &mut errs).into()),
                                 "name" => AuthorQuery::UserName(parse_regex(val, &mut errs)),
                                 "nick" => AuthorQuery::UserNick(parse_regex(val, &mut errs)),
                                 "virt" => AuthorQuery::Virtual(parse_regex(val, &mut errs)),
                                 "any" => AuthorQuery::Any(parse_regex(val, &mut errs)),
                                 s => {
                                     errs.push(format!("unrecognized author_query type: {}", s));
-                                    AuthorQuery::UserId(0) // tmp value
+                                    AuthorQuery::UserId(0.into()) // tmp value
                                 },
                             }
                         });
@@ -168,14 +172,14 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                             ),
                         })
                         .map(|(ty, val)| match ty {
-                            "id" => PostedQuery::UserId(parse_num(val, &mut errs)),
+                            "id" => PostedQuery::UserId(parse_num::<u64>(val, &mut errs).into()),
                             "name" => PostedQuery::UserName(parse_regex(val, &mut errs)),
                             "nick" => PostedQuery::UserNick(parse_regex(val, &mut errs)),
                             "any" => PostedQuery::Any(parse_regex(val, &mut errs)),
                             s => {
                                 errs.push(format!("unrecognized posted_query type: {}", s));
 
-                                PostedQuery::UserId(0) // tmp value
+                                PostedQuery::UserId(0.into()) // tmp value
                             },
                         });
                     *content = ams2.value_of("content").map(|s| parse_regex(s, &mut errs));
@@ -198,7 +202,8 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_uuid(s, &mut errs))
-                        .unwrap();
+                        .unwrap()
+                        .let_(ContentId);
                     let mut mutation = Default::default();
 
                     let PartialContentMutation { author, content } = &mut mutation;
@@ -213,12 +218,12 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                             ),
                         })
                         .map(|(ty, val)| match ty {
-                            "user" => PartialAuthor::User(parse_num(val, &mut errs)),
+                            "user" => PartialAuthor::User(parse_num::<u64>(val, &mut errs).into()),
                             "virt" => PartialAuthor::Virtual(val.to_string()),
                             s => {
                                 errs.push(format!("unrecognized author_mutation type: {}", s));
 
-                                PartialAuthor::User(0) // tmp value
+                                PartialAuthor::User(0.into()) // tmp value
                             },
                         });
                     *content = ams2
@@ -245,7 +250,8 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_uuid(s, &mut errs))
-                        .unwrap();
+                        .unwrap()
+                        .let_(ContentId);
 
                     ContentCommand::Delete { id }
                 },
@@ -260,12 +266,12 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                         l => unreachable!("illegal args (expected: 2, found: {}) (impl error)", l),
                     })
                     .map(|(ty, val)| match ty {
-                        "user" => PartialAuthor::User(parse_num(val, &mut errs)),
+                        "user" => PartialAuthor::User(parse_num::<u64>(val, &mut errs).into()),
                         "virt" => PartialAuthor::Virtual(val.to_string()),
                         s => {
                             errs.push(format!("unrecognized post_author type: {}", s));
 
-                            PartialAuthor::User(0) // tmp value
+                            PartialAuthor::User(0.into()) // tmp value
                         },
                     })
                     .unwrap();
@@ -277,7 +283,8 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                 let content_id = ams1
                     .value_of("content_id")
                     .map(|s| parse_uuid(s, &mut errs))
-                    .unwrap();
+                    .unwrap()
+                    .let_(ContentId);
                 let undo = ams1.values_of("undo").is_some();
 
                 Command::Like { content_id, undo }
@@ -286,7 +293,8 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                 let content_id = ams1
                     .value_of("content_id")
                     .map(|s| parse_uuid(s, &mut errs))
-                    .unwrap();
+                    .unwrap()
+                    .let_(ContentId);
                 let undo = ams1.values_of("undo").is_some();
 
                 Command::Pin { content_id, undo }
@@ -295,7 +303,8 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                 let content_id = ams1
                     .value_of("content_id")
                     .map(|s| parse_uuid(s, &mut errs))
-                    .unwrap();
+                    .unwrap()
+                    .let_(ContentId);
                 let undo = ams1.values_of("undo").is_some();
 
                 Command::Bookmark { content_id, undo }
@@ -470,7 +479,7 @@ where T: DeserializeOwned {
 }
 
 #[inline]
-fn parse_uuid(s: &str, errs: &mut Vec<String>) -> Uuid {
+fn parse_uuid(s: &str, errs: &mut Vec<String>) -> ::uuid::Uuid {
     match s.parse() {
         Ok(o) => o,
         Err(e) => {

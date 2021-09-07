@@ -1,26 +1,46 @@
 use std::collections::HashSet;
 
-use uuid::Uuid;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct UserId(u64);
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    ::serde::Serialize,
+    ::serde::Deserialize,
+)]
+pub(crate) struct UserId(pub u64);
 
 #[derive(Debug, Clone)]
 pub struct User {
-    pub(crate) id: u64,
+    pub(crate) id: UserId,
     pub(crate) admin: bool,
     pub(crate) sub_admin: bool,
     pub(crate) posted: HashSet<ContentId>,
     pub(crate) bookmark: HashSet<ContentId>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct ContentId(Uuid);
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    ::serde::Serialize,
+    ::serde::Deserialize,
+)]
+pub(crate) struct ContentId(pub ::uuid::Uuid);
 
 // TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
 pub struct Content {
-    pub(crate) id: Uuid,
+    pub(crate) id: ContentId,
     pub(crate) author: Author,
     pub(crate) posted: Posted,
     pub(crate) content: String,
@@ -30,7 +50,7 @@ pub struct Content {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Posted {
-    pub(crate) id: u64,
+    pub(crate) id: UserId,
     pub(crate) name: String,
     pub(crate) nick: Option<String>,
 }
@@ -38,7 +58,7 @@ pub(crate) struct Posted {
 #[derive(Debug, Clone)]
 pub(crate) enum Author {
     User {
-        id: u64,
+        id: UserId,
         name: String,
         nick: Option<String>,
     },
@@ -47,7 +67,7 @@ pub(crate) enum Author {
 
 #[derive(Debug, Clone)]
 pub(crate) enum PartialAuthor {
-    User(u64),
+    User(UserId),
     Virtual(String),
 }
 
@@ -89,4 +109,12 @@ impl ::core::fmt::Display for Posted {
             self.id
         )
     }
+}
+
+impl From<u64> for UserId {
+    fn from(n: u64) -> Self { Self(n) }
+}
+
+impl From<::uuid::Uuid> for ContentId {
+    fn from(i: ::uuid::Uuid) -> Self { Self(i) }
 }

@@ -9,11 +9,9 @@ use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
 use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
-use serenity::model::id::UserId;
 use serenity::model::prelude::User;
-use uuid::Uuid;
 
-use crate::entities::{Author, PartialAuthor, Posted};
+use crate::entities::{Author, ContentId, PartialAuthor, Posted, UserId};
 use crate::handlers::Handler;
 use crate::repositories::{
     ContentContentMutation, ContentMutation, ContentQuery, UserMutation, UserQuery,
@@ -41,11 +39,11 @@ pub(crate) enum Command {
         content: String,
     },
     /// (un)like content with executed user's id.
-    Like { content_id: Uuid, undo: bool },
+    Like { content_id: ContentId, undo: bool },
     /// (un)pin content with executed user's id.
-    Pin { content_id: Uuid, undo: bool },
+    Pin { content_id: ContentId, undo: bool },
     /// (un)bookmark content to executed user's id.
-    Bookmark { content_id: Uuid, undo: bool },
+    Bookmark { content_id: ContentId, undo: bool },
 }
 
 // TODO: can show user's bookmark and posted
@@ -55,13 +53,13 @@ pub(crate) enum UserCommand {
     Create,
     /// read user with id.
     /// if not given id, fallback to executed user's id.
-    Read { id: Option<u64> },
+    Read { id: Option<UserId> },
     /// read users with query.
     /// page **must** satisfies `1..`.
     Reads { page: NonZeroU32, query: UserQuery },
     /// update user with id and mutation.
     /// it's **must** given id.
-    Update { id: u64, mutation: UserMutation },
+    Update { id: UserId, mutation: UserMutation },
     /* delete user with executed user's id. (only accepted from user and admin)
      * Delete, <- TODO: do implement */
 }
@@ -70,7 +68,7 @@ pub(crate) enum UserCommand {
 #[derive(Debug, Clone)]
 pub(crate) enum ContentCommand {
     /// read content with id.
-    Read { id: Uuid },
+    Read { id: ContentId },
     /// read contents with query.
     /// page **must** satisfies `1..`.
     Reads {
@@ -79,11 +77,11 @@ pub(crate) enum ContentCommand {
     },
     /// update content with id and mutation.
     Update {
-        id: Uuid,
+        id: ContentId,
         mutation: PartialContentMutation,
     },
     /// delete content with id.
-    Delete { id: Uuid },
+    Delete { id: ContentId },
 }
 
 #[derive(Debug, Clone, Default)]
@@ -120,19 +118,19 @@ impl Conductor {
 
         let res: Result<Vec<Response>> = try {
             let cmd = self
-                .authorize_cmd(cmd, user_id.0)
+                .authorize_cmd(cmd, user_id)
                 .await
                 .map_err(|e| anyhow!(e))?;
 
             match cmd {
                 Command::User(UserCommand::Create) => {
-                    let user = self.handler.create_user(*user_id.as_u64()).await?;
+                    let user = self.handler.create_user(user_id).await?;
 
                     helper::resp_from_user("registered user", from_user_shows, USER_CREATE, user)
                         .let_(|r| vec![r])
                 },
                 Command::User(UserCommand::Read { id }) => {
-                    let user = self.handler.read_user(id.unwrap_or(user_id.0)).await?;
+                    let user = self.handler.read_user(id.unwrap_or(user_id)).await?;
 
                     helper::resp_from_user("showing user", from_user_shows, USER_READ, user)
                         .let_(|r| vec![r])
@@ -247,7 +245,7 @@ impl Conductor {
                     let author = match p_author {
                         Some(PartialAuthor::Virtual(s)) => Some(Author::Virtual(s)),
                         Some(PartialAuthor::User(id)) => {
-                            let user = http.http().get_user(id).await?;
+                            let user = http.http().get_user(id.0).await?;
 
                             let nick = match guild_id {
                                 Some(i) => user.nick_in(http, i).await,
@@ -288,7 +286,7 @@ impl Conductor {
                     let author = match partial_author {
                         PartialAuthor::Virtual(s) => Author::Virtual(s),
                         PartialAuthor::User(id) => {
-                            let user = http.http().get_user(id).await?;
+                            let user = http.http().get_user(id.0).await?;
                             let nick = match guild_id {
                                 Some(i) => user.nick_in(http, i).await,
                                 None => None,
@@ -307,7 +305,7 @@ impl Conductor {
                         .post(
                             content,
                             Posted {
-                                id: user_id.0,
+                                id: user_id,
                                 name: user_name,
                                 nick: user_nick,
                             },
@@ -319,7 +317,7 @@ impl Conductor {
                         .let_(|r| vec![r])
                 },
                 Command::Like { content_id, undo } => {
-                    let content = self.handler.like(content_id, user_id.0, undo).await?;
+                    let content = self.handler.like(content_id, user_id, undo).await?;
 
                     let title = match undo {
                         false => "liked",
@@ -329,7 +327,7 @@ impl Conductor {
                         .let_(|r| vec![r])
                 },
                 Command::Pin { content_id, undo } => {
-                    let content = self.handler.pin(content_id, user_id.0, undo).await?;
+                    let content = self.handler.pin(content_id, user_id, undo).await?;
 
                     let title = match undo {
                         false => "pinned",
@@ -339,7 +337,7 @@ impl Conductor {
                         .let_(|r| vec![r])
                 },
                 Command::Bookmark { content_id, undo } => {
-                    let (user, _) = self.handler.bookmark(user_id.0, content_id, undo).await?;
+                    let (user, _) = self.handler.bookmark(user_id, content_id, undo).await?;
 
                     let title = match undo {
                         false => "bookmarked",
@@ -362,7 +360,7 @@ impl Conductor {
         }
     }
 
-    async fn authorize_cmd(&self, cmd: Command, user_id: u64) -> Result<Command, String> {
+    async fn authorize_cmd(&self, cmd: Command, user_id: UserId) -> Result<Command, String> {
         let user = self
             .handler
             .read_user(user_id)
@@ -494,7 +492,7 @@ impl EventHandler for Conductor {
         let mut resps = self
             .conduct(
                 cmd,
-                user_id,
+                user_id.0.into(),
                 user_name,
                 user_nick,
                 ctx.clone(),

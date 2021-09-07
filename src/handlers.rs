@@ -1,9 +1,8 @@
 use std::collections::HashSet;
 
 use anyhow::{bail, Error, Result};
-use uuid::Uuid;
 
-use crate::entities::{Author, Content, Posted, User};
+use crate::entities::{Author, Content, ContentId, Posted, User, UserId};
 use crate::repositories::{
     ContentMutation, ContentQuery, ContentRepository, RepositoryError, UserMutation, UserQuery,
     UserRepository,
@@ -35,7 +34,7 @@ fn content_err_fmt(e: RepositoryError) -> Error {
 }
 
 impl Handler {
-    pub(crate) async fn create_user(&self, user_id: u64) -> Result<User> {
+    pub(crate) async fn create_user(&self, user_id: UserId) -> Result<User> {
         let new_user = User {
             id: user_id,
             admin: false,
@@ -53,7 +52,7 @@ impl Handler {
         Ok(new_user)
     }
 
-    pub(crate) async fn read_user(&self, user_id: u64) -> Result<User> {
+    pub(crate) async fn read_user(&self, user_id: UserId) -> Result<User> {
         self.user_repository
             .find(user_id)
             .await
@@ -67,7 +66,11 @@ impl Handler {
             .map_err(user_err_fmt)
     }
 
-    pub(crate) async fn update_user(&self, user_id: u64, mutation: UserMutation) -> Result<User> {
+    pub(crate) async fn update_user(
+        &self,
+        user_id: UserId,
+        mutation: UserMutation,
+    ) -> Result<User> {
         self.user_repository
             .update(user_id, mutation)
             .await
@@ -76,8 +79,8 @@ impl Handler {
 
     pub(crate) async fn bookmark(
         &self,
-        user_id: u64,
-        content_id: Uuid,
+        user_id: UserId,
+        content_id: ContentId,
         undo: bool,
     ) -> Result<(User, Content)> {
         let can_insert = match undo {
@@ -129,7 +132,7 @@ impl Handler {
 
         let posted_id = posted.id;
         let new_content = Content {
-            id: uuid::Uuid::new_v4(),
+            id: ::uuid::Uuid::new_v4().into(),
             content,
             author,
             posted,
@@ -159,7 +162,7 @@ impl Handler {
         Ok(new_content)
     }
 
-    pub(crate) async fn read_content(&self, content_id: Uuid) -> Result<Content> {
+    pub(crate) async fn read_content(&self, content_id: ContentId) -> Result<Content> {
         self.content_repository
             .find(content_id)
             .await
@@ -175,7 +178,7 @@ impl Handler {
 
     pub(crate) async fn update_content(
         &self,
-        content_id: Uuid,
+        content_id: ContentId,
         mutation: ContentMutation,
     ) -> Result<Content> {
         self.content_repository
@@ -184,7 +187,12 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub(crate) async fn like(&self, content_id: Uuid, user_id: u64, undo: bool) -> Result<Content> {
+    pub(crate) async fn like(
+        &self,
+        content_id: ContentId,
+        user_id: UserId,
+        undo: bool,
+    ) -> Result<Content> {
         let can_insert = match undo {
             false =>
                 self.content_repository
@@ -209,7 +217,12 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub(crate) async fn pin(&self, content_id: Uuid, user_id: u64, undo: bool) -> Result<Content> {
+    pub(crate) async fn pin(
+        &self,
+        content_id: ContentId,
+        user_id: UserId,
+        undo: bool,
+    ) -> Result<Content> {
         let can_insert = match undo {
             false =>
                 self.content_repository
@@ -236,7 +249,7 @@ impl Handler {
 
     // FIXME: unsyncronized `user#posted`
     // rename to `withdraw` (<=?=> `post`)
-    pub(crate) async fn delete_content(&self, content_id: Uuid) -> Result<Content> {
+    pub(crate) async fn delete_content(&self, content_id: ContentId) -> Result<Content> {
         self.content_repository
             .delete(content_id)
             .await
