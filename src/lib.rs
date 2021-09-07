@@ -6,5 +6,6 @@ mod constructors;
 pub(crate) mod entities;
 pub(crate) mod handlers;
 pub(crate) mod repositories;
+pub(crate) mod utils;
 
 pub use constructors::*;

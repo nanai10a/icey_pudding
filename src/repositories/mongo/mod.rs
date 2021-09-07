@@ -15,6 +15,7 @@ use super::{
     PostedQuery, RepositoryError, Result, StdResult, UserMutation, UserQuery, UserRepository,
 };
 use crate::entities::{Author, Content, User};
+use crate::utils::LetChain;
 
 mod type_convert;
 
@@ -693,41 +694,6 @@ where N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Clone {
         0 => false,
         1 => true,
         n => unreachable!("expected 0 or 1, found: {}", n),
-    }
-}
-
-trait LetChain {
-    fn let_<F, R>(self, f: F) -> R
-    where
-        Self: Sized,
-        F: FnOnce(Self) -> R;
-}
-impl<T> LetChain for T {
-    #[inline]
-    fn let_<F, R>(self, f: F) -> R
-    where
-        Self: Sized,
-        F: FnOnce(Self) -> R,
-    {
-        f(self)
-    }
-}
-
-trait AlsoChain {
-    fn also_<F, R>(self, f: F) -> Self
-    where
-        Self: Sized,
-        F: FnOnce(&mut Self) -> R;
-}
-impl<T> AlsoChain for T {
-    #[inline]
-    fn also_<F, R>(mut self, f: F) -> Self
-    where
-        Self: Sized,
-        F: FnOnce(&mut Self) -> R,
-    {
-        f(&mut self);
-        self
     }
 }
 
