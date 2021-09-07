@@ -119,6 +119,11 @@ impl Conductor {
         use command_colors::*;
 
         let res: Result<Vec<Response>> = try {
+            let cmd = self
+                .authorize_cmd(cmd, user_id.0)
+                .await
+                .map_err(|e| anyhow!(e))?;
+
             match cmd {
                 Command::User(UserCommand::Create) => {
                     let user = self.handler.create_user(*user_id.as_u64()).await?;
@@ -174,7 +179,7 @@ impl Conductor {
                         .collect()
                 },
                 Command::User(UserCommand::Update { id, mutation }) => {
-                    let user = self.handler.update_user(id, mutation).await?; // FIXME: don't able to use this from users (must limit to admin).
+                    let user = self.handler.update_user(id, mutation).await?;
 
                     helper::resp_from_user("updated user", from_user_shows, USER_UPDATE, user)
                         .let_(|r| vec![r])
@@ -256,7 +261,7 @@ impl Conductor {
                     };
 
                     let mutation = ContentMutation { author, content };
-                    let content = self.handler.update_content(id, mutation).await?; // FIXME: limit to posted user and admin and sub_admin
+                    let content = self.handler.update_content(id, mutation).await?;
 
                     helper::resp_from_content(
                         "updated user",
@@ -267,8 +272,7 @@ impl Conductor {
                     .let_(|r| vec![r])
                 },
                 Command::Content(ContentCommand::Delete { id }) => {
-                    let content = self.handler.delete_content(id).await?; // FIXME: limit to posted user and admin
-
+                    let content = self.handler.delete_content(id).await?;
                     helper::resp_from_content(
                         "deleted content",
                         from_user_shows,
@@ -355,6 +359,44 @@ impl Conductor {
                 fields: vec![],
             }
             .let_(|r| vec![r]),
+        }
+    }
+
+    async fn authorize_cmd(&self, cmd: Command, user_id: u64) -> Result<Command, String> {
+        let user = self
+            .handler
+            .read_user(user_id)
+            .await
+            .map_err(|e| format!("auth error: {}", e))?;
+
+        let res = match &cmd {
+            Command::User(UserCommand::Update { .. }) => user.admin,
+            // Command::User(UserComamnd::Delete { id }) => unimplemented!(),
+            Command::Content(ContentCommand::Update { id, .. }) => {
+                let content = self
+                    .handler
+                    .read_content(*id)
+                    .await
+                    .map_err(|e| format!("auth error: {}", e))?;
+
+                content.posted.id == user_id || user.admin || user.sub_admin
+            },
+            Command::Content(ContentCommand::Delete { id }) => {
+                let content = self
+                    .handler
+                    .read_content(*id)
+                    .await
+                    .map_err(|e| format!("auth error: {}", e))?;
+
+                content.posted.id == user_id || user.admin || user.sub_admin
+            },
+
+            _ => true,
+        };
+
+        match res {
+            true => Ok(cmd),
+            false => Err("not permitted operation".to_string()),
         }
     }
 }
