@@ -10,7 +10,6 @@ use crate::entities::{Author, Content, ContentId, User, UserId};
 pub(crate) mod mock;
 pub(crate) mod mongo;
 
-type StdResult<T, E> = ::std::result::Result<T, E>;
 type Result<T> = ::std::result::Result<T, RepositoryError>;
 
 #[async_trait]
