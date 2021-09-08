@@ -64,11 +64,7 @@ impl Handler {
             .map_err(user_err_fmt)
     }
 
-    pub async fn update_user(
-        &self,
-        user_id: UserId,
-        mutation: UserMutation,
-    ) -> Result<User> {
+    pub async fn update_user(&self, user_id: UserId, mutation: UserMutation) -> Result<User> {
         self.user_repository
             .update(user_id, mutation)
             .await
@@ -220,12 +216,7 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub async fn pin(
-        &self,
-        content_id: ContentId,
-        user_id: UserId,
-        undo: bool,
-    ) -> Result<Content> {
+    pub async fn pin(&self, content_id: ContentId, user_id: UserId, undo: bool) -> Result<Content> {
         let can_insert = match undo {
             false =>
                 self.content_repository
