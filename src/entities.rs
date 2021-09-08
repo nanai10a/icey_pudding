@@ -37,7 +37,6 @@ pub struct User {
 )]
 pub(crate) struct ContentId(pub ::uuid::Uuid);
 
-// TODO: add `created` and `edited`
 #[derive(Debug, Clone)]
 pub struct Content {
     pub(crate) id: ContentId,
@@ -46,6 +45,9 @@ pub struct Content {
     pub(crate) content: String,
     pub(crate) liked: HashSet<UserId>,
     pub(crate) pinned: HashSet<UserId>,
+    // FIXME: replace type alias and provide helper fn
+    pub(crate) created: ::chrono::DateTime<::chrono::Utc>,
+    pub(crate) edited: Vec<::chrono::DateTime<::chrono::Utc>>,
 }
 
 #[derive(Debug, Clone)]

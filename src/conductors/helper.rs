@@ -6,6 +6,7 @@ use std::ops::Bound;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
+use chrono::SecondsFormat;
 use clap::ErrorKind;
 use regex::Regex;
 use serde::de::DeserializeOwned;
@@ -357,6 +358,8 @@ pub(crate) fn resp_from_content(
         posted,
         liked,
         pinned,
+        created,
+        mut edited,
     }: Content,
 ) -> Response {
     Response {
@@ -370,6 +373,14 @@ pub(crate) fn resp_from_content(
             ("content:".to_string(), content),
             ("liked:".to_string(), liked.len().to_string()),
             ("pinned:".to_string(), pinned.len().to_string()),
+            ("created:".to_string(), created.to_string()),
+            (
+                "last_edited:".to_string(),
+                edited.pop().map_or_else(
+                    || "no edited".to_string(),
+                    |dt| dt.to_rfc3339_opts(SecondsFormat::Millis, true),
+                ),
+            ),
         ],
     }
 }

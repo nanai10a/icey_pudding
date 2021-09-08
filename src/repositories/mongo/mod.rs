@@ -3,6 +3,7 @@ use std::ops::Bound;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
+use chrono::SecondsFormat;
 use mongodb::bson::{doc, Document};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
 use mongodb::{bson, Client, ClientSession, Collection, Database};
@@ -97,6 +98,8 @@ struct MongoContentModel {
     liked_size: i64,
     pinned: HashSet<String>,
     pinned_size: i64,
+    created: String,
+    edited: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -506,7 +509,11 @@ impl ContentRepository for MongoContentRepository {
         async fn transaction(
             this: &MongoContentRepository,
             id: ContentId,
-            ContentMutation { author, content }: ContentMutation,
+            ContentMutation {
+                author,
+                content,
+                edited,
+            }: ContentMutation,
         ) -> ::mongodb::error::Result<Option<Content>> {
             let mut session = make_session(&this.client).await?;
 
@@ -534,10 +541,14 @@ impl ContentRepository for MongoContentRepository {
             }
 
             let target_model: MongoContentModel = target_content.into();
+            let edited_str = edited.to_rfc3339_opts(SecondsFormat::Nanos, true);
             this.coll
                 .update_one_with_session(
                     doc! { "id": id },
-                    doc! { "$set": bson::to_document(&target_model).unwrap() },
+                    doc! {
+                        "$set": bson::to_document(&target_model).unwrap(),
+                        "$push": { "edited": edited_str }
+                    },
                     None,
                     &mut session,
                 )

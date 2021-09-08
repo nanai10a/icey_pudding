@@ -345,7 +345,11 @@ impl ContentRepository for InMemoryRepository<Content> {
     async fn update(
         &self,
         id: ContentId,
-        ContentMutation { author, content }: ContentMutation,
+        ContentMutation {
+            author,
+            content,
+            edited,
+        }: ContentMutation,
     ) -> Result<Content> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |c| c.id == id)?;
@@ -362,6 +366,8 @@ impl ContentRepository for InMemoryRepository<Content> {
             },
             None => (),
         };
+
+        item.edited.push(edited);
 
         Ok(item.clone())
     }

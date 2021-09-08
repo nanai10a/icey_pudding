@@ -5,6 +5,7 @@ use std::ops::{
 
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
 use serenity::http::CacheHttp;
@@ -107,6 +108,7 @@ impl Conductor {
         user_nick: Option<String>,
         http: impl CacheHttp,
         guild_id: Option<u64>,
+        timestamp: DateTime<Utc>,
     ) -> Vec<Response> {
         let from_user_shows = format!(
             "from: {} ({})",
@@ -258,7 +260,11 @@ impl Conductor {
                         None => None,
                     };
 
-                    let mutation = ContentMutation { author, content };
+                    let mutation = ContentMutation {
+                        author,
+                        content,
+                        edited: timestamp,
+                    };
                     let content = self.handler.update_content(id, mutation).await?;
 
                     helper::resp_from_content(
@@ -310,6 +316,7 @@ impl Conductor {
                                 nick: user_nick,
                             },
                             author,
+                            timestamp,
                         )
                         .await?;
 
@@ -483,6 +490,7 @@ impl EventHandler for Conductor {
             channel_id,
             guild_id: guild_id_opt,
             author,
+            timestamp,
             ..
         } = msg;
         let User {
@@ -499,6 +507,7 @@ impl EventHandler for Conductor {
                 user_nick,
                 ctx.clone(),
                 guild_id_opt.map(|i| i.0),
+                timestamp,
             )
             .await;
 
