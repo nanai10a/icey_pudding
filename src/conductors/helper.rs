@@ -17,7 +17,7 @@ use crate::repositories::{
 };
 use crate::utils::{self, LetChain};
 
-pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
+pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     let res: Result<_> = try {
         let splitted = shell_words::split(msg)?;
 
@@ -315,7 +315,7 @@ pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     Some(tmp)
 }
 
-pub(crate) fn resp_from_user(
+pub fn resp_from_user(
     title: impl ToString,
     description: impl ToString,
     rgb: (u8, u8, u8),
@@ -341,7 +341,7 @@ pub(crate) fn resp_from_user(
     }
 }
 
-pub(crate) fn resp_from_content(
+pub fn resp_from_content(
     title: impl ToString,
     description: impl ToString,
     rgb: (u8, u8, u8),
@@ -378,7 +378,7 @@ pub(crate) fn resp_from_content(
     }
 }
 
-pub(crate) fn build_embed_from_resp(
+pub fn build_embed_from_resp(
     ce: &mut CreateEmbed,
     Response {
         title,
@@ -400,7 +400,7 @@ pub(crate) fn build_embed_from_resp(
         )
 }
 
-pub(crate) fn append_message_reference(
+pub fn append_message_reference(
     raw: &mut ::std::collections::HashMap<&str, Value>,
     id: MessageId,
     channel_id: ChannelId,

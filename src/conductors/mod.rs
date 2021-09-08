@@ -22,13 +22,13 @@ mod clapcmd;
 mod command_colors;
 mod helper;
 
-pub(crate) struct Conductor {
-    pub(crate) handler: Handler,
+pub struct Conductor {
+    pub handler: Handler,
 }
 
 /// command data.
 #[derive(Debug, Clone)]
-pub(crate) enum Command {
+pub enum Command {
     /// commands about user.
     User(UserCommand),
     /// commands about content.
@@ -48,7 +48,7 @@ pub(crate) enum Command {
 
 // TODO: can show user's bookmark and posted
 #[derive(Debug, Clone)]
-pub(crate) enum UserCommand {
+pub enum UserCommand {
     /// create user with executed user's id.
     Create,
     /// read user with id.
@@ -66,7 +66,7 @@ pub(crate) enum UserCommand {
 
 // TODO: can show content's liked and pinned
 #[derive(Debug, Clone)]
-pub(crate) enum ContentCommand {
+pub enum ContentCommand {
     /// read content with id.
     Read { id: ContentId },
     /// read contents with query.
@@ -85,13 +85,13 @@ pub(crate) enum ContentCommand {
 }
 
 #[derive(Debug, Clone, Default)]
-pub(crate) struct PartialContentMutation {
-    pub(crate) author: Option<PartialAuthor>,
-    pub(crate) content: Option<ContentContentMutation>,
+pub struct PartialContentMutation {
+    pub author: Option<PartialAuthor>,
+    pub content: Option<ContentContentMutation>,
 }
 
 #[derive(Debug)]
-pub(crate) struct Response {
+pub struct Response {
     title: String,
     rgb: (u8, u8, u8),
     description: String,
@@ -99,7 +99,7 @@ pub(crate) struct Response {
 }
 
 impl Conductor {
-    pub(crate) async fn conduct(
+    pub async fn conduct(
         &self,
         cmd: Command,
         http: impl CacheHttp + Clone,

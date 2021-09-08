@@ -1,6 +1,6 @@
 use clap::{load_yaml, App};
 
-pub(crate) fn create_clap_app() -> App<'static, 'static> {
+pub fn create_clap_app() -> App<'static, 'static> {
     ::lazy_static::lazy_static! {
         static ref YAML: ::yaml_rust::Yaml = load_yaml!("clap.yml").clone();
     }
