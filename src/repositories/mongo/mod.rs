@@ -15,7 +15,7 @@ use super::{
     PostedQuery, RepositoryError, Result, UserMutation, UserQuery, UserRepository,
 };
 use crate::entities::{Author, Content, ContentId, User, UserId};
-use crate::utils::LetChain;
+use crate::utils::{self, LetChain};
 
 mod type_convert;
 
@@ -541,7 +541,7 @@ impl ContentRepository for MongoContentRepository {
             }
 
             let target_model: MongoContentModel = target_content.into();
-            let edited_str = edited.to_rfc3339_opts(SecondsFormat::Nanos, true);
+            let edited_str = utils::date_to_string(edited);
             this.coll
                 .update_one_with_session(
                     doc! { "id": id },
