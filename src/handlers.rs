@@ -1,9 +1,8 @@
 use std::collections::HashSet;
 
 use anyhow::{bail, Error, Result};
-use chrono::{DateTime, Utc};
 
-use crate::entities::{Author, Content, ContentId, Posted, User, UserId};
+use crate::entities::{Author, Content, ContentId, Date, Posted, User, UserId};
 use crate::repositories::{
     ContentMutation, ContentQuery, ContentRepository, RepositoryError, UserMutation, UserQuery,
     UserRepository,
@@ -119,7 +118,7 @@ impl Handler {
         content: String,
         posted: Posted,
         author: Author,
-        created: DateTime<Utc>,
+        created: Date,
     ) -> Result<Content> {
         let user_is_exists = self
             .user_repository
