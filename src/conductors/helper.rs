@@ -6,7 +6,6 @@ use std::ops::Bound;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use chrono::SecondsFormat;
 use clap::ErrorKind;
 use regex::Regex;
 use serde::de::DeserializeOwned;

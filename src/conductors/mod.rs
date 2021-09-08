@@ -5,7 +5,6 @@ use std::ops::{
 
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
 use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
 use serenity::http::CacheHttp;

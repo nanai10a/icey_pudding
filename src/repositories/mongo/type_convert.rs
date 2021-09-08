@@ -1,6 +1,5 @@
 use std::ops::Bound;
 
-use chrono::{DateTime, FixedOffset, SecondsFormat, Utc};
 use mongodb::bson::{doc, Bson, Document};
 
 use super::{
