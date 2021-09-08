@@ -2,10 +2,9 @@ use std::collections::HashSet;
 use std::ops::Bound;
 
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
 use regex::Regex;
 
-use crate::entities::{Author, Content, ContentId, User, UserId};
+use crate::entities::{Author, Content, ContentId, Date, User, UserId};
 
 pub(crate) mod mock;
 pub(crate) mod mongo;
@@ -123,7 +122,7 @@ pub(crate) struct UserMutation {
 pub(crate) struct ContentMutation {
     pub(crate) author: Option<Author>,
     pub(crate) content: Option<ContentContentMutation>,
-    pub(crate) edited: DateTime<Utc>,
+    pub(crate) edited: Date,
 }
 
 #[derive(Debug, Clone)]
