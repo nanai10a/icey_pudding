@@ -1,9 +1,4 @@
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::io::Cursor;
-use std::num::NonZeroU32;
-use std::ops::Bound;
-use std::str::FromStr;
+use core::num::NonZeroU32;
 
 use anyhow::{anyhow, Result};
 use clap::ErrorKind;
@@ -406,7 +401,7 @@ pub(crate) fn build_embed_from_resp(
 }
 
 pub(crate) fn append_message_reference(
-    raw: &mut HashMap<&str, Value>,
+    raw: &mut ::std::collections::HashMap<&str, Value>,
     id: MessageId,
     channel_id: ChannelId,
     guild_id: Option<GuildId>,
@@ -440,8 +435,8 @@ fn combine_errs(mut errs: Vec<String>) -> String {
 
 fn parse_num<N>(s: &str, errs: &mut Vec<String>) -> N
 where
-    N: Default + FromStr,
-    <N as FromStr>::Err: ToString,
+    N: Default + ::core::str::FromStr,
+    <N as ::core::str::FromStr>::Err: ToString,
 {
     match s.parse() {
         Ok(o) => o,
@@ -452,16 +447,16 @@ where
     }
 }
 
-fn parse_range<N>(s: &str, errs: &mut Vec<String>) -> (Bound<N>, Bound<N>)
+fn parse_range<N>(s: &str, errs: &mut Vec<String>) -> (::core::ops::Bound<N>, ::core::ops::Bound<N>)
 where
-    N: range_parser::Num + Default + FromStr + Debug,
-    <N as FromStr>::Err: Debug + PartialEq + Eq,
+    N: range_parser::Num + Default + ::core::str::FromStr + ::core::fmt::Debug,
+    <N as ::core::str::FromStr>::Err: ::core::fmt::Debug + PartialEq + Eq,
 {
     match range_parser::parse(s.to_string()).map_err(|e| anyhow::anyhow!("{:?}", e)) {
         Ok(o) => o,
         Err(e) => {
             errs.push(e.to_string());
-            (Bound::Unbounded, Bound::Unbounded) // tmp value
+            (::core::ops::Bound::Unbounded, ::core::ops::Bound::Unbounded) // tmp value
         },
     }
 }
@@ -509,7 +504,7 @@ fn parse_regex(s: &str, errs: &mut Vec<String>) -> Regex {
 
 lazy_static::lazy_static! {
     static ref CLAP_HELP: String = {
-        let mut buf = Cursor::new(vec![]);
+        let mut buf = ::std::io::Cursor::new(vec![]);
         clapcmd::create_clap_app()
             .write_long_help(&mut buf)
             .unwrap();
@@ -518,7 +513,7 @@ lazy_static::lazy_static! {
     };
 
     static ref CLAP_VERSION: String = {
-        let mut buf = Cursor::new(vec![]);
+        let mut buf = ::std::io::Cursor::new(vec![]);
         clapcmd::create_clap_app()
             .write_long_version(&mut buf)
             .unwrap();
