@@ -18,13 +18,13 @@ use crate::utils::{self, LetChain};
 
 mod type_convert;
 
-pub(crate) struct MongoUserRepository {
+pub struct MongoUserRepository {
     client: Client,
     coll: Collection<MongoUserModel>,
 }
 
 impl MongoUserRepository {
-    pub(crate) async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
+    pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
         db.run_command(
             doc! {
                 "createIndexes": "user",
@@ -47,13 +47,13 @@ impl MongoUserRepository {
     }
 }
 
-pub(crate) struct MongoContentRepository {
+pub struct MongoContentRepository {
     client: Client,
     coll: Collection<MongoContentModel>,
 }
 
 impl MongoContentRepository {
-    pub(crate) async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
+    pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
         db.run_command(
             doc! {
                 "createIndexes": "content",

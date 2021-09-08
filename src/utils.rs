@@ -1,4 +1,4 @@
-pub(crate) trait LetChain {
+pub trait LetChain {
     fn let_<F, R>(self, f: F) -> R
     where
         Self: Sized,
@@ -14,7 +14,7 @@ impl<T> LetChain for T {
     }
 }
 
-pub(crate) trait AlsoChain {
+pub trait AlsoChain {
     fn also_<F, R>(self, f: F) -> Self
     where
         Self: Sized,
@@ -31,12 +31,12 @@ impl<T> AlsoChain for T {
     }
 }
 
-pub(crate) fn parse_date(s: &str) -> crate::entities::Date {
+pub fn parse_date(s: &str) -> crate::entities::Date {
     ::chrono::DateTime::parse_from_rfc3339(s)
         .unwrap()
         .with_timezone(&::chrono::Utc)
 }
 
-pub(crate) fn date_to_string(dt: crate::entities::Date) -> String {
+pub fn date_to_string(dt: crate::entities::Date) -> String {
     dt.to_rfc3339_opts(::chrono::SecondsFormat::Nanos, true)
 }

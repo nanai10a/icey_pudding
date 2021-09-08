@@ -12,15 +12,15 @@ use std::collections::HashSet;
     ::serde::Serialize,
     ::serde::Deserialize,
 )]
-pub(crate) struct UserId(pub u64);
+pub struct UserId(pub u64);
 
 #[derive(Debug, Clone)]
 pub struct User {
-    pub(crate) id: UserId,
-    pub(crate) admin: bool,
-    pub(crate) sub_admin: bool,
-    pub(crate) posted: HashSet<ContentId>,
-    pub(crate) bookmark: HashSet<ContentId>,
+    pub id: UserId,
+    pub admin: bool,
+    pub sub_admin: bool,
+    pub posted: HashSet<ContentId>,
+    pub bookmark: HashSet<ContentId>,
 }
 
 #[derive(
@@ -35,29 +35,29 @@ pub struct User {
     ::serde::Serialize,
     ::serde::Deserialize,
 )]
-pub(crate) struct ContentId(pub ::uuid::Uuid);
+pub struct ContentId(pub ::uuid::Uuid);
 
 #[derive(Debug, Clone)]
 pub struct Content {
-    pub(crate) id: ContentId,
-    pub(crate) author: Author,
-    pub(crate) posted: Posted,
-    pub(crate) content: String,
-    pub(crate) liked: HashSet<UserId>,
-    pub(crate) pinned: HashSet<UserId>,
-    pub(crate) created: Date,
-    pub(crate) edited: Vec<Date>,
+    pub id: ContentId,
+    pub author: Author,
+    pub posted: Posted,
+    pub content: String,
+    pub liked: HashSet<UserId>,
+    pub pinned: HashSet<UserId>,
+    pub created: Date,
+    pub edited: Vec<Date>,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Posted {
-    pub(crate) id: UserId,
-    pub(crate) name: String,
-    pub(crate) nick: Option<String>,
+pub struct Posted {
+    pub id: UserId,
+    pub name: String,
+    pub nick: Option<String>,
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum Author {
+pub enum Author {
     User {
         id: UserId,
         name: String,
@@ -66,10 +66,10 @@ pub(crate) enum Author {
     Virtual(String),
 }
 
-pub(crate) type Date = ::chrono::DateTime<::chrono::Utc>;
+pub type Date = ::chrono::DateTime<::chrono::Utc>;
 
 #[derive(Debug, Clone)]
-pub(crate) enum PartialAuthor {
+pub enum PartialAuthor {
     User(UserId),
     Virtual(String),
 }
