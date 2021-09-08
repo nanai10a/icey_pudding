@@ -1,5 +1,5 @@
-use std::num::NonZeroU32;
-use std::ops::{
+use core::num::NonZeroU32;
+use core::ops::{
     Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
 
