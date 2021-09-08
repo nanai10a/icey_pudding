@@ -200,11 +200,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "consts"
-version = "0.1.0-alpha"
-source = "git+https://github.com/Nanai10a/consts#ae4c1b302b280f53f736c8e2d6d4e909d0d7a717"
-
-[[package]]
 name = "cpufeatures"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -618,7 +613,6 @@ dependencies = [
  "async-trait",
  "chrono",
  "clap",
- "consts",
  "lazy_static",
  "mongodb",
  "range_parser",
