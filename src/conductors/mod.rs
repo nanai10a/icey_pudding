@@ -103,13 +103,26 @@ impl Conductor {
     pub(crate) async fn conduct(
         &self,
         cmd: Command,
-        user_id: UserId,
-        user_name: String,
-        user_nick: Option<String>,
-        http: impl CacheHttp,
-        guild_id: Option<u64>,
-        timestamp: DateTime<Utc>,
+        http: impl CacheHttp + Clone,
+        msg: &Message,
     ) -> Vec<Response> {
+        let user_nick = msg.author_nick(&http).await;
+
+        let Message {
+            guild_id: guild_id_raw,
+            author:
+                User {
+                    id: user_id_raw,
+                    name: user_name,
+                    ..
+                },
+            timestamp,
+            ..
+        } = msg;
+
+        let user_id = UserId(user_id_raw.0);
+        let guild_id = guild_id_raw.as_ref().map(|r| r.0);
+
         let from_user_shows = format!(
             "from: {} ({})",
             user_name,
@@ -263,7 +276,7 @@ impl Conductor {
                     let mutation = ContentMutation {
                         author,
                         content,
-                        edited: timestamp,
+                        edited: *timestamp,
                     };
                     let content = self.handler.update_content(id, mutation).await?;
 
@@ -312,11 +325,11 @@ impl Conductor {
                             content,
                             Posted {
                                 id: user_id,
-                                name: user_name,
+                                name: user_name.clone(),
                                 nick: user_nick,
                             },
                             author,
-                            timestamp,
+                            *timestamp,
                         )
                         .await?;
 
@@ -483,42 +496,17 @@ impl EventHandler for Conductor {
             },
         };
 
-        let user_nick = msg.author_nick(&ctx).await;
+        let mut resps = self.conduct(cmd, ctx.clone(), &msg).await;
 
-        let Message {
-            id: message_id,
-            channel_id,
-            guild_id: guild_id_opt,
-            author,
-            timestamp,
-            ..
-        } = msg;
-        let User {
-            id: user_id,
-            name: user_name,
-            ..
-        } = author;
-
-        let mut resps = self
-            .conduct(
-                cmd,
-                user_id.0.into(),
-                user_name,
-                user_nick,
-                ctx.clone(),
-                guild_id_opt.map(|i| i.0),
-                timestamp,
-            )
-            .await;
-
-        let res = channel_id
+        let res = msg
+            .channel_id
             .send_message(ctx.http, |cm| {
                 resps.drain(..).for_each(|resp| {
                     cm.add_embed(|ce| helper::build_embed_from_resp(ce, resp));
                 });
 
                 let CreateMessage(ref mut raw, ..) = cm;
-                helper::append_message_reference(raw, message_id, channel_id, guild_id_opt);
+                helper::append_message_reference(raw, msg.id, msg.channel_id, msg.guild_id);
 
                 cm
             })
