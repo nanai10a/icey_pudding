@@ -18,7 +18,6 @@ impl<T> Default for InMemoryRepository<T> {
     fn default() -> Self { Self::new() }
 }
 
-#[inline]
 fn find_mut<T, P>(v: &mut [T], preficate: P) -> Result<&mut T>
 where P: FnMut(&&mut T) -> bool {
     let mut res = v.iter_mut().filter(preficate).collect::<Vec<_>>();
@@ -30,7 +29,6 @@ where P: FnMut(&&mut T) -> bool {
     }
 }
 
-#[inline]
 fn find_ref<T, P>(v: &[T], preficate: P) -> Result<&T>
 where P: FnMut(&&T) -> bool {
     let mut res = v.iter().filter(preficate).collect::<Vec<_>>();

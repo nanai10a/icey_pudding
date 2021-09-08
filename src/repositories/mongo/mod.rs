@@ -704,7 +704,6 @@ where N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Clone {
     }
 }
 
-#[inline]
 async fn make_session(c: &Client) -> ::mongodb::error::Result<ClientSession> {
     let mut s = c.start_session(None).await?;
 
@@ -717,7 +716,6 @@ async fn make_session(c: &Client) -> ::mongodb::error::Result<ClientSession> {
     Ok(s)
 }
 
-#[inline]
 async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<()> {
     loop {
         let r = s.commit_transaction().await;
@@ -731,7 +729,6 @@ async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<
     }
 }
 
-#[inline]
 async fn is_contains<T>(
     name: impl AsRef<str>,
     coll: &Collection<T>,
@@ -758,7 +755,7 @@ enum ModifyOpTy {
     Push,
     Pull,
 }
-#[inline]
+
 async fn modify_set<T>(
     name: impl AsRef<str>,
     coll: &Collection<T>,

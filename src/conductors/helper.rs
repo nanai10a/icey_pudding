@@ -423,7 +423,6 @@ pub(crate) fn append_message_reference(
     raw.insert("message_reference", mr);
 }
 
-#[inline]
 fn combine_errs(mut errs: Vec<String>) -> String {
     let mut s = vec![];
     let len = errs.len();
@@ -439,7 +438,6 @@ fn combine_errs(mut errs: Vec<String>) -> String {
     String::from_utf8(s).unwrap()
 }
 
-#[inline]
 fn parse_num<N>(s: &str, errs: &mut Vec<String>) -> N
 where
     N: Default + FromStr,
@@ -454,7 +452,6 @@ where
     }
 }
 
-#[inline]
 fn parse_range<N>(s: &str, errs: &mut Vec<String>) -> (Bound<N>, Bound<N>)
 where
     N: range_parser::Num + Default + FromStr + Debug,
@@ -469,7 +466,6 @@ where
     }
 }
 
-#[inline]
 fn parse_array<T>(s: &str, errs: &mut Vec<String>) -> Vec<T>
 where T: DeserializeOwned {
     match serde_json::from_str(s) {
@@ -481,7 +477,6 @@ where T: DeserializeOwned {
     }
 }
 
-#[inline]
 fn parse_uuid(s: &str, errs: &mut Vec<String>) -> ::uuid::Uuid {
     match s.parse() {
         Ok(o) => o,
@@ -492,7 +487,6 @@ fn parse_uuid(s: &str, errs: &mut Vec<String>) -> ::uuid::Uuid {
     }
 }
 
-#[inline]
 fn parse_bool(s: &str, errs: &mut Vec<String>) -> bool {
     match s.parse() {
         Ok(o) => o,
@@ -503,7 +497,6 @@ fn parse_bool(s: &str, errs: &mut Vec<String>) -> bool {
     }
 }
 
-#[inline]
 fn parse_regex(s: &str, errs: &mut Vec<String>) -> Regex {
     match s.parse() {
         Ok(o) => o,

@@ -14,7 +14,6 @@ pub(crate) struct Handler {
     pub(crate) content_repository: Box<dyn ContentRepository + Sync + Send>,
 }
 
-#[inline]
 fn user_err_fmt(e: RepositoryError) -> Error {
     use anyhow::anyhow;
 
@@ -24,7 +23,6 @@ fn user_err_fmt(e: RepositoryError) -> Error {
     }
 }
 
-#[inline]
 fn content_err_fmt(e: RepositoryError) -> Error {
     use anyhow::anyhow;
 
