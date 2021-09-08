@@ -17,6 +17,84 @@ use crate::repositories::{
 };
 use crate::utils::{self, LetChain};
 
+#[derive(Debug, Clone, ::clap::Clap)]
+struct AppV2_1 {
+    #[clap(subcommand)]
+    cmd: RootMod,
+}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+enum RootMod {
+    User {
+        #[clap(subcommand)]
+        cmd: UserMod,
+    },
+    Content {
+        #[clap(subcommand)]
+        cmd: ContentMod,
+    },
+    Post(PostCmd),
+    Like(LikeCmd),
+    Pin(PinCmd),
+    Bookmark(BookmarkCmd),
+}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+enum UserMod {
+    Create(UserCreateCmd),
+    Read(UserReadCmd),
+    Reads(UserReadsCmd),
+    Update(UserUpdateCmd),
+    Delete(UserDeleteCmd),
+}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+enum ContentMod {
+    Read(ContentReadCmd),
+    Reads(ContentReadsCmd),
+    Update(ContentUpdateCmd),
+    Delete(ContentDeleteCmd),
+}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct UserCreateCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct UserReadCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct UserReadsCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct UserUpdateCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct UserDeleteCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct ContentReadCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct ContentReadsCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct ContentUpdateCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct ContentDeleteCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct PostCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct LikeCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct PinCmd {}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+struct BookmarkCmd {}
+
 pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     let res: Result<_> = try {
         let splitted = shell_words::split(msg)?;
