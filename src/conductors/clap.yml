@@ -37,7 +37,7 @@ subcommands:
                   long: "bookmark-num"
                   value_name: "range<u32>"
         - update:
-            about: "update user with mutation. (note: owner can only use.)"
+            about: "update user with mutation."
             args:
               - id:
                   value_name: "ID: u64"
