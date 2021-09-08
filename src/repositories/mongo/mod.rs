@@ -12,7 +12,7 @@ use serenity::futures::TryStreamExt;
 
 use super::{
     AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, ContentRepository,
-    PostedQuery, RepositoryError, Result, StdResult, UserMutation, UserQuery, UserRepository,
+    PostedQuery, RepositoryError, Result, UserMutation, UserQuery, UserRepository,
 };
 use crate::entities::{Author, Content, ContentId, User, UserId};
 use crate::utils::LetChain;
@@ -670,7 +670,7 @@ where E: Sync + Send + ::std::error::Error + 'static {
     result.map_err(|e| RepositoryError::Internal(anyhow!(e)))
 }
 
-fn try_unique_check<T>(result: StdResult<T, ::mongodb::error::Error>) -> Result<bool> {
+fn try_unique_check<T>(result: ::core::result::Result<T, ::mongodb::error::Error>) -> Result<bool> {
     match match match result {
         Ok(_) => return Ok(true),
         Err(e) => (*e.kind.clone(), e),
