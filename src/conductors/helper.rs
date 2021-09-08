@@ -27,26 +27,26 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
             }
         }
 
-        let ams0 = match clapcmd::create_clap_app().get_matches_from_safe(splitted) {
+        let ams0 = match clapcmd::create_clap_app().try_get_matches_from(splitted) {
             Ok(o) => o,
             Err(e) => match e.kind {
-                ErrorKind::VersionDisplayed => Err(anyhow!(CLAP_VERSION.clone()))?,
-                _ => Err(anyhow!(e))?,
+                ErrorKind::DisplayVersion => Err(anyhow!(CLAP_VERSION.clone()))?,
+                _ => Err(anyhow!(e.to_string()))?, // FIXME: is ok?
             },
         };
 
         let mut errs = vec![];
         let cmd = match ams0.subcommand() {
-            ("user", Some(ams1)) => Command::User(match ams1.subcommand() {
-                ("create", Some(_)) => UserCommand::Create,
-                ("read", Some(ams2)) => {
+            Some(("user", ams1)) => Command::User(match ams1.subcommand() {
+                Some(("create", _)) => UserCommand::Create,
+                Some(("read", ams2)) => {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_num::<u64>(s, &mut errs).into());
 
                     UserCommand::Read { id }
                 },
-                ("reads", Some(ams2)) => {
+                Some(("reads", ams2)) => {
                     let page = ams2
                         .value_of("page")
                         .map(|s| {
@@ -79,7 +79,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                     UserCommand::Reads { page, query }
                 },
-                ("update", Some(ams2)) => {
+                Some(("update", ams2)) => {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_num::<u64>(s, &mut errs).into())
@@ -92,7 +92,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                     UserCommand::Update { id, mutation }
                 },
-                ("delete", Some(ams2)) => {
+                Some(("delete", ams2)) => {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_num::<u64>(s, &mut errs).into())
@@ -102,8 +102,8 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                 },
                 _ => Err(anyhow!(CLAP_HELP.clone()))?,
             }),
-            ("content", Some(ams1)) => Command::Content(match ams1.subcommand() {
-                ("read", Some(ams2)) => {
+            Some(("content", ams1)) => Command::Content(match ams1.subcommand() {
+                Some(("read", ams2)) => {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_uuid(s, &mut errs))
@@ -112,7 +112,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                     ContentCommand::Read { id }
                 },
-                ("reads", Some(ams2)) => {
+                Some(("reads", ams2)) => {
                     let page = ams2
                         .value_of("page")
                         .map(|s| {
@@ -195,7 +195,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                     ContentCommand::Reads { page, query }
                 },
-                ("update", Some(ams2)) => {
+                Some(("update", ams2)) => {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_uuid(s, &mut errs))
@@ -243,7 +243,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                     ContentCommand::Update { id, mutation }
                 },
-                ("delete", Some(ams2)) => {
+                Some(("delete", ams2)) => {
                     let id = ams2
                         .value_of("id")
                         .map(|s| parse_uuid(s, &mut errs))
@@ -254,7 +254,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                 },
                 _ => Err(anyhow!(CLAP_HELP.clone()))?,
             }),
-            ("post", Some(ams1)) => {
+            Some(("post", ams1)) => {
                 let author = ams1
                     .values_of("author")
                     .map(|vs| vs.collect::<Vec<_>>())
@@ -276,7 +276,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                 Command::Post { author, content }
             },
-            ("like", Some(ams1)) => {
+            Some(("like", ams1)) => {
                 let content_id = ams1
                     .value_of("content_id")
                     .map(|s| parse_uuid(s, &mut errs))
@@ -286,7 +286,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                 Command::Like { content_id, undo }
             },
-            ("pin", Some(ams1)) => {
+            Some(("pin", ams1)) => {
                 let content_id = ams1
                     .value_of("content_id")
                     .map(|s| parse_uuid(s, &mut errs))
@@ -296,7 +296,7 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                 Command::Pin { content_id, undo }
             },
-            ("bookmark", Some(ams1)) => {
+            Some(("bookmark", ams1)) => {
                 let content_id = ams1
                     .value_of("content_id")
                     .map(|s| parse_uuid(s, &mut errs))
@@ -520,12 +520,5 @@ lazy_static::lazy_static! {
         String::from_utf8(buf.into_inner()).unwrap()
     };
 
-    static ref CLAP_VERSION: String = {
-        let mut buf = ::std::io::Cursor::new(vec![]);
-        clapcmd::create_clap_app()
-            .write_long_version(&mut buf)
-            .unwrap();
-
-        String::from_utf8(buf.into_inner()).unwrap()
-    };
+    static ref CLAP_VERSION: String = clapcmd::create_clap_app().render_long_version();
 }
