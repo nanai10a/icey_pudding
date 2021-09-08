@@ -5,7 +5,6 @@ pub(crate) trait LetChain {
         F: FnOnce(Self) -> R;
 }
 impl<T> LetChain for T {
-    #[inline]
     fn let_<F, R>(self, f: F) -> R
     where
         Self: Sized,
@@ -22,7 +21,6 @@ pub(crate) trait AlsoChain {
         F: FnOnce(&mut Self) -> R;
 }
 impl<T> AlsoChain for T {
-    #[inline]
     fn also_<F, R>(mut self, f: F) -> Self
     where
         Self: Sized,
