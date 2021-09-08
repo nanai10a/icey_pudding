@@ -32,3 +32,13 @@ impl<T> AlsoChain for T {
         self
     }
 }
+
+pub(crate) fn parse_date(s: &str) -> crate::entities::Date {
+    ::chrono::DateTime::parse_from_rfc3339(s)
+        .unwrap()
+        .with_timezone(&::chrono::Utc)
+}
+
+pub(crate) fn date_to_string(dt: crate::entities::Date) -> String {
+    dt.to_rfc3339_opts(::chrono::SecondsFormat::Nanos, true)
+}

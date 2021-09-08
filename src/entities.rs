@@ -45,9 +45,8 @@ pub struct Content {
     pub(crate) content: String,
     pub(crate) liked: HashSet<UserId>,
     pub(crate) pinned: HashSet<UserId>,
-    // FIXME: replace type alias and provide helper fn
-    pub(crate) created: ::chrono::DateTime<::chrono::Utc>,
-    pub(crate) edited: Vec<::chrono::DateTime<::chrono::Utc>>,
+    pub(crate) created: Date,
+    pub(crate) edited: Vec<Date>,
 }
 
 #[derive(Debug, Clone)]
@@ -66,6 +65,8 @@ pub(crate) enum Author {
     },
     Virtual(String),
 }
+
+pub(crate) type Date = ::chrono::DateTime<::chrono::Utc>;
 
 #[derive(Debug, Clone)]
 pub(crate) enum PartialAuthor {

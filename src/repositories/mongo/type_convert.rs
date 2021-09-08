@@ -8,6 +8,7 @@ use super::{
     UserMutation, UserQuery,
 };
 use crate::entities::{Author, Content, ContentId, Posted, User, UserId};
+use crate::utils;
 
 impl From<UserQuery> for Document {
     fn from(
@@ -164,16 +165,10 @@ impl From<MongoContentModel> for Content {
                 .drain()
                 .map(|s| s.parse::<u64>().unwrap().into())
                 .collect(),
-            created: DateTime::<FixedOffset>::parse_from_rfc3339(created.as_str())
-                .unwrap()
-                .with_timezone(&Utc),
+            created: utils::parse_date(created.as_str()),
             edited: edited
                 .drain(..)
-                .map(|s| {
-                    DateTime::<FixedOffset>::parse_from_rfc3339(s.as_str())
-                        .unwrap()
-                        .with_timezone(&Utc)
-                })
+                .map(|s| utils::parse_date(s.as_str()))
                 .collect(),
         }
     }
@@ -200,11 +195,8 @@ impl From<Content> for MongoContentModel {
             liked: liked.drain().map(|n| n.to_string()).collect(),
             pinned_size: pinned.len() as i64,
             pinned: pinned.drain().map(|n| n.to_string()).collect(),
-            created: created.to_rfc3339_opts(SecondsFormat::Nanos, true),
-            edited: edited
-                .drain(..)
-                .map(|dt| dt.to_rfc3339_opts(SecondsFormat::Nanos, true))
-                .collect(),
+            created: utils::date_to_string(created),
+            edited: edited.drain(..).map(utils::date_to_string).collect(),
         }
     }
 }

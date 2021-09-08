@@ -21,7 +21,7 @@ use crate::entities::{Content, ContentId, PartialAuthor, User};
 use crate::repositories::{
     AuthorQuery, ContentContentMutation, ContentQuery, PostedQuery, UserMutation, UserQuery,
 };
-use crate::utils::LetChain;
+use crate::utils::{self, LetChain};
 
 pub(crate) async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     let res: Result<_> = try {
@@ -376,10 +376,9 @@ pub(crate) fn resp_from_content(
             ("created:".to_string(), created.to_string()),
             (
                 "last_edited:".to_string(),
-                edited.pop().map_or_else(
-                    || "no edited".to_string(),
-                    |dt| dt.to_rfc3339_opts(SecondsFormat::Millis, true),
-                ),
+                edited
+                    .pop()
+                    .map_or_else(|| "no edited".to_string(), utils::date_to_string),
             ),
         ],
     }
