@@ -3,7 +3,6 @@ use std::ops::Bound;
 
 use anyhow::anyhow;
 use async_trait::async_trait;
-use chrono::SecondsFormat;
 use mongodb::bson::{doc, Document};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
 use mongodb::{bson, Client, ClientSession, Collection, Database};
