@@ -26,6 +26,7 @@ pub struct Conductor {
     pub handler: Handler,
 }
 
+// FIXME: replace `clap = "3"`
 /// command data.
 #[derive(Debug, Clone)]
 pub enum Command {
