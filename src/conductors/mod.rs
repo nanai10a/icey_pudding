@@ -60,8 +60,8 @@ pub enum UserCommand {
     /// update user with id and mutation.
     /// it's **must** given id.
     Update { id: UserId, mutation: UserMutation },
-    /* delete user with executed user's id. (only accepted from user and admin)
-     * Delete, <- TODO: do implement */
+    /// delete user with executed user's id. (only accepted from user and admin)
+    Delete { id: UserId },
 }
 
 // TODO: can show content's liked and pinned
@@ -194,6 +194,12 @@ impl Conductor {
                     let user = self.handler.update_user(id, mutation).await?;
 
                     helper::resp_from_user("updated user", from_user_shows, USER_UPDATE, user)
+                        .let_(|r| vec![r])
+                },
+                Command::User(UserCommand::Delete { id }) => {
+                    let user = self.handler.delete_user(id).await?;
+
+                    helper::resp_from_user("deleted user.", from_user_shows, USER_DELETE, user)
                         .let_(|r| vec![r])
                 },
                 Command::Content(ContentCommand::Read { id }) => {
@@ -388,7 +394,7 @@ impl Conductor {
 
         let res = match &cmd {
             Command::User(UserCommand::Update { .. }) => user_res?.admin,
-            // Command::User(UserComamnd::Delete { id }) => unimplemented!(),
+            Command::User(UserCommand::Delete { .. }) => user_res?.admin,
             Command::Content(ContentCommand::Update { id, .. }) => {
                 let user = user_res?;
                 let content = self

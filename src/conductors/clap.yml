@@ -50,6 +50,11 @@ subcommands:
                   short: "s"
                   long: "sub-admin"
                   value_name: "bool"
+        - delete:
+            about: "delete with id."
+            args:
+              - id:
+                  value_name: "ID: u64"
 
   - content:
       about: "about content."

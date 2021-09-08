@@ -92,6 +92,14 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
 
                     UserCommand::Update { id, mutation }
                 },
+                ("delete", Some(ams2)) => {
+                    let id = ams2
+                        .value_of("id")
+                        .map(|s| parse_num::<u64>(s, &mut errs).into())
+                        .unwrap();
+
+                    UserCommand::Delete { id }
+                },
                 _ => Err(anyhow!(CLAP_HELP.clone()))?,
             }),
             ("content", Some(ams1)) => Command::Content(match ams1.subcommand() {

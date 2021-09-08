@@ -75,6 +75,8 @@ impl Handler {
             .map_err(user_err_fmt)
     }
 
+    pub async fn delete_user(&self, user_id: UserId) -> Result<User> { unimplemented!() }
+
     pub async fn bookmark(
         &self,
         user_id: UserId,
