@@ -1,5 +1,6 @@
 use std::ops::Bound;
 
+use chrono::{DateTime, FixedOffset, SecondsFormat, Utc};
 use mongodb::bson::{doc, Bson, Document};
 
 use super::{
@@ -146,6 +147,8 @@ impl From<MongoContentModel> for Content {
             liked_size: _,
             mut pinned,
             pinned_size: _,
+            created,
+            mut edited,
         }: MongoContentModel,
     ) -> Self {
         Content {
@@ -161,6 +164,17 @@ impl From<MongoContentModel> for Content {
                 .drain()
                 .map(|s| s.parse::<u64>().unwrap().into())
                 .collect(),
+            created: DateTime::<FixedOffset>::parse_from_rfc3339(created.as_str())
+                .unwrap()
+                .with_timezone(&Utc),
+            edited: edited
+                .drain(..)
+                .map(|s| {
+                    DateTime::<FixedOffset>::parse_from_rfc3339(s.as_str())
+                        .unwrap()
+                        .with_timezone(&Utc)
+                })
+                .collect(),
         }
     }
 }
@@ -173,6 +187,8 @@ impl From<Content> for MongoContentModel {
             content,
             mut liked,
             mut pinned,
+            created,
+            mut edited,
         }: Content,
     ) -> Self {
         MongoContentModel {
@@ -184,6 +200,11 @@ impl From<Content> for MongoContentModel {
             liked: liked.drain().map(|n| n.to_string()).collect(),
             pinned_size: pinned.len() as i64,
             pinned: pinned.drain().map(|n| n.to_string()).collect(),
+            created: created.to_rfc3339_opts(SecondsFormat::Nanos, true),
+            edited: edited
+                .drain(..)
+                .map(|dt| dt.to_rfc3339_opts(SecondsFormat::Nanos, true))
+                .collect(),
         }
     }
 }

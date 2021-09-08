@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::ops::Bound;
 
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
 use regex::Regex;
 
 use crate::entities::{Author, Content, ContentId, User, UserId};
@@ -71,6 +72,7 @@ pub(crate) struct ContentQuery {
     pub(crate) liked_num: Option<(Bound<u32>, Bound<u32>)>,
     pub(crate) pinned: Option<HashSet<UserId>>,
     pub(crate) pinned_num: Option<(Bound<u32>, Bound<u32>)>,
+    // FiF: times query
 }
 
 #[derive(Debug, Clone)]
@@ -118,10 +120,11 @@ pub(crate) struct UserMutation {
     pub(crate) sub_admin: Option<bool>,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub(crate) struct ContentMutation {
     pub(crate) author: Option<Author>,
     pub(crate) content: Option<ContentContentMutation>,
+    pub(crate) edited: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone)]

@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use anyhow::{bail, Error, Result};
+use chrono::{DateTime, Utc};
 
 use crate::entities::{Author, Content, ContentId, Posted, User, UserId};
 use crate::repositories::{
@@ -120,6 +121,7 @@ impl Handler {
         content: String,
         posted: Posted,
         author: Author,
+        created: DateTime<Utc>,
     ) -> Result<Content> {
         let user_is_exists = self
             .user_repository
@@ -138,6 +140,8 @@ impl Handler {
             posted,
             liked: HashSet::new(),
             pinned: HashSet::new(),
+            created,
+            edited: vec![],
         };
 
         let user_posted_can_insert = self
