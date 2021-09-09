@@ -20,6 +20,7 @@ use crate::utils::{self, LetChain};
 
 /// this is a ICEy_PUDDING.
 #[derive(Debug, Clone, ::clap::Clap)]
+#[clap(author, version)]
 struct AppV2_1 {
     #[clap(subcommand)]
     cmd: RootMod,
