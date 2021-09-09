@@ -45,7 +45,7 @@ enum RootMod {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 enum UserMod {
-    #[clap(short_flag = 'r')]
+    #[clap(short_flag = 'c')]
     Register(UserRegisterCmd),
 
     #[clap(short_flag = 'g')]
