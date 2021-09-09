@@ -95,7 +95,7 @@ struct UserRegisterCmd;
 struct UserGetCmd {
     /// u64,
     #[clap(name = "USER_ID")]
-    user_id: u64,
+    user_id: Option<u64>,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
