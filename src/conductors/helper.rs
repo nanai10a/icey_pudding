@@ -137,17 +137,9 @@ pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
                     let mut query = Default::default();
 
                     let UserQuery {
-                        posted,
-                        posted_num,
                         bookmark,
                         bookmark_num,
                     } = &mut query;
-                    *posted = ams2
-                        .value_of("posted")
-                        .map(|s| parse_array(s, &mut errs).drain(..).collect());
-                    *posted_num = ams2
-                        .value_of("posted_num")
-                        .map(|s| parse_range(s, &mut errs));
                     *bookmark = ams2
                         .value_of("bookmark")
                         .map(|s| parse_array(s, &mut errs).drain(..).collect());
@@ -409,7 +401,6 @@ pub fn resp_from_user(
         id,
         admin,
         sub_admin,
-        posted,
         bookmark,
     }: User,
 ) -> Response {
@@ -421,7 +412,6 @@ pub fn resp_from_user(
             ("id:".to_string(), id.to_string()),
             ("is_admin?".to_string(), admin.to_string()),
             ("is_sub_admin?".to_string(), sub_admin.to_string()),
-            ("posted:".to_string(), posted.len().to_string()),
             ("bookmarked:".to_string(), bookmark.len().to_string()),
         ],
     }

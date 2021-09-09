@@ -81,8 +81,6 @@ struct MongoUserModel {
     id: String,
     admin: bool,
     sub_admin: bool,
-    posted: HashSet<ContentId>,
-    posted_size: i64,
     bookmark: HashSet<ContentId>,
     bookmark_size: i64,
 }
@@ -230,34 +228,6 @@ impl UserRepository for MongoUserRepository {
 
         let res = exec_transaction!(transaction, self, id, mutation_doc.clone()).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
-    }
-
-    async fn is_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
-        is_contains("posted", &self.coll, id.to_string(), content_id.to_string()).await
-    }
-
-    async fn insert_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
-        modify_set(
-            "posted",
-            &self.coll,
-            &self.client,
-            id.to_string(),
-            content_id.to_string(),
-            ModifyOpTy::Push,
-        )
-        .await
-    }
-
-    async fn delete_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
-        modify_set(
-            "posted",
-            &self.coll,
-            &self.client,
-            id.to_string(),
-            content_id.to_string(),
-            ModifyOpTy::Pull,
-        )
-        .await
     }
 
     async fn is_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {

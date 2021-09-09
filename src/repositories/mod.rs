@@ -21,10 +21,6 @@ pub trait UserRepository {
 
     async fn update(&self, id: UserId, mutation: UserMutation) -> Result<User>;
 
-    async fn is_posted(&self, id: UserId, content_id: ContentId) -> Result<bool>;
-    async fn insert_posted(&self, id: UserId, content_id: ContentId) -> Result<bool>;
-    async fn delete_posted(&self, id: UserId, content_id: ContentId) -> Result<bool>;
-
     async fn is_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool>;
     async fn insert_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool>;
     async fn delete_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool>;
@@ -55,8 +51,6 @@ pub trait ContentRepository {
 
 #[derive(Debug, Clone, Default)]
 pub struct UserQuery {
-    pub posted: Option<HashSet<ContentId>>,
-    pub posted_num: Option<(Bound<u32>, Bound<u32>)>,
     pub bookmark: Option<HashSet<ContentId>>,
     pub bookmark_num: Option<(Bound<u32>, Bound<u32>)>,
 }
