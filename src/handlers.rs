@@ -13,24 +13,6 @@ pub struct Handler {
     pub content_repository: Box<dyn ContentRepository + Sync + Send>,
 }
 
-fn user_err_fmt(e: RepositoryError) -> Error {
-    use anyhow::anyhow;
-
-    match e {
-        RepositoryError::NotFound => anyhow!("cannot find user. not registered?"),
-        e => anyhow!("repository error: {}", e),
-    }
-}
-
-fn content_err_fmt(e: RepositoryError) -> Error {
-    use anyhow::anyhow;
-
-    match e {
-        RepositoryError::NotFound => anyhow!("cannot find content."),
-        e => anyhow!("repository error: {}", e),
-    }
-}
-
 impl Handler {
     pub async fn create_user(&self, user_id: UserId) -> Result<User> {
         let new_user = User {
@@ -237,5 +219,23 @@ impl Handler {
             .delete(content_id)
             .await
             .map_err(content_err_fmt)
+    }
+}
+
+fn user_err_fmt(e: RepositoryError) -> Error {
+    use anyhow::anyhow;
+
+    match e {
+        RepositoryError::NotFound => anyhow!("cannot find user. not registered?"),
+        e => anyhow!("repository error: {}", e),
+    }
+}
+
+fn content_err_fmt(e: RepositoryError) -> Error {
+    use anyhow::anyhow;
+
+    match e {
+        RepositoryError::NotFound => anyhow!("cannot find content."),
+        e => anyhow!("repository error: {}", e),
     }
 }
