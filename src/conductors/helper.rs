@@ -98,8 +98,28 @@ struct UserEditCmd {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserBookmarkCmd {
-    #[clap(flatten)]
-    inner: Inner,
+    #[clap(subcommand)]
+    op: UserBookmarkOp,
+}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+enum UserBookmarkOp {
+    #[clap(short_flag = 'd')]
+    Do {
+        /// uuid
+        #[clap(name = "CONTENT_ID")]
+        content_id: Uuid,
+    },
+
+    #[clap(short_flag = 'u')]
+    Undo {
+        /// uuid
+        #[clap(name = "CONTENT_ID")]
+        content_id: Uuid,
+    },
+
+    #[clap(short_flag = 's')]
+    Show,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
@@ -160,30 +180,26 @@ struct ContentEditCmd {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentLikeCmd {
-    #[clap(flatten)]
-    inner: Inner,
-}
-
-#[derive(Debug, Clone, ::clap::Clap)]
-struct Inner {
     #[clap(subcommand)]
-    op: Op,
+    op: ContentLikeOp,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
-enum Op {
+enum ContentLikeOp {
     #[clap(short_flag = 'd')]
     Do {
         /// uuid
         #[clap(name = "CONTENT_ID")]
         content_id: Uuid,
     },
+
     #[clap(short_flag = 'u')]
     Undo {
         /// uuid
         #[clap(name = "CONTENT_ID")]
         content_id: Uuid,
     },
+
     #[clap(short_flag = 's')]
     Show {
         /// uuid
@@ -194,8 +210,32 @@ enum Op {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentPinCmd {
-    #[clap(flatten)]
-    inner: Inner,
+    #[clap(subcommand)]
+    op: ContentPinOp,
+}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+enum ContentPinOp {
+    #[clap(short_flag = 'd')]
+    Do {
+        /// uuid
+        #[clap(name = "CONTENT_ID")]
+        content_id: Uuid,
+    },
+
+    #[clap(short_flag = 'u')]
+    Undo {
+        /// uuid
+        #[clap(name = "CONTENT_ID")]
+        content_id: Uuid,
+    },
+
+    #[clap(short_flag = 's')]
+    Show {
+        /// uuid
+        #[clap(name = "CONTENT_ID")]
+        content_id: Uuid,
+    },
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
