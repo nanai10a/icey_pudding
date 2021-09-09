@@ -98,13 +98,8 @@ struct UserEditCmd {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserBookmarkCmd {
-    /// uuid
-    #[clap(name = "CONTENT_ID")]
-    content_id: Uuid,
-
-    /// is *unbookmark*?
-    #[clap(short = 'u', long)]
-    undo: bool,
+    #[clap(flatten)]
+    inner: Inner,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
@@ -165,24 +160,42 @@ struct ContentEditCmd {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentLikeCmd {
-    /// uuid
-    #[clap(name = "ID")]
-    id: Uuid,
+    #[clap(flatten)]
+    inner: Inner,
+}
 
-    /// is *unlike*?
-    #[clap(short = 'u', long)]
-    undo: bool,
+#[derive(Debug, Clone, ::clap::Clap)]
+struct Inner {
+    #[clap(subcommand)]
+    op: Op,
+}
+
+#[derive(Debug, Clone, ::clap::Clap)]
+enum Op {
+    #[clap(short_flag = 'd')]
+    Do {
+        /// uuid
+        #[clap(name = "CONTENT_ID")]
+        content_id: Uuid,
+    },
+    #[clap(short_flag = 'u')]
+    Undo {
+        /// uuid
+        #[clap(name = "CONTENT_ID")]
+        content_id: Uuid,
+    },
+    #[clap(short_flag = 's')]
+    Show {
+        /// uuid
+        #[clap(name = "CONTENT_ID")]
+        content_id: Uuid,
+    },
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentPinCmd {
-    /// uuid
-    #[clap(name = "ID")]
-    id: Uuid,
-
-    /// is *unpin*?
-    #[clap(short = 'u', long)]
-    undo: bool,
+    #[clap(flatten)]
+    inner: Inner,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
