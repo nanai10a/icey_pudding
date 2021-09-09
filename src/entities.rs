@@ -19,7 +19,6 @@ pub struct User {
     pub id: UserId,
     pub admin: bool,
     pub sub_admin: bool,
-    pub posted: HashSet<ContentId>,
     pub bookmark: HashSet<ContentId>,
 }
 
