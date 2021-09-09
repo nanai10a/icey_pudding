@@ -66,8 +66,8 @@ struct UserRegisterCmd;
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserGetCmd {
     /// u64,
-    #[clap(name = "ID")]
-    id: u64,
+    #[clap(name = "USER_ID")]
+    user_id: u64,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
@@ -86,8 +86,8 @@ struct UserGetsCmd {
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserEditCmd {
     /// u64
-    #[clap(name = "ID")]
-    id: u64,
+    #[clap(name = "USER_ID")]
+    user_id: u64,
 
     /// json
     ///
@@ -105,8 +105,8 @@ struct UserBookmarkCmd {
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserUnregisterCmd {
     /// u64
-    #[clap(name = "ID")]
-    id: u64,
+    #[clap(name = "USER_ID")]
+    user_id: u64,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
@@ -128,8 +128,8 @@ struct ContentPostCmd {
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentGetCmd {
     /// uuid
-    #[clap(name = "ID")]
-    id: Uuid,
+    #[clap(name = "CONTENT_ID")]
+    content_id: Uuid,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
@@ -148,8 +148,8 @@ struct ContentGetsCmd {
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentEditCmd {
     /// uuid
-    #[clap(name = "ID")]
-    id: Uuid,
+    #[clap(name = "CONTENT_ID")]
+    content_id: Uuid,
 
     /// json
     ///
@@ -201,8 +201,8 @@ struct ContentPinCmd {
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentWithdrawCmd {
     /// uuid
-    #[clap(name = "ID")]
-    id: Uuid,
+    #[clap(name = "CONTENT_ID")]
+    content_id: Uuid,
 }
 
 pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
