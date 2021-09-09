@@ -156,7 +156,11 @@ enum UserBookmarkOp {
 
     /// get bookmarks.
     #[clap(short_flag = 's')]
-    Show,
+    Show {
+        /// u32 (1 =< n)
+        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+        page: u32,
+    },
 }
 
 /// unregister user with executed user's id.
@@ -248,6 +252,10 @@ enum ContentLikeOp {
     /// get liked users.
     #[clap(short_flag = 's')]
     Show {
+        /// u32 (1 =< n)
+        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+        page: u32,
+
         /// uuid
         #[clap(name = "CONTENT_ID")]
         content_id: Uuid,
@@ -282,6 +290,10 @@ enum ContentPinOp {
     /// get pinned users.
     #[clap(short_flag = 's')]
     Show {
+        /// u32 (1 =< n)
+        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+        page: u32,
+
         /// uuid
         #[clap(name = "CONTENT_ID")]
         content_id: Uuid,
