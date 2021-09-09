@@ -74,8 +74,6 @@ impl UserRepository for InMemoryRepository<User> {
     async fn finds(
         &self,
         UserQuery {
-            posted,
-            posted_num,
             bookmark,
             bookmark_num,
         }: UserQuery,
@@ -85,18 +83,6 @@ impl UserRepository for InMemoryRepository<User> {
             .lock()
             .await
             .iter()
-            .filter(|u| {
-                posted
-                    .as_ref()
-                    .map(|s| s.is_subset(&u.posted))
-                    .unwrap_or(true)
-            })
-            .filter(|u| {
-                posted_num
-                    .as_ref()
-                    .map(|b| b.contains(&(u.posted.len() as u32)))
-                    .unwrap_or(true)
-            })
             .filter(|u| {
                 bookmark
                     .as_ref()
@@ -137,31 +123,6 @@ impl UserRepository for InMemoryRepository<User> {
         }
 
         Ok(item.clone())
-    }
-
-    async fn is_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
-        let guard = self.0.lock().await;
-        let item = find_ref(&guard, |u| u.id == id)?;
-
-        match item.posted.iter().filter(|v| **v == content_id).count() {
-            0 => Ok(false),
-            1 => Ok(true),
-            i => Err(RepositoryError::NoUnique { matched: i as u32 }),
-        }
-    }
-
-    async fn insert_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
-        let mut guard = self.0.lock().await;
-        let item = find_mut(&mut guard, |u| u.id == id)?;
-
-        Ok(item.posted.insert(content_id))
-    }
-
-    async fn delete_posted(&self, id: UserId, content_id: ContentId) -> Result<bool> {
-        let mut guard = self.0.lock().await;
-        let item = find_mut(&mut guard, |u| u.id == id)?;
-
-        Ok(item.posted.remove(&content_id))
     }
 
     async fn is_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {

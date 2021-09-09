@@ -22,13 +22,6 @@ subcommands:
               - page:
                   help: "must satisfies `1..`"
                   value_name: "PAGE: u32"
-              - posted:
-                  short: "p"
-                  long: "posted"
-                  value_name: "[uuid]"
-              - posted_num:
-                  long: "posted-num"
-                  value_name: "range<u32>"
               - bookmark:
                   short: "b"
                   long: "bookmark"

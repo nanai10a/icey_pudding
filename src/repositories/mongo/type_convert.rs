@@ -12,40 +12,11 @@ use crate::utils;
 impl From<UserQuery> for Document {
     fn from(
         UserQuery {
-            posted,
-            posted_num,
             bookmark,
             bookmark_num,
         }: UserQuery,
     ) -> Self {
         let mut query = doc! {};
-
-        if let Some(mut set_raw) = posted {
-            if !set_raw.is_empty() {
-                let set = set_raw.drain().map(|i| i.to_string()).collect::<Vec<_>>();
-                query.insert("posted", doc! { "$in": set });
-            }
-        }
-
-        if let Some((g, l)) = posted_num {
-            let mut posted_num_q = doc! {};
-
-            match g {
-                Bound::Unbounded => (),
-                Bound::Included(n) => posted_num_q.insert("$gte", n).let_(::core::mem::drop),
-                Bound::Excluded(n) => posted_num_q.insert("$gt", n).let_(::core::mem::drop),
-            }
-
-            match l {
-                Bound::Unbounded => (),
-                Bound::Included(n) => posted_num_q.insert("$lte", n).let_(::core::mem::drop),
-                Bound::Excluded(n) => posted_num_q.insert("$lt", n).let_(::core::mem::drop),
-            }
-
-            if !posted_num_q.is_empty() {
-                query.insert("posted_size", posted_num_q);
-            }
-        }
 
         if let Some(mut set_raw) = bookmark {
             if !set_raw.is_empty() {
@@ -99,8 +70,6 @@ impl From<MongoUserModel> for User {
             id,
             admin,
             sub_admin,
-            posted,
-            posted_size: _,
             bookmark,
             bookmark_size: _,
         }: MongoUserModel,
@@ -109,7 +78,6 @@ impl From<MongoUserModel> for User {
             id: id.parse::<u64>().unwrap().into(),
             admin,
             sub_admin,
-            posted,
             bookmark,
         }
     }
@@ -120,7 +88,6 @@ impl From<User> for MongoUserModel {
             id,
             admin,
             sub_admin,
-            posted,
             bookmark,
         }: User,
     ) -> Self {
@@ -128,8 +95,6 @@ impl From<User> for MongoUserModel {
             id: id.to_string(),
             admin,
             sub_admin,
-            posted_size: posted.len() as i64,
-            posted,
             bookmark_size: bookmark.len() as i64,
             bookmark,
         }

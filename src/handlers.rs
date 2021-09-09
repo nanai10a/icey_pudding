@@ -37,7 +37,6 @@ impl Handler {
             id: user_id,
             admin: false,
             sub_admin: false,
-            posted: HashSet::new(),
             bookmark: HashSet::new(),
         };
 
@@ -127,7 +126,6 @@ impl Handler {
             bail!("cannot find user. not registered?");
         }
 
-        let posted_id = posted.id;
         let new_content = Content {
             id: ::uuid::Uuid::new_v4().into(),
             content,
@@ -138,15 +136,6 @@ impl Handler {
             created,
             edited: vec![],
         };
-
-        let user_posted_can_insert = self
-            .user_repository
-            .insert_posted(posted_id, new_content.id)
-            .await
-            .map_err(user_err_fmt)?;
-        if !user_posted_can_insert {
-            panic!("content_id duplicated!");
-        }
 
         let content_can_insert = self
             .content_repository
