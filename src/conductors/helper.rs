@@ -8,6 +8,7 @@ use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::utils::Colour;
+use uuid::Uuid;
 
 use super::{clapcmd, Command, ContentCommand, Response, UserCommand};
 use crate::conductors::PartialContentMutation;
@@ -17,6 +18,7 @@ use crate::repositories::{
 };
 use crate::utils::{self, LetChain};
 
+/// this is a ICEy_PUDDING.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct AppV2_1 {
     #[clap(subcommand)]
@@ -25,10 +27,12 @@ struct AppV2_1 {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 enum RootMod {
+    /// about user.
     User {
         #[clap(subcommand)]
         cmd: UserMod,
     },
+    /// about content.
     Content {
         #[clap(subcommand)]
         cmd: ContentMod,
@@ -57,43 +61,136 @@ enum ContentMod {
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserRegisterCmd {}
+struct UserRegisterCmd;
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserGetCmd {}
+struct UserGetCmd {
+    /// u64,
+    #[clap(name = "ID")]
+    id: u64,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserGetsCmd {}
+struct UserGetsCmd {
+    /// u32 (1 =< n)
+    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num_v2))]
+    page: NonZeroU32,
+
+    /// json
+    ///
+    /// schema: {}
+    #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_user_query_v2))]
+    query: UserQuery,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserEditCmd {}
+struct UserEditCmd {
+    /// u64
+    #[clap(name = "ID")]
+    id: u64,
+
+    /// json
+    ///
+    /// schema: {}
+    #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_user_mutation_v2))]
+    mutation: UserMutation,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserBookmarkCmd {}
+struct UserBookmarkCmd {
+    /// uuid
+    #[clap(name = "CONTENT_ID")]
+    content_id: Uuid,
+
+    /// is *unbookmark*?
+    #[clap(short = 'u', long)]
+    undo: bool,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserUnregisterCmd {}
+struct UserUnregisterCmd {
+    /// u64
+    #[clap(name = "ID")]
+    id: u64,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentPostCmd {}
+#[clap(group = ::clap::ArgGroup::new("author").required(true))]
+struct ContentPostCmd {
+    /// str
+    #[clap(short = 'v', long, group = "author")]
+    virt: Option<String>,
+
+    /// u64
+    #[clap(short = 'u', long, group = "author")]
+    user_id: Option<u64>,
+
+    /// str
+    #[clap(short = 'c', long)]
+    content: String,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentGetCmd {}
+struct ContentGetCmd {
+    /// uuid
+    #[clap(name = "ID")]
+    id: Uuid,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentGetsCmd {}
+struct ContentGetsCmd {
+    /// u32 (1 =< n)
+    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num_v2))]
+    page: NonZeroU32,
+
+    /// json
+    ///
+    /// schema: {}
+    #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_content_query_v2))]
+    query: ContentQuery,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentEditCmd {}
+struct ContentEditCmd {
+    /// uuid
+    #[clap(name = "ID")]
+    id: Uuid,
+
+    /// json
+    ///
+    /// schema: {}
+    #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_partial_content_mutation_v2))]
+    mutation: PartialContentMutation,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentLikeCmd {}
+struct ContentLikeCmd {
+    /// uuid
+    #[clap(name = "ID")]
+    id: Uuid,
+
+    /// is *unlike*?
+    #[clap(short = 'u', long)]
+    undo: bool,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentPinCmd {}
+struct ContentPinCmd {
+    /// uuid
+    #[clap(name = "ID")]
+    id: Uuid,
+
+    /// is *unpin*?
+    #[clap(short = 'u', long)]
+    undo: bool,
+}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentWithdrawCmd {}
+struct ContentWithdrawCmd {
+    /// uuid
+    #[clap(name = "ID")]
+    id: Uuid,
+}
 
 pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     let res: Result<_> = try {
