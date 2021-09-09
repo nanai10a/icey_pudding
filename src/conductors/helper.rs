@@ -88,9 +88,12 @@ enum ContentMod {
     Withdraw(ContentWithdrawCmd),
 }
 
+/// register user with executed user's id.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserRegisterCmd;
 
+/// get user with id.
+/// if not given id, fallback to executed user's id.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserGetCmd {
     /// u64,
@@ -98,6 +101,7 @@ struct UserGetCmd {
     user_id: Option<u64>,
 }
 
+/// get users with query.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserGetsCmd {
     /// u32 (1 =< n)
@@ -111,6 +115,7 @@ struct UserGetsCmd {
     query: UserQuery,
 }
 
+/// edit user with id and mutation.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserEditCmd {
     /// u64
@@ -124,6 +129,7 @@ struct UserEditCmd {
     mutation: UserMutation,
 }
 
+/// about executed user's bookmark.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserBookmarkCmd {
     #[clap(subcommand)]
@@ -132,6 +138,7 @@ struct UserBookmarkCmd {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 enum UserBookmarkOp {
+    /// bookmark content.
     #[clap(short_flag = 'd')]
     Do {
         /// uuid
@@ -139,6 +146,7 @@ enum UserBookmarkOp {
         content_id: Uuid,
     },
 
+    /// unbookmark content.
     #[clap(short_flag = 'u')]
     Undo {
         /// uuid
@@ -146,10 +154,12 @@ enum UserBookmarkOp {
         content_id: Uuid,
     },
 
+    /// get bookmarks.
     #[clap(short_flag = 's')]
     Show,
 }
 
+/// unregister user with executed user's id.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserUnregisterCmd {
     /// u64
@@ -157,6 +167,7 @@ struct UserUnregisterCmd {
     user_id: u64,
 }
 
+/// post content with executed user's id.
 #[derive(Debug, Clone, ::clap::Clap)]
 #[clap(group = ::clap::ArgGroup::new("author").required(true))]
 struct ContentPostCmd {
@@ -173,6 +184,7 @@ struct ContentPostCmd {
     content: String,
 }
 
+/// get content with id.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentGetCmd {
     /// uuid
@@ -180,6 +192,7 @@ struct ContentGetCmd {
     content_id: Uuid,
 }
 
+/// get contents with query.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentGetsCmd {
     /// u32 (1 =< n)
@@ -193,6 +206,7 @@ struct ContentGetsCmd {
     query: ContentQuery,
 }
 
+/// edit content with id and mutation.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentEditCmd {
     /// uuid
@@ -212,8 +226,10 @@ struct ContentLikeCmd {
     op: ContentLikeOp,
 }
 
+/// about like with executed user.
 #[derive(Debug, Clone, ::clap::Clap)]
 enum ContentLikeOp {
+    /// like content.
     #[clap(short_flag = 'd')]
     Do {
         /// uuid
@@ -221,6 +237,7 @@ enum ContentLikeOp {
         content_id: Uuid,
     },
 
+    /// unlike content.
     #[clap(short_flag = 'u')]
     Undo {
         /// uuid
@@ -228,6 +245,7 @@ enum ContentLikeOp {
         content_id: Uuid,
     },
 
+    /// get liked users.
     #[clap(short_flag = 's')]
     Show {
         /// uuid
@@ -236,6 +254,7 @@ enum ContentLikeOp {
     },
 }
 
+/// about pin with executed user.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentPinCmd {
     #[clap(subcommand)]
@@ -244,6 +263,7 @@ struct ContentPinCmd {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 enum ContentPinOp {
+    /// pin content.
     #[clap(short_flag = 'd')]
     Do {
         /// uuid
@@ -251,6 +271,7 @@ enum ContentPinOp {
         content_id: Uuid,
     },
 
+    /// unpin content.
     #[clap(short_flag = 'u')]
     Undo {
         /// uuid
@@ -258,6 +279,7 @@ enum ContentPinOp {
         content_id: Uuid,
     },
 
+    /// get pinned users.
     #[clap(short_flag = 's')]
     Show {
         /// uuid
@@ -266,6 +288,7 @@ enum ContentPinOp {
     },
 }
 
+/// withdraw content with id.
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentWithdrawCmd {
     /// uuid
