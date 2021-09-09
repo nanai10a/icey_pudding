@@ -212,7 +212,6 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    // FIXME: rename to `withdraw` (<=?=> `post`)
     pub async fn delete_content(&self, content_id: ContentId) -> Result<Content> {
         self.content_repository
             .delete(content_id)

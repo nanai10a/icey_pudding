@@ -37,54 +37,54 @@ enum RootMod {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 enum UserMod {
-    Create(UserCreateCmd),
-    Read(UserReadCmd),
-    Reads(UserReadsCmd),
-    Update(UserUpdateCmd),
+    Register(UserRegisterCmd),
+    Get(UserGetCmd),
+    Gets(UserGetsCmd),
+    Edit(UserEditCmd),
     Bookmark(UserBookmarkCmd),
-    Delete(UserDeleteCmd),
+    Unregister(UserUnregisterCmd),
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
 enum ContentMod {
     Post(ContentPostCmd),
-    Read(ContentReadCmd),
-    Reads(ContentReadsCmd),
-    Update(ContentUpdateCmd),
+    Get(ContentGetCmd),
+    Gets(ContentGetsCmd),
+    Edit(ContentEditCmd),
     Like(ContentLikeCmd),
     Pin(ContentPinCmd),
-    Delete(ContentDeleteCmd),
+    Withdraw(ContentWithdrawCmd),
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserCreateCmd {}
+struct UserRegisterCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserReadCmd {}
+struct UserGetCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserReadsCmd {}
+struct UserGetsCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserUpdateCmd {}
+struct UserEditCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserBookmarkCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct UserDeleteCmd {}
+struct UserUnregisterCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentPostCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentReadCmd {}
+struct ContentGetCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentReadsCmd {}
+struct ContentGetsCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentUpdateCmd {}
+struct ContentEditCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentLikeCmd {}
@@ -93,7 +93,7 @@ struct ContentLikeCmd {}
 struct ContentPinCmd {}
 
 #[derive(Debug, Clone, ::clap::Clap)]
-struct ContentDeleteCmd {}
+struct ContentWithdrawCmd {}
 
 pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     let res: Result<_> = try {
