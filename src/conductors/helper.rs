@@ -28,11 +28,14 @@ struct AppV2_1 {
 #[derive(Debug, Clone, ::clap::Clap)]
 enum RootMod {
     /// about user.
+    #[clap(short_flag = 'U')]
     User {
         #[clap(subcommand)]
         cmd: UserMod,
     },
+
     /// about content.
+    #[clap(short_flag = 'C')]
     Content {
         #[clap(subcommand)]
         cmd: ContentMod,
@@ -41,22 +44,46 @@ enum RootMod {
 
 #[derive(Debug, Clone, ::clap::Clap)]
 enum UserMod {
+    #[clap(short_flag = 'r')]
     Register(UserRegisterCmd),
+
+    #[clap(short_flag = 'g')]
     Get(UserGetCmd),
+
+    #[clap(short_flag = 'q')]
     Gets(UserGetsCmd),
+
+    #[clap(short_flag = 'e')]
     Edit(UserEditCmd),
+
+    #[clap(short_flag = 'b')]
     Bookmark(UserBookmarkCmd),
+
+    #[clap(short_flag = 'd')]
     Unregister(UserUnregisterCmd),
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
 enum ContentMod {
+    #[clap(short_flag = 'c')]
     Post(ContentPostCmd),
+
+    #[clap(short_flag = 'g')]
     Get(ContentGetCmd),
+
+    #[clap(short_flag = 'q')]
     Gets(ContentGetsCmd),
+
+    #[clap(short_flag = 'e')]
     Edit(ContentEditCmd),
+
+    #[clap(short_flag = 'l')]
     Like(ContentLikeCmd),
+
+    #[clap(short_flag = 'p')]
     Pin(ContentPinCmd),
+
+    #[clap(short_flag = 'd')]
     Withdraw(ContentWithdrawCmd),
 }
 
