@@ -101,13 +101,13 @@ struct UserGetCmd {
 #[derive(Debug, Clone, ::clap::Clap)]
 struct UserGetsCmd {
     /// u32 (1 =< n)
-    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num_v2))]
-    page: NonZeroU32,
+    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+    page: u32,
 
     /// json
     ///
     /// schema: {}
-    #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_user_query_v2))]
+    #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_user_query))]
     query: UserQuery,
 }
 
@@ -120,7 +120,7 @@ struct UserEditCmd {
     /// json
     ///
     /// schema: {}
-    #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_user_mutation_v2))]
+    #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_user_mutation))]
     mutation: UserMutation,
 }
 
@@ -183,13 +183,13 @@ struct ContentGetCmd {
 #[derive(Debug, Clone, ::clap::Clap)]
 struct ContentGetsCmd {
     /// u32 (1 =< n)
-    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num_v2))]
-    page: NonZeroU32,
+    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+    page: u32,
 
     /// json
     ///
     /// schema: {}
-    #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_content_query_v2))]
+    #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_content_query))]
     query: ContentQuery,
 }
 
@@ -202,7 +202,7 @@ struct ContentEditCmd {
     /// json
     ///
     /// schema: {}
-    #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_partial_content_mutation_v2))]
+    #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_partial_content_mutation))]
     mutation: PartialContentMutation,
 }
 
