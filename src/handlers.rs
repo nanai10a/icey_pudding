@@ -13,9 +13,8 @@ pub struct Handler {
     pub content_repository: Box<dyn ContentRepository + Sync + Send>,
 }
 
-// FIXME: rename to new_op_names
 impl Handler {
-    pub async fn create_user(&self, user_id: UserId) -> Result<User> {
+    pub async fn register_user(&self, user_id: UserId) -> Result<User> {
         let new_user = User {
             id: user_id,
             admin: false,
@@ -32,42 +31,42 @@ impl Handler {
         Ok(new_user)
     }
 
-    pub async fn read_user(&self, user_id: UserId) -> Result<User> {
+    pub async fn get_user(&self, user_id: UserId) -> Result<User> {
         self.user_repository
             .find(user_id)
             .await
             .map_err(user_err_fmt)
     }
 
-    pub async fn read_users(&self, query: UserQuery) -> Result<Vec<User>> {
+    pub async fn get_users(&self, query: UserQuery) -> Result<Vec<User>> {
         self.user_repository
             .finds(query)
             .await
             .map_err(user_err_fmt)
     }
 
-    pub async fn update_user(&self, user_id: UserId, mutation: UserMutation) -> Result<User> {
+    pub async fn edit_user(&self, user_id: UserId, mutation: UserMutation) -> Result<User> {
         self.user_repository
             .update(user_id, mutation)
             .await
             .map_err(user_err_fmt)
     }
 
-    pub async fn delete_user(&self, user_id: UserId) -> Result<User> {
+    pub async fn unregister_user(&self, user_id: UserId) -> Result<User> {
         self.user_repository
             .delete(user_id)
             .await
             .map_err(content_err_fmt)
     }
 
-    pub async fn read_bookmark(&self, user_id: UserId) -> Result<HashSet<ContentId>> {
+    pub async fn get_user_bookmark(&self, user_id: UserId) -> Result<HashSet<ContentId>> {
         self.user_repository
             .get_bookmark(user_id)
             .await
             .map_err(content_err_fmt)
     }
 
-    pub async fn bookmark(
+    pub async fn user_bookmark_op(
         &self,
         user_id: UserId,
         content_id: ContentId,
@@ -105,7 +104,7 @@ impl Handler {
         Ok((user, content))
     }
 
-    pub async fn post(
+    pub async fn content_post(
         &self,
         content: String,
         posted: Posted,
@@ -145,21 +144,21 @@ impl Handler {
         Ok(new_content)
     }
 
-    pub async fn read_content(&self, content_id: ContentId) -> Result<Content> {
+    pub async fn get_content(&self, content_id: ContentId) -> Result<Content> {
         self.content_repository
             .find(content_id)
             .await
             .map_err(content_err_fmt)
     }
 
-    pub async fn read_contents(&self, query: ContentQuery) -> Result<Vec<Content>> {
+    pub async fn get_contents(&self, query: ContentQuery) -> Result<Vec<Content>> {
         self.content_repository
             .finds(query)
             .await
             .map_err(content_err_fmt)
     }
 
-    pub async fn update_content(
+    pub async fn edit_content(
         &self,
         content_id: ContentId,
         mutation: ContentMutation,
@@ -170,14 +169,14 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub async fn read_like(&self, content_id: ContentId) -> Result<HashSet<UserId>> {
+    pub async fn get_content_like(&self, content_id: ContentId) -> Result<HashSet<UserId>> {
         self.content_repository
             .get_liked(content_id)
             .await
             .map_err(content_err_fmt)
     }
 
-    pub async fn like(
+    pub async fn content_like_op(
         &self,
         content_id: ContentId,
         user_id: UserId,
@@ -207,14 +206,19 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub async fn read_pin(&self, content_id: ContentId) -> Result<HashSet<UserId>> {
+    pub async fn get_content_pin(&self, content_id: ContentId) -> Result<HashSet<UserId>> {
         self.content_repository
             .get_pinned(content_id)
             .await
             .map_err(content_err_fmt)
     }
 
-    pub async fn pin(&self, content_id: ContentId, user_id: UserId, undo: bool) -> Result<Content> {
+    pub async fn content_pin_op(
+        &self,
+        content_id: ContentId,
+        user_id: UserId,
+        undo: bool,
+    ) -> Result<Content> {
         let can_insert = match undo {
             false =>
                 self.content_repository
@@ -239,7 +243,7 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
-    pub async fn delete_content(&self, content_id: ContentId) -> Result<Content> {
+    pub async fn withdraw_content(&self, content_id: ContentId) -> Result<Content> {
         self.content_repository
             .delete(content_id)
             .await
