@@ -11,6 +11,12 @@ use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
 use serenity::model::prelude::User;
 
+use crate::conductors::helper::{
+    AppV2_1, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp,
+    ContentMod, ContentPinCmd, ContentPinOp, ContentPostCmd, ContentWithdrawCmd, RootMod,
+    UserBookmarkCmd, UserBookmarkOp, UserEditCmd, UserGetCmd, UserGetsCmd, UserMod,
+    UserRegisterCmd, UserUnregisterCmd,
+};
 use crate::entities::{Author, ContentId, PartialAuthor, Posted, UserId};
 use crate::handlers::Handler;
 use crate::repositories::{
@@ -100,6 +106,120 @@ pub struct Response {
 }
 
 impl Conductor {
+    pub async fn conduct_v2(
+        &self,
+        cmd: AppV2_1,
+        http: impl CacheHttp + Clone,
+        msg: &Message,
+    ) -> Vec<Response> {
+        let user_nick = msg.author_nick(&http).await;
+
+        let Message {
+            guild_id: guild_id_raw,
+            author:
+                User {
+                    id: user_id_raw,
+                    name: user_name,
+                    ..
+                },
+            timestamp,
+            ..
+        } = msg;
+
+        let user_id = UserId(user_id_raw.0);
+        let guild_id = guild_id_raw.as_ref().map(|r| r.0);
+
+        let from_user_shows = format!(
+            "from: {} ({})",
+            user_name,
+            user_nick.as_ref().unwrap_or(&"".to_string())
+        );
+
+        use command_colors::*;
+
+        let res: Result<Vec<Response>> = try {
+            let AppV2_1 { cmd } = self
+                .authorize_cmd_v2(cmd, user_id)
+                .await
+                .map_err(|e| anyhow!(e))?;
+
+            match cmd {
+                RootMod::User { cmd } => match cmd {
+                    UserMod::Register(UserRegisterCmd) => unimplemented!(),
+                    UserMod::Get(UserGetCmd { user_id }) => unimplemented!(),
+                    UserMod::Gets(UserGetsCmd { page, query }) => unimplemented!(),
+                    UserMod::Edit(UserEditCmd { user_id, mutation }) => unimplemented!(),
+                    UserMod::Bookmark(UserBookmarkCmd { op }) => match op {
+                        UserBookmarkOp::Do { content_id } => unimplemented!(),
+                        UserBookmarkOp::Undo { content_id } => unimplemented!(),
+                        UserBookmarkOp::Show { page } => unimplemented!(),
+                    },
+                    UserMod::Unregister(UserUnregisterCmd { user_id }) => unimplemented!(),
+                },
+                RootMod::Content { cmd } => match cmd {
+                    ContentMod::Post(ContentPostCmd {
+                        virt,
+                        user_id,
+                        content,
+                    }) => unimplemented!(),
+                    ContentMod::Get(ContentGetCmd { content_id }) => unimplemented!(),
+                    ContentMod::Gets(ContentGetsCmd { page, query }) => unimplemented!(),
+                    ContentMod::Edit(ContentEditCmd {
+                        content_id,
+                        mutation,
+                    }) => unimplemented!(),
+                    ContentMod::Like(ContentLikeCmd { op }) => match op {
+                        ContentLikeOp::Do { content_id } => unimplemented!(),
+                        ContentLikeOp::Undo { content_id } => unimplemented!(),
+                        ContentLikeOp::Show { page, content_id } => unimplemented!(),
+                    },
+                    ContentMod::Pin(ContentPinCmd { op }) => match op {
+                        ContentPinOp::Do { content_id } => unimplemented!(),
+                        ContentPinOp::Undo { content_id } => unimplemented!(),
+                        ContentPinOp::Show { page, content_id } => unimplemented!(),
+                    },
+                    ContentMod::Withdraw(ContentWithdrawCmd { content_id }) => unimplemented!(),
+                },
+            }
+        };
+
+        vec![]
+    }
+
+    pub async fn authorize_cmd_v2(&self, cmd: AppV2_1, user_id: UserId) -> Result<AppV2_1, String> {
+        let user_res = self
+            .handler
+            .read_user(user_id)
+            .await
+            .map_err(|e| format!("auth error: {}", e));
+
+        let res = match &cmd.cmd {
+            RootMod::User { cmd } => match cmd {
+                UserMod::Edit(..) | UserMod::Unregister(..) => user_res?.admin,
+                _ => true,
+            },
+            RootMod::Content { cmd } => match cmd {
+                ContentMod::Edit(ContentEditCmd { content_id, .. })
+                | ContentMod::Withdraw(ContentWithdrawCmd { content_id, .. }) => {
+                    let user = user_res?;
+                    let content = self
+                        .handler
+                        .read_content(content_id.let_(|r| *r).let_(ContentId))
+                        .await
+                        .map_err(|e| format!("auth error: {}", e))?;
+
+                    content.posted.id == user_id || user.admin || user.sub_admin
+                },
+                _ => true,
+            },
+        };
+
+        match res {
+            true => Ok(cmd),
+            false => Err("not permitted operation".to_string()),
+        }
+    }
+
     pub async fn conduct(
         &self,
         cmd: Command,
@@ -471,7 +591,7 @@ impl EventHandler for Conductor {
             return;
         }
 
-        let parse_res = match helper::parse_msg(msg.content.as_str()).await {
+        let parse_res = match helper::parse_msg_v2(msg.content.as_str()) {
             Some(o) => o,
             None => return,
         };
@@ -502,7 +622,7 @@ impl EventHandler for Conductor {
             },
         };
 
-        let mut resps = self.conduct(cmd, ctx.clone(), &msg).await;
+        let mut resps = self.conduct_v2(cmd, ctx.clone(), &msg).await;
 
         let res = msg
             .channel_id
