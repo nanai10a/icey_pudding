@@ -60,6 +60,13 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
+    pub async fn read_bookmark(&self, user_id: UserId) -> Result<HashSet<ContentId>> {
+        self.user_repository
+            .get_bookmark(user_id)
+            .await
+            .map_err(content_err_fmt)
+    }
+
     pub async fn bookmark(
         &self,
         user_id: UserId,
@@ -163,6 +170,13 @@ impl Handler {
             .map_err(content_err_fmt)
     }
 
+    pub async fn read_like(&self, content_id: ContentId) -> Result<HashSet<UserId>> {
+        self.content_repository
+            .get_liked(content_id)
+            .await
+            .map_err(content_err_fmt)
+    }
+
     pub async fn like(
         &self,
         content_id: ContentId,
@@ -189,6 +203,13 @@ impl Handler {
 
         self.content_repository
             .find(content_id)
+            .await
+            .map_err(content_err_fmt)
+    }
+
+    pub async fn read_pin(&self, content_id: ContentId) -> Result<HashSet<UserId>> {
+        self.content_repository
+            .get_pinned(content_id)
             .await
             .map_err(content_err_fmt)
     }
