@@ -132,9 +132,10 @@ impl UserRepository for InMemoryRepository<User> {
     }
 
     async fn is_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
-        let item = self.find(id).await?;
+        let guard = self.0.lock().await;
+        let User { bookmark, .. } = find_ref(&guard, |u| u.id == id)?;
 
-        match item.bookmark.iter().filter(|v| **v == content_id).count() {
+        match bookmark.iter().filter(|v| **v == content_id).count() {
             0 => Ok(false),
             1 => Ok(true),
             i => Err(RepositoryError::NoUnique { matched: i as u32 }),
