@@ -24,7 +24,7 @@ use crate::utils::{self, LetChain};
 #[clap(author, version)]
 pub struct AppV2_1 {
     #[clap(subcommand)]
-    cmd: RootMod,
+    pub cmd: RootMod,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
@@ -99,7 +99,7 @@ pub struct UserRegisterCmd;
 pub struct UserGetCmd {
     /// u64,
     #[clap(name = "USER_ID")]
-    user_id: Option<u64>,
+    pub user_id: Option<u64>,
 }
 
 /// get users with query.
@@ -107,7 +107,7 @@ pub struct UserGetCmd {
 pub struct UserGetsCmd {
     /// u32 (1 =< n)
     #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
-    page: u32,
+    pub page: u32,
 
     /// json
     ///
@@ -116,7 +116,7 @@ pub struct UserGetsCmd {
     ///   bookmark_num?: range<u32>,
     /// }
     #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_user_query))]
-    query: UserQuery,
+    pub query: UserQuery,
 }
 
 /// edit user with id and mutation.
@@ -124,7 +124,7 @@ pub struct UserGetsCmd {
 pub struct UserEditCmd {
     /// u64
     #[clap(name = "USER_ID")]
-    user_id: u64,
+    pub user_id: u64,
 
     /// json
     ///
@@ -133,14 +133,14 @@ pub struct UserEditCmd {
     ///   sub_admin?: bool,
     /// }
     #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_user_mutation))]
-    mutation: UserMutation,
+    pub mutation: UserMutation,
 }
 
 /// about executed user's bookmark.
 #[derive(Debug, Clone, ::clap::Clap)]
 pub struct UserBookmarkCmd {
     #[clap(subcommand)]
-    op: UserBookmarkOp,
+    pub op: UserBookmarkOp,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
@@ -175,7 +175,7 @@ pub enum UserBookmarkOp {
 pub struct UserUnregisterCmd {
     /// u64
     #[clap(name = "USER_ID")]
-    user_id: u64,
+    pub user_id: u64,
 }
 
 /// post content with executed user's id.
@@ -184,15 +184,15 @@ pub struct UserUnregisterCmd {
 pub struct ContentPostCmd {
     /// str
     #[clap(short = 'v', long, group = "author")]
-    virt: Option<String>,
+    pub virt: Option<String>,
 
     /// u64
     #[clap(short = 'u', long, group = "author")]
-    user_id: Option<u64>,
+    pub user_id: Option<u64>,
 
     /// str
     #[clap(short = 'c', long)]
-    content: String,
+    pub content: String,
 }
 
 /// get content with id.
@@ -200,7 +200,7 @@ pub struct ContentPostCmd {
 pub struct ContentGetCmd {
     /// uuid
     #[clap(name = "CONTENT_ID")]
-    content_id: Uuid,
+    pub content_id: Uuid,
 }
 
 /// get contents with query.
@@ -208,7 +208,7 @@ pub struct ContentGetCmd {
 pub struct ContentGetsCmd {
     /// u32 (1 =< n)
     #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
-    page: u32,
+    pub page: u32,
 
     /// json
     ///
@@ -245,7 +245,7 @@ pub struct ContentGetsCmd {
     ///   "pinned_num": "10.."
     /// }
     #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_content_query))]
-    query: ContentQuery,
+    pub query: ContentQuery,
 }
 
 /// edit content with id and mutation.
@@ -253,7 +253,7 @@ pub struct ContentGetsCmd {
 pub struct ContentEditCmd {
     /// uuid
     #[clap(name = "CONTENT_ID")]
-    content_id: Uuid,
+    pub content_id: Uuid,
 
     /// json
     ///
@@ -272,13 +272,13 @@ pub struct ContentEditCmd {
     ///   Sed { capture: regex, replace: str }
     /// }
     #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_partial_content_mutation))]
-    mutation: PartialContentMutation,
+    pub mutation: PartialContentMutation,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
 pub struct ContentLikeCmd {
     #[clap(subcommand)]
-    op: ContentLikeOp,
+    pub op: ContentLikeOp,
 }
 
 /// about like with executed user.
@@ -317,7 +317,7 @@ pub enum ContentLikeOp {
 #[derive(Debug, Clone, ::clap::Clap)]
 pub struct ContentPinCmd {
     #[clap(subcommand)]
-    op: ContentPinOp,
+    pub op: ContentPinOp,
 }
 
 #[derive(Debug, Clone, ::clap::Clap)]
@@ -356,7 +356,7 @@ pub enum ContentPinOp {
 pub struct ContentWithdrawCmd {
     /// uuid
     #[clap(name = "CONTENT_ID")]
-    content_id: Uuid,
+    pub content_id: Uuid,
 }
 
 pub fn parse_msg_v2(msg: &str) -> Option<Result<AppV2_1, String>> {
