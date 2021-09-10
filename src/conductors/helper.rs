@@ -165,6 +165,10 @@ pub enum UserBookmarkOp {
         /// u32 (1 =< n)
         #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
         page: u32,
+
+        /// u64
+        #[clap(name = "USER_ID")]
+        user_id: Option<u64>,
     },
 }
 
