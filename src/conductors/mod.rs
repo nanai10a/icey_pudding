@@ -21,7 +21,6 @@ use crate::handlers::Handler;
 use crate::repositories::{ContentContentMutation, ContentMutation};
 use crate::utils::LetChain;
 
-mod clapcmd;
 mod command_colors;
 mod helper;
 
