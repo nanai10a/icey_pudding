@@ -42,6 +42,51 @@ pub struct Response {
     fields: Vec<(String, String)>,
 }
 
+macro_rules! inner_op_handler {
+    ($n:literal, $c:path, $s:expr, $i:expr, $p:expr, $d:expr) => {{
+        if $s.is_empty() {
+            Err(anyhow!("{}: {}", $n, $s.len()))?
+        }
+
+        const ITEMS: usize = $i; // show num [users]/[page]
+
+        let lim = {
+            let full = ..$s.len();
+            let lim = (ITEMS * ($p as usize - 1))..(ITEMS + ITEMS * ($p as usize - 1));
+
+            if !full.contains(&lim.start) {
+                Err(anyhow!("out of range (0..{} !< {:?})", $s.len(), lim))?
+            }
+
+            if !full.contains(&lim.end) {
+                (lim.start..).to_turple()
+            } else {
+                lim.to_turple()
+            }
+        };
+
+        let mut resp_fields = vec![];
+
+        let all_pages = (($s.len() as f32) / (ITEMS as f32)).ceil();
+        resp_fields.push(("page".to_string(), format!("{}/{}", $p, all_pages)));
+
+        $s.drain()
+            .enumerate()
+            .collect::<Vec<_>>()
+            .drain(lim)
+            .enumerate()
+            .for_each(|(s, (i, c))| resp_fields.push((format!("{}[{}]", i, s), c.to_string())));
+
+        Response {
+            title: format!("showing {}", $n),
+            description: $d,
+            rgb: $c,
+            fields: resp_fields,
+        }
+        .let_(|r| vec![r])
+    }};
+}
+
 impl Conductor {
     pub async fn conduct_v2(
         &self,
@@ -177,7 +222,21 @@ impl Conductor {
                                 .let_(|r| vec![r])
                         },
 
-                        UserBookmarkOp::Show { page } => unimplemented!(),
+                        UserBookmarkOp::Show { user_id, page } => {
+                            let mut bookmark = self
+                                .handler
+                                .read_bookmark(user_id.map(UserId).unwrap_or(executed_user_id))
+                                .await?;
+
+                            inner_op_handler!(
+                                "bookmark",
+                                BOOKMARK,
+                                bookmark,
+                                20,
+                                page,
+                                from_user_shows
+                            )
+                        },
                     },
 
                     UserMod::Unregister(UserUnregisterCmd { user_id }) => {
@@ -355,7 +414,12 @@ impl Conductor {
                                 .let_(|r| vec![r])
                         },
 
-                        ContentLikeOp::Show { page, content_id } => unimplemented!(),
+                        ContentLikeOp::Show { page, content_id } => {
+                            let mut like =
+                                self.handler.read_like(content_id.let_(ContentId)).await?;
+
+                            inner_op_handler!("like", LIKE, like, 20, page, from_user_shows)
+                        },
                     },
 
                     ContentMod::Pin(ContentPinCmd { op }) => match op {
@@ -379,7 +443,11 @@ impl Conductor {
                                 .let_(|r| vec![r])
                         },
 
-                        ContentPinOp::Show { page, content_id } => unimplemented!(),
+                        ContentPinOp::Show { page, content_id } => {
+                            let mut pin = self.handler.read_pin(content_id.let_(ContentId)).await?;
+
+                            inner_op_handler!("pin", PIN, pin, 20, page, from_user_shows)
+                        },
                     },
 
                     ContentMod::Withdraw(ContentWithdrawCmd { content_id }) => {
