@@ -359,6 +359,32 @@ pub struct ContentWithdrawCmd {
     content_id: Uuid,
 }
 
+pub fn parse_msg_v2(msg: &str) -> Option<Result<AppV2_1, String>> {
+    let split_res = shell_words::split(msg)
+        .map(|mut v| {
+            v.drain(..)
+                .map(|s| s.into())
+                .collect::<Vec<::std::ffi::OsString>>()
+        })
+        .map_err(|e| e.to_string());
+
+    let splitted = match split_res {
+        Ok(o) => o,
+        Err(e) => return Some(Err(e)),
+    };
+
+    if let Some("*ip") = splitted.get(0).map(|s| s.to_str().unwrap()) {
+    } else {
+        return None;
+    }
+
+    use clap::Clap;
+
+    AppV2_1::try_parse_from(splitted)
+        .map_err(|e| e.to_string())
+        .let_(Some)
+}
+
 pub async fn parse_msg(msg: &str) -> Option<Result<Command, String>> {
     let res: Result<_> = try {
         let splitted = shell_words::split(msg)?;
