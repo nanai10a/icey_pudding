@@ -13,6 +13,7 @@ pub struct Handler {
     pub content_repository: Box<dyn ContentRepository + Sync + Send>,
 }
 
+// FIXME: rename to new_op_names
 impl Handler {
     pub async fn create_user(&self, user_id: UserId) -> Result<User> {
         let new_user = User {
