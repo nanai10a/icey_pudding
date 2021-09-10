@@ -9,7 +9,7 @@ use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use super::{clapcmd, Response};
+use super::Response;
 use crate::conductors::PartialContentMutation;
 use crate::entities::{Content, ContentId, PartialAuthor, User, UserId};
 use crate::repositories::{
@@ -383,6 +383,8 @@ pub fn parse_msg_v2(msg: &str) -> Option<Result<AppV2_1, String>> {
         .let_(Some)
 }
 
+// --- public helpers ---
+
 pub fn resp_from_user(
     title: impl ToString,
     description: impl ToString,
@@ -483,6 +485,8 @@ pub fn append_message_reference(
 
     raw.insert("message_reference", mr);
 }
+
+// --- parsing helpers ---
 
 fn parse_nonzero_num(
     s: &str,
@@ -691,17 +695,4 @@ fn parse_partial_content_mutation(
     // --- finalize ---
 
     Ok(PartialContentMutation { author, content })
-}
-
-lazy_static::lazy_static! {
-    static ref CLAP_HELP: String = {
-        let mut buf = ::std::io::Cursor::new(vec![]);
-        clapcmd::create_clap_app()
-            .write_long_help(&mut buf)
-            .unwrap();
-
-        String::from_utf8(buf.into_inner()).unwrap()
-    };
-
-    static ref CLAP_VERSION: String = clapcmd::create_clap_app().render_long_version();
 }
