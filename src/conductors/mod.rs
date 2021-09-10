@@ -11,7 +11,7 @@ use serenity::model::channel::Message;
 use serenity::model::prelude::User;
 
 use crate::conductors::helper::{
-    AppV2_1, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp,
+    App, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp,
     ContentMod, ContentPinCmd, ContentPinOp, ContentPostCmd, ContentWithdrawCmd, RootMod,
     UserBookmarkCmd, UserBookmarkOp, UserEditCmd, UserGetCmd, UserGetsCmd, UserMod,
     UserRegisterCmd, UserUnregisterCmd,
@@ -88,9 +88,9 @@ macro_rules! inner_op_handler {
 }
 
 impl Conductor {
-    pub async fn conduct_v2(
+    pub async fn conduct(
         &self,
-        cmd: AppV2_1,
+        cmd: App,
         http: impl CacheHttp + Clone,
         msg: &Message,
     ) -> Vec<Response> {
@@ -120,8 +120,8 @@ impl Conductor {
         use command_colors::*;
 
         let res: Result<Vec<Response>> = try {
-            let AppV2_1 { cmd } = self
-                .authorize_cmd_v2(cmd, executed_user_id)
+            let App { cmd } = self
+                .authorize_cmd(cmd, executed_user_id)
                 .await
                 .map_err(|e| anyhow!(e))?;
 
@@ -479,7 +479,7 @@ impl Conductor {
         })
     }
 
-    pub async fn authorize_cmd_v2(&self, cmd: AppV2_1, user_id: UserId) -> Result<AppV2_1, String> {
+    pub async fn authorize_cmd(&self, cmd: App, user_id: UserId) -> Result<App, String> {
         let user_res = self
             .handler
             .read_user(user_id)
@@ -558,7 +558,7 @@ impl EventHandler for Conductor {
             return;
         }
 
-        let parse_res = match helper::parse_msg_v2(msg.content.as_str()) {
+        let parse_res = match helper::parse_msg(msg.content.as_str()) {
             Some(o) => o,
             None => return,
         };
@@ -589,7 +589,7 @@ impl EventHandler for Conductor {
             },
         };
 
-        let mut resps = self.conduct_v2(cmd, ctx.clone(), &msg).await;
+        let mut resps = self.conduct(cmd, ctx.clone(), &msg).await;
 
         let res = msg
             .channel_id
