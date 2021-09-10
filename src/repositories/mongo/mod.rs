@@ -6,6 +6,7 @@ use async_trait::async_trait;
 use mongodb::bson::{doc, Document};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
 use mongodb::{bson, Client, ClientSession, Collection, Database};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serenity::futures::TryStreamExt;
 
@@ -228,6 +229,23 @@ impl UserRepository for MongoUserRepository {
 
         let res = exec_transaction!(transaction, self, id, mutation_doc.clone()).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
+    }
+
+    async fn get_bookmark(&self, id: UserId) -> Result<HashSet<ContentId>> {
+        #[derive(::serde::Deserialize)]
+        struct Model {
+            bookmark: HashSet<String>,
+        }
+
+        let res = get_set(&self.coll.clone_with_type::<Model>(), id.to_string())
+            .await?
+            .bookmark
+            .drain()
+            .map(|s| s.parse::<::uuid::Uuid>().unwrap())
+            .map(ContentId)
+            .collect();
+
+        Ok(res)
     }
 
     async fn is_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
@@ -539,6 +557,23 @@ impl ContentRepository for MongoContentRepository {
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
+    async fn get_liked(&self, id: ContentId) -> Result<HashSet<UserId>> {
+        #[derive(::serde::Deserialize)]
+        struct Model {
+            liked: HashSet<String>,
+        }
+
+        let res = get_set(&self.coll.clone_with_type::<Model>(), id.to_string())
+            .await?
+            .liked
+            .drain()
+            .map(|s| s.parse::<u64>().unwrap())
+            .map(UserId)
+            .collect();
+
+        Ok(res)
+    }
+
     async fn is_liked(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         is_contains("liked", &self.coll, id.to_string(), user_id.to_string()).await
     }
@@ -565,6 +600,23 @@ impl ContentRepository for MongoContentRepository {
             ModifyOpTy::Pull,
         )
         .await
+    }
+
+    async fn get_pinned(&self, id: ContentId) -> Result<HashSet<UserId>> {
+        #[derive(::serde::Deserialize)]
+        struct Model {
+            pinned: HashSet<String>,
+        }
+
+        let res = get_set(&self.coll.clone_with_type::<Model>(), id.to_string())
+            .await?
+            .pinned
+            .drain()
+            .map(|s| s.parse::<u64>().unwrap())
+            .map(UserId)
+            .collect();
+
+        Ok(res)
     }
 
     async fn is_pinned(&self, id: ContentId, user_id: UserId) -> Result<bool> {
@@ -697,6 +749,17 @@ async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<
 
         break r;
     }
+}
+
+async fn get_set<T>(coll: &Collection<T>, id: impl Into<::mongodb::bson::Bson>) -> Result<T>
+where T: Sync + Send + Unpin + DeserializeOwned {
+    let res = coll
+        .find_one(doc! { "id": id.into() }, None)
+        .await
+        .let_(convert_repo_err)?
+        .let_(convert_404_or)?;
+
+    Ok(res)
 }
 
 async fn is_contains<T>(
