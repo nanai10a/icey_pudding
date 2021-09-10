@@ -125,6 +125,12 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(item.clone())
     }
 
+    async fn get_bookmark(&self, id: UserId) -> Result<std::collections::HashSet<ContentId>> {
+        let User { bookmark, .. } = self.find(id).await?;
+
+        Ok(bookmark)
+    }
+
     async fn is_bookmark(&self, id: UserId, content_id: ContentId) -> Result<bool> {
         let item = self.find(id).await?;
 
@@ -331,6 +337,12 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(item.clone())
     }
 
+    async fn get_liked(&self, id: ContentId) -> Result<std::collections::HashSet<UserId>> {
+        let Content { liked, .. } = self.find(id).await?;
+
+        Ok(liked)
+    }
+
     async fn is_liked(&self, id: ContentId, user_id: UserId) -> Result<bool> {
         let guard = self.0.lock().await;
         let item = find_ref(&guard, |c| c.id == id)?;
@@ -354,6 +366,12 @@ impl ContentRepository for InMemoryRepository<Content> {
         let item = find_mut(&mut guard, |c| c.id == id)?;
 
         Ok(item.liked.remove(&user_id))
+    }
+
+    async fn get_pinned(&self, id: ContentId) -> Result<std::collections::HashSet<UserId>> {
+        let Content { pinned, .. } = self.find(id).await?;
+
+        Ok(pinned)
     }
 
     async fn is_pinned(&self, id: ContentId, user_id: UserId) -> Result<bool> {
