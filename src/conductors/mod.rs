@@ -124,7 +124,7 @@ impl Conductor {
             match cmd {
                 RootMod::User { cmd } => match cmd {
                     UserMod::Register(UserRegisterCmd) => {
-                        let user = self.handler.create_user(executed_user_id).await?;
+                        let user = self.handler.register_user(executed_user_id).await?;
 
                         helper::resp_from_user(
                             "registered user",
@@ -138,7 +138,7 @@ impl Conductor {
                     UserMod::Get(UserGetCmd { user_id }) => {
                         let user = self
                             .handler
-                            .read_user(user_id.map(UserId).unwrap_or(executed_user_id))
+                            .get_user(user_id.map(UserId).unwrap_or(executed_user_id))
                             .await?;
 
                         helper::resp_from_user("showing user", from_user_shows, USER_READ, user)
@@ -146,7 +146,7 @@ impl Conductor {
                     },
 
                     UserMod::Gets(UserGetsCmd { page, query }) => {
-                        let mut users = self.handler.read_users(query).await?;
+                        let mut users = self.handler.get_users(query).await?;
 
                         if users.is_empty() {
                             Err(anyhow!("matched: {}", users.len()))?
@@ -190,7 +190,7 @@ impl Conductor {
                     UserMod::Edit(UserEditCmd { user_id, mutation }) => {
                         let user = self
                             .handler
-                            .update_user(user_id.let_(UserId), mutation)
+                            .edit_user(user_id.let_(UserId), mutation)
                             .await?;
 
                         helper::resp_from_user("updated user", from_user_shows, USER_UPDATE, user)
@@ -201,7 +201,11 @@ impl Conductor {
                         UserBookmarkOp::Do { content_id } => {
                             let (user, _) = self
                                 .handler
-                                .bookmark(executed_user_id, content_id.let_(ContentId), false)
+                                .user_bookmark_op(
+                                    executed_user_id,
+                                    content_id.let_(ContentId),
+                                    false,
+                                )
                                 .await?;
 
                             helper::resp_from_user("bookmarked", from_user_shows, BOOKMARK, user)
@@ -211,7 +215,11 @@ impl Conductor {
                         UserBookmarkOp::Undo { content_id } => {
                             let (user, _) = self
                                 .handler
-                                .bookmark(executed_user_id, content_id.let_(ContentId), true)
+                                .user_bookmark_op(
+                                    executed_user_id,
+                                    content_id.let_(ContentId),
+                                    true,
+                                )
                                 .await?;
 
                             helper::resp_from_user("unbookmarked", from_user_shows, BOOKMARK, user)
@@ -221,7 +229,7 @@ impl Conductor {
                         UserBookmarkOp::Show { user_id, page } => {
                             let mut bookmark = self
                                 .handler
-                                .read_bookmark(user_id.map(UserId).unwrap_or(executed_user_id))
+                                .get_user_bookmark(user_id.map(UserId).unwrap_or(executed_user_id))
                                 .await?;
 
                             inner_op_handler!(
@@ -236,7 +244,7 @@ impl Conductor {
                     },
 
                     UserMod::Unregister(UserUnregisterCmd { user_id }) => {
-                        let user = self.handler.delete_user(user_id.let_(UserId)).await?;
+                        let user = self.handler.unregister_user(user_id.let_(UserId)).await?;
 
                         helper::resp_from_user("deleted user.", from_user_shows, USER_DELETE, user)
                             .let_(|r| vec![r])
@@ -270,7 +278,7 @@ impl Conductor {
 
                         let content = self
                             .handler
-                            .post(
+                            .content_post(
                                 content,
                                 Posted {
                                     id: executed_user_id,
@@ -287,10 +295,7 @@ impl Conductor {
                     },
 
                     ContentMod::Get(ContentGetCmd { content_id }) => {
-                        let content = self
-                            .handler
-                            .read_content(content_id.let_(ContentId))
-                            .await?;
+                        let content = self.handler.get_content(content_id.let_(ContentId)).await?;
 
                         helper::resp_from_content(
                             "showing content",
@@ -302,7 +307,7 @@ impl Conductor {
                     },
 
                     ContentMod::Gets(ContentGetsCmd { page, query }) => {
-                        let mut contents = self.handler.read_contents(query).await?;
+                        let mut contents = self.handler.get_contents(query).await?;
 
                         if contents.is_empty() {
                             Err(anyhow!("matched: {}", contents.len()))?
@@ -377,7 +382,7 @@ impl Conductor {
                         };
                         let content = self
                             .handler
-                            .update_content(content_id.let_(ContentId), mutation)
+                            .edit_content(content_id.let_(ContentId), mutation)
                             .await?;
 
                         helper::resp_from_content(
@@ -393,7 +398,11 @@ impl Conductor {
                         ContentLikeOp::Do { content_id } => {
                             let content = self
                                 .handler
-                                .like(content_id.let_(ContentId), executed_user_id, false)
+                                .content_like_op(
+                                    content_id.let_(ContentId),
+                                    executed_user_id,
+                                    false,
+                                )
                                 .await?;
 
                             helper::resp_from_content("liked", from_user_shows, LIKE, content)
@@ -403,7 +412,7 @@ impl Conductor {
                         ContentLikeOp::Undo { content_id } => {
                             let content = self
                                 .handler
-                                .like(content_id.let_(ContentId), executed_user_id, true)
+                                .content_like_op(content_id.let_(ContentId), executed_user_id, true)
                                 .await?;
 
                             helper::resp_from_content("unliked", from_user_shows, LIKE, content)
@@ -411,8 +420,10 @@ impl Conductor {
                         },
 
                         ContentLikeOp::Show { page, content_id } => {
-                            let mut like =
-                                self.handler.read_like(content_id.let_(ContentId)).await?;
+                            let mut like = self
+                                .handler
+                                .get_content_like(content_id.let_(ContentId))
+                                .await?;
 
                             inner_op_handler!("like", LIKE, like, 20, page, from_user_shows)
                         },
@@ -422,7 +433,7 @@ impl Conductor {
                         ContentPinOp::Do { content_id } => {
                             let content = self
                                 .handler
-                                .pin(content_id.let_(ContentId), executed_user_id, false)
+                                .content_pin_op(content_id.let_(ContentId), executed_user_id, false)
                                 .await?;
 
                             helper::resp_from_content("pinned", from_user_shows, PIN, content)
@@ -432,7 +443,7 @@ impl Conductor {
                         ContentPinOp::Undo { content_id } => {
                             let content = self
                                 .handler
-                                .pin(content_id.let_(ContentId), executed_user_id, true)
+                                .content_pin_op(content_id.let_(ContentId), executed_user_id, true)
                                 .await?;
 
                             helper::resp_from_content("unpinned", from_user_shows, PIN, content)
@@ -440,7 +451,10 @@ impl Conductor {
                         },
 
                         ContentPinOp::Show { page, content_id } => {
-                            let mut pin = self.handler.read_pin(content_id.let_(ContentId)).await?;
+                            let mut pin = self
+                                .handler
+                                .get_content_pin(content_id.let_(ContentId))
+                                .await?;
 
                             inner_op_handler!("pin", PIN, pin, 20, page, from_user_shows)
                         },
@@ -449,7 +463,7 @@ impl Conductor {
                     ContentMod::Withdraw(ContentWithdrawCmd { content_id }) => {
                         let content = self
                             .handler
-                            .delete_content(content_id.let_(ContentId))
+                            .withdraw_content(content_id.let_(ContentId))
                             .await?;
 
                         helper::resp_from_content(
@@ -478,7 +492,7 @@ impl Conductor {
     pub async fn authorize_cmd(&self, cmd: App, user_id: UserId) -> Result<App, String> {
         let user_res = self
             .handler
-            .read_user(user_id)
+            .get_user(user_id)
             .await
             .map_err(|e| format!("auth error: {}", e));
 
@@ -493,7 +507,7 @@ impl Conductor {
                     let user = user_res?;
                     let content = self
                         .handler
-                        .read_content(content_id.let_(|r| *r).let_(ContentId))
+                        .get_content(content_id.let_(|r| *r).let_(ContentId))
                         .await
                         .map_err(|e| format!("auth error: {}", e))?;
 
