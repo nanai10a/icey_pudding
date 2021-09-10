@@ -1,4 +1,3 @@
-use core::num::NonZeroU32;
 use core::ops::{
     Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
@@ -19,9 +18,7 @@ use crate::conductors::helper::{
 };
 use crate::entities::{Author, ContentId, PartialAuthor, Posted, UserId};
 use crate::handlers::Handler;
-use crate::repositories::{
-    ContentContentMutation, ContentMutation, ContentQuery, UserMutation, UserQuery,
-};
+use crate::repositories::{ContentContentMutation, ContentMutation};
 use crate::utils::LetChain;
 
 mod clapcmd;
@@ -30,64 +27,6 @@ mod helper;
 
 pub struct Conductor {
     pub handler: Handler,
-}
-
-/// command data.
-#[derive(Debug, Clone)]
-pub enum Command {
-    /// commands about user.
-    User(UserCommand),
-    /// commands about content.
-    Content(ContentCommand),
-    /// post content with executed user's id.
-    Post {
-        author: PartialAuthor,
-        content: String,
-    },
-    /// (un)like content with executed user's id.
-    Like { content_id: ContentId, undo: bool },
-    /// (un)pin content with executed user's id.
-    Pin { content_id: ContentId, undo: bool },
-    /// (un)bookmark content to executed user's id.
-    Bookmark { content_id: ContentId, undo: bool },
-}
-
-// TODO: can show user's bookmark and posted
-#[derive(Debug, Clone)]
-pub enum UserCommand {
-    /// create user with executed user's id.
-    Create,
-    /// read user with id.
-    /// if not given id, fallback to executed user's id.
-    Read { id: Option<UserId> },
-    /// read users with query.
-    /// page **must** satisfies `1..`.
-    Reads { page: NonZeroU32, query: UserQuery },
-    /// update user with id and mutation.
-    /// it's **must** given id.
-    Update { id: UserId, mutation: UserMutation },
-    /// delete user with executed user's id. (only accepted from user and admin)
-    Delete { id: UserId },
-}
-
-// TODO: can show content's liked and pinned
-#[derive(Debug, Clone)]
-pub enum ContentCommand {
-    /// read content with id.
-    Read { id: ContentId },
-    /// read contents with query.
-    /// page **must** satisfies `1..`.
-    Reads {
-        page: NonZeroU32,
-        query: ContentQuery,
-    },
-    /// update content with id and mutation.
-    Update {
-        id: ContentId,
-        mutation: PartialContentMutation,
-    },
-    /// delete content with id.
-    Delete { id: ContentId },
 }
 
 #[derive(Debug, Clone, Default)]
@@ -505,19 +444,6 @@ impl Conductor {
             true => Ok(cmd),
             false => Err("not permitted operation".to_string()),
         }
-    }
-
-    pub async fn conduct(
-        &self,
-        _: Command,
-        _: impl CacheHttp + Clone,
-        _: &Message,
-    ) -> Vec<Response> {
-        unimplemented!()
-    }
-
-    async fn authorize_cmd(&self, _: Command, _: UserId) -> Result<Command, String> {
-        unimplemented!()
     }
 }
 
