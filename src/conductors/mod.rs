@@ -1,7 +1,3 @@
-use core::ops::{
-    Bound, Range, RangeBounds, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
-};
-
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use serenity::builder::CreateMessage;
@@ -514,40 +510,57 @@ impl Conductor {
     }
 }
 
-trait ConvertRange<T>: RangeBounds<T> {
-    fn to_turple(self) -> (Bound<T>, Bound<T>);
+trait ConvertRange<T>: ::core::ops::RangeBounds<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>);
 }
-impl<T> ConvertRange<T> for Range<T> {
-    fn to_turple(self) -> (Bound<T>, Bound<T>) {
-        let Range { start, end } = self;
-        (Bound::Included(start), Bound::Excluded(end))
+impl<T> ConvertRange<T> for ::core::ops::Range<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let ::core::ops::Range { start, end } = self;
+        (
+            ::core::ops::Bound::Included(start),
+            ::core::ops::Bound::Excluded(end),
+        )
     }
 }
-impl<T> ConvertRange<T> for RangeFrom<T> {
-    fn to_turple(self) -> (Bound<T>, Bound<T>) {
-        let RangeFrom { start } = self;
-        (Bound::Included(start), Bound::Unbounded)
+impl<T> ConvertRange<T> for ::core::ops::RangeFrom<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let ::core::ops::RangeFrom { start } = self;
+        (
+            ::core::ops::Bound::Included(start),
+            ::core::ops::Bound::Unbounded,
+        )
     }
 }
-impl<T> ConvertRange<T> for RangeFull {
-    fn to_turple(self) -> (Bound<T>, Bound<T>) { (Bound::Unbounded, Bound::Unbounded) }
+impl<T> ConvertRange<T> for ::core::ops::RangeFull {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        (::core::ops::Bound::Unbounded, ::core::ops::Bound::Unbounded)
+    }
 }
-impl<T> ConvertRange<T> for RangeInclusive<T> {
-    fn to_turple(self) -> (Bound<T>, Bound<T>) {
+impl<T> ConvertRange<T> for ::core::ops::RangeInclusive<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
         let (start, end) = self.into_inner();
-        (Bound::Included(start), Bound::Included(end))
+        (
+            ::core::ops::Bound::Included(start),
+            ::core::ops::Bound::Included(end),
+        )
     }
 }
-impl<T> ConvertRange<T> for RangeTo<T> {
-    fn to_turple(self) -> (Bound<T>, Bound<T>) {
-        let RangeTo { end } = self;
-        (Bound::Unbounded, Bound::Excluded(end))
+impl<T> ConvertRange<T> for ::core::ops::RangeTo<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let ::core::ops::RangeTo { end } = self;
+        (
+            ::core::ops::Bound::Unbounded,
+            ::core::ops::Bound::Excluded(end),
+        )
     }
 }
-impl<T> ConvertRange<T> for RangeToInclusive<T> {
-    fn to_turple(self) -> (Bound<T>, Bound<T>) {
-        let RangeToInclusive { end } = self;
-        (Bound::Unbounded, Bound::Included(end))
+impl<T> ConvertRange<T> for ::core::ops::RangeToInclusive<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let ::core::ops::RangeToInclusive { end } = self;
+        (
+            ::core::ops::Bound::Unbounded,
+            ::core::ops::Bound::Included(end),
+        )
     }
 }
 
