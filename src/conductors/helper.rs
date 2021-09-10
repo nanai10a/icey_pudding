@@ -111,7 +111,10 @@ struct UserGetsCmd {
 
     /// json
     ///
-    /// schema: {}
+    /// schema: {
+    ///   bookmark?: [uuid],
+    ///   bookmark_num?: range<u32>,
+    /// }
     #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_user_query))]
     query: UserQuery,
 }
@@ -125,7 +128,10 @@ struct UserEditCmd {
 
     /// json
     ///
-    /// schema: {}
+    /// schema: {
+    ///   admin?: bool,
+    ///   sub_admin?: bool,
+    /// }
     #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_user_mutation))]
     mutation: UserMutation,
 }
@@ -206,7 +212,38 @@ struct ContentGetsCmd {
 
     /// json
     ///
-    /// schema: {}
+    /// schema: {
+    ///   author?: Author,
+    ///   posted?: Posted,
+    ///   content?: regex,
+    ///   liked?: [u64],
+    ///   liked_num?: range<u32>,
+    ///   pinned: [u64],
+    ///   pinned_num?: range<u32>,
+    /// }
+    ///
+    /// enum Author {
+    ///   UserId(u64),
+    ///   UserName(regex),
+    ///   UserNick(regex),
+    ///   Any(regex),
+    /// }
+    ///
+    /// enum Posted {
+    ///   UserId(u64),
+    ///   UserName(regex),
+    ///   UserNick(regex),
+    ///   Any(regex)
+    /// }
+    ///
+    /// # example
+    ///
+    /// {
+    ///   "author": {
+    ///     "Any": "username"
+    ///   },
+    ///   "pinned_num": "10.."
+    /// }
     #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_content_query))]
     query: ContentQuery,
 }
@@ -220,7 +257,20 @@ struct ContentEditCmd {
 
     /// json
     ///
-    /// schema: {}
+    /// schema: {
+    ///   "author": Author,
+    ///   "content": Content,
+    /// }
+    ///
+    /// enum Author {
+    ///   User(u64),
+    ///   Virtual(regex),
+    /// }
+    ///
+    /// enum Content {
+    ///   Complete(str),
+    ///   Sed { capture: regex, replace: str }
+    /// }
     #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_partial_content_mutation))]
     mutation: PartialContentMutation,
 }
