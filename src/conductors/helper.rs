@@ -20,7 +20,7 @@ use crate::utils::{self, LetChain};
 /// this is a ICEy_PUDDING.
 #[derive(Debug, Clone, ::clap::Clap)]
 #[clap(author, version)]
-pub struct AppV2_1 {
+pub struct App {
     #[clap(subcommand)]
     pub cmd: RootMod,
 }
@@ -361,7 +361,7 @@ pub struct ContentWithdrawCmd {
     pub content_id: Uuid,
 }
 
-pub fn parse_msg_v2(msg: &str) -> Option<Result<AppV2_1, String>> {
+pub fn parse_msg(msg: &str) -> Option<Result<App, String>> {
     let split_res = shell_words::split(msg)
         .map(|mut v| {
             v.drain(..)
@@ -382,7 +382,7 @@ pub fn parse_msg_v2(msg: &str) -> Option<Result<AppV2_1, String>> {
 
     use clap::Clap;
 
-    AppV2_1::try_parse_from(splitted)
+    App::try_parse_from(splitted)
         .map_err(|e| e.to_string())
         .let_(Some)
 }
