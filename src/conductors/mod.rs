@@ -379,7 +379,7 @@ impl Conductor {
             Err(e) => Response {
                 title: "response".to_string(),
                 rgb: ERROR,
-                description: format!("{}", e),
+                description: e.to_string(),
                 fields: vec![],
             }
             .let_(|r| vec![r]),
