@@ -39,6 +39,30 @@ pub struct Response {
     fields: Vec<(String, String)>,
 }
 
+fn calc_paging(
+    full: impl ConvertRange<usize>,
+    items: usize,
+    page: usize,
+) -> Result<(::core::ops::Bound<usize>, ::core::ops::Bound<usize>)> {
+    let lim = (items * (page - 1))..(items + items * (page - 1));
+
+    if !full.contains(&lim.start) {
+        bail!("out of range ({:?} !< {:?})", full.to_turple(), lim);
+    }
+
+    let r: (::core::ops::Bound<usize>, ::core::ops::Bound<usize>) = if !full.contains(&lim.end) {
+        let (start_bo, _) = full.to_turple();
+        match start_bo {
+            ::core::ops::Bound::Included(n) | ::core::ops::Bound::Excluded(n) => (n..).to_turple(),
+            ::core::ops::Bound::Unbounded => (..).to_turple(),
+        }
+    } else {
+        lim.to_turple()
+    };
+
+    Ok(r)
+}
+
 fn inner_op_handler(
     name: impl ::core::fmt::Display,
     color: (u8, u8, u8),
@@ -51,20 +75,7 @@ fn inner_op_handler(
         bail!("{}: {}", name, set.len());
     }
 
-    let lim = {
-        let full = ..set.len();
-        let lim = (items * (page - 1))..(items + items * (page - 1));
-
-        if !full.contains(&lim.start) {
-            bail!("out of range (0..{} !< {:?})", set.len(), lim);
-        }
-
-        if !full.contains(&lim.end) {
-            (lim.start..).to_turple()
-        } else {
-            lim.to_turple()
-        }
-    };
+    let lim = calc_paging(..set.len(), items, page)?;
 
     let mut resp_fields = vec![];
 
