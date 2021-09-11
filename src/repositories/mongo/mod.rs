@@ -1,11 +1,9 @@
 use core::ops::Bound;
 use std::collections::HashSet;
 
-use anyhow::anyhow;
 use async_trait::async_trait;
 use mongodb::bson::{doc, Document};
-use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
-use mongodb::{bson, Client, ClientSession, Collection, Database};
+use mongodb::{bson, Client, Collection, Database};
 use serenity::futures::TryStreamExt;
 
 use super::{
@@ -15,9 +13,16 @@ use super::{
 use crate::entities::{Author, Content, ContentId, User, UserId};
 use crate::utils::{self, LetChain};
 
+mod converters;
+mod helpers;
 mod models;
 mod type_convert;
 
+use converters::{convert_404_or, convert_repo_err, to_bool, try_unique_check};
+use helpers::{
+    exec_transaction, get_set, initialize_coll, is_contains, make_session, modify_set,
+    process_transaction, ModifyOpTy,
+};
 use models::{MongoContentAuthorModel, MongoContentModel, MongoContentPostedModel, MongoUserModel};
 
 pub struct MongoUserRepository {
@@ -604,228 +609,4 @@ impl ContentRepository for MongoContentRepository {
         let res = exec_transaction(transaction, (self, id)).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
-}
-
-// --- convert fn ---
-
-fn convert_repo_err<T, E>(result: ::core::result::Result<T, E>) -> Result<T>
-where E: Sync + Send + ::std::error::Error + 'static {
-    result.map_err(|e| RepositoryError::Internal(anyhow!(e)))
-}
-
-fn try_unique_check<T>(result: ::core::result::Result<T, ::mongodb::error::Error>) -> Result<bool> {
-    match match match result {
-        Ok(_) => return Ok(true),
-        Err(e) => (*e.kind.clone(), e),
-    } {
-        (
-            ::mongodb::error::ErrorKind::Write(::mongodb::error::WriteFailure::WriteError(e)),
-            src,
-        ) => (e.code, src),
-        (_, src) => return Err(RepositoryError::Internal(anyhow!(src))),
-    } {
-        (11000, _) => Ok(false),
-        (_, src) => Err(RepositoryError::Internal(anyhow!(src))),
-    }
-}
-
-fn convert_404_or<T>(option: Option<T>) -> Result<T> {
-    match option {
-        Some(t) => Ok(t),
-        None => Err(RepositoryError::NotFound),
-    }
-}
-
-fn to_bool<N>(number: N) -> bool
-where N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Clone {
-    match match ::core::convert::TryInto::<i8>::try_into(number.clone()) {
-        Ok(n) => n,
-        Err(_) => unreachable!("expected 0 or 1, found: {:?}", number),
-    } {
-        0 => false,
-        1 => true,
-        n => unreachable!("expected 0 or 1, found: {}", n),
-    }
-}
-
-// --- helper fn ---
-
-async fn initialize_coll(
-    coll_name: impl Into<::mongodb::bson::Bson>,
-    db: &Database,
-) -> ::mongodb::error::Result<()> {
-    db.run_command(
-        doc! {
-            "createIndexes": coll_name.into(),
-            "indexes": [{
-                "name": "unique_id",
-                "key": {
-                    "id": 1
-                },
-                "unique": true
-            }],
-        },
-        None,
-    )
-    .await?;
-
-    Ok(())
-}
-
-async fn make_session(c: &Client) -> ::mongodb::error::Result<ClientSession> {
-    let mut s = c.start_session(None).await?;
-
-    let ta_opt = TransactionOptions::builder()
-        .read_concern(ReadConcern::snapshot())
-        .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
-        .build();
-    s.start_transaction(ta_opt).await?;
-
-    Ok(s)
-}
-
-async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<()> {
-    loop {
-        let r = s.commit_transaction().await;
-        if let Err(ref e) = r {
-            if e.contains_label(::mongodb::error::UNKNOWN_TRANSACTION_COMMIT_RESULT) {
-                continue;
-            }
-        }
-
-        break r;
-    }
-}
-
-async fn exec_transaction<F, I, FO, RO>(f: F, arg: I) -> ::mongodb::error::Result<RO>
-where
-    F: Fn<I, Output = FO>,
-    I: Clone,
-    FO: ::core::future::Future<Output = ::mongodb::error::Result<RO>>,
-{
-    loop {
-        let r = f.call(arg.clone()).await;
-        if let Err(ref e) = r {
-            if e.contains_label(::mongodb::error::TRANSIENT_TRANSACTION_ERROR) {
-                continue;
-            }
-
-            break r;
-        }
-    }
-}
-
-async fn get_set<T>(coll: &Collection<T>, id: impl Into<::mongodb::bson::Bson>) -> Result<T>
-where T: Sync + Send + Unpin + ::serde::de::DeserializeOwned {
-    let res = coll
-        .find_one(doc! { "id": id.into() }, None)
-        .await
-        .let_(convert_repo_err)?
-        .let_(convert_404_or)?;
-
-    Ok(res)
-}
-
-async fn is_contains<T>(
-    name: impl AsRef<str>,
-    coll: &Collection<T>,
-    id: impl Into<::mongodb::bson::Bson>,
-    target: impl Into<::mongodb::bson::Bson>,
-) -> Result<bool> {
-    let res = coll
-        .count_documents(
-            doc! {
-                "id": id.into(),
-                name.as_ref(): { "$in": [target.into()] }
-            },
-            None,
-        )
-        .await
-        .let_(convert_repo_err)?
-        .let_(to_bool);
-
-    Ok(res)
-}
-
-#[derive(Clone, Copy)]
-enum ModifyOpTy {
-    Push,
-    Pull,
-}
-
-async fn modify_set<T>(
-    name: impl AsRef<str>,
-    coll: &Collection<T>,
-    client: &Client,
-    id: impl Into<::mongodb::bson::Bson>,
-    target: impl Into<::mongodb::bson::Bson>,
-    ty: ModifyOpTy,
-) -> Result<bool> {
-    async fn transaction<T>(
-        name: &str,
-        coll: &Collection<T>,
-        client: &Client,
-        id: &::mongodb::bson::Bson,
-        target: &::mongodb::bson::Bson,
-        ty: ModifyOpTy,
-    ) -> ::mongodb::error::Result<Option<bool>> {
-        let mut session = make_session(client).await?;
-
-        let operation = match ty {
-            ModifyOpTy::Push => "$addToSet",
-            ModifyOpTy::Pull => "$pull",
-        };
-        let res = coll
-            .update_one_with_session(
-                doc! { "id": id },
-                doc! { operation: { name: target } },
-                None,
-                &mut session,
-            )
-            .await?;
-
-        if !res.matched_count.let_(to_bool) {
-            return Ok(None);
-        };
-        if !res.modified_count.let_(to_bool) {
-            return Ok(Some(false));
-        }
-
-        let inc_name = &format!("{}_size", name);
-        let inc_value = match ty {
-            ModifyOpTy::Push => 1,
-            ModifyOpTy::Pull => -1,
-        };
-        let res = coll
-            .update_one_with_session(
-                doc! { "id": id },
-                doc! { "$inc": { inc_name: inc_value } },
-                None,
-                &mut session,
-            )
-            .await?;
-
-        if !res.matched_count.let_(to_bool) {
-            unreachable!("not found value");
-        }
-        if !res.modified_count.let_(to_bool) {
-            let op = match ty {
-                ModifyOpTy::Push => "inc",
-                ModifyOpTy::Pull => "dec",
-            };
-            unreachable!("cannot {} {} field", op, inc_name);
-        }
-
-        process_transaction(&mut session).await.map(|_| Some(true))
-    }
-
-    let id_bson = id.into();
-    let target_bson = target.into();
-
-    let res = exec_transaction(
-        transaction,
-        (name.as_ref(), coll, client, &id_bson, &target_bson, ty),
-    )
-    .await;
-    Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
 }
