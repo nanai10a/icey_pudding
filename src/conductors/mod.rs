@@ -129,7 +129,7 @@ impl Conductor {
                         helper::resp_from_user(
                             "registered user",
                             from_user_shows,
-                            USER_CREATE,
+                            USER_REGISTER,
                             user,
                         )
                         .let_(|r| vec![r])
@@ -141,7 +141,7 @@ impl Conductor {
                             .get_user(user_id.map(UserId).unwrap_or(executed_user_id))
                             .await?;
 
-                        helper::resp_from_user("showing user", from_user_shows, USER_READ, user)
+                        helper::resp_from_user("showing user", from_user_shows, USER_GET, user)
                             .let_(|r| vec![r])
                     },
 
@@ -180,7 +180,7 @@ impl Conductor {
                                 helper::resp_from_user(
                                     format!("showing users: {}[{}] | {}/{}", i, s, page, all_pages),
                                     from_user_shows.to_string(),
-                                    USER_READ,
+                                    USER_GET,
                                     u,
                                 )
                             })
@@ -193,7 +193,7 @@ impl Conductor {
                             .edit_user(user_id.let_(UserId), mutation)
                             .await?;
 
-                        helper::resp_from_user("updated user", from_user_shows, USER_UPDATE, user)
+                        helper::resp_from_user("updated user", from_user_shows, USER_EDIT, user)
                             .let_(|r| vec![r])
                     },
 
@@ -208,8 +208,13 @@ impl Conductor {
                                 )
                                 .await?;
 
-                            helper::resp_from_user("bookmarked", from_user_shows, BOOKMARK, user)
-                                .let_(|r| vec![r])
+                            helper::resp_from_user(
+                                "bookmarked",
+                                from_user_shows,
+                                USER_BOOKMARK,
+                                user,
+                            )
+                            .let_(|r| vec![r])
                         },
 
                         UserBookmarkOp::Undo { content_id } => {
@@ -222,8 +227,13 @@ impl Conductor {
                                 )
                                 .await?;
 
-                            helper::resp_from_user("unbookmarked", from_user_shows, BOOKMARK, user)
-                                .let_(|r| vec![r])
+                            helper::resp_from_user(
+                                "unbookmarked",
+                                from_user_shows,
+                                USER_BOOKMARK,
+                                user,
+                            )
+                            .let_(|r| vec![r])
                         },
 
                         UserBookmarkOp::Show { user_id, page } => {
@@ -234,7 +244,7 @@ impl Conductor {
 
                             inner_op_handler!(
                                 "bookmark",
-                                BOOKMARK,
+                                USER_BOOKMARK,
                                 bookmark,
                                 20,
                                 page,
@@ -246,8 +256,13 @@ impl Conductor {
                     UserMod::Unregister(UserUnregisterCmd { user_id }) => {
                         let user = self.handler.unregister_user(user_id.let_(UserId)).await?;
 
-                        helper::resp_from_user("deleted user.", from_user_shows, USER_DELETE, user)
-                            .let_(|r| vec![r])
+                        helper::resp_from_user(
+                            "deleted user.",
+                            from_user_shows,
+                            USER_UNREGISTER,
+                            user,
+                        )
+                        .let_(|r| vec![r])
                     },
                 },
 
@@ -290,8 +305,13 @@ impl Conductor {
                             )
                             .await?;
 
-                        helper::resp_from_content("posted content", from_user_shows, POST, content)
-                            .let_(|r| vec![r])
+                        helper::resp_from_content(
+                            "posted content",
+                            from_user_shows,
+                            CONTENT_POST,
+                            content,
+                        )
+                        .let_(|r| vec![r])
                     },
 
                     ContentMod::Get(ContentGetCmd { content_id }) => {
@@ -300,7 +320,7 @@ impl Conductor {
                         helper::resp_from_content(
                             "showing content",
                             from_user_shows,
-                            CONTENT_READ,
+                            CONTENT_GET,
                             content,
                         )
                         .let_(|r| vec![r])
@@ -344,7 +364,7 @@ impl Conductor {
                                         i, s, page, all_pages
                                     ),
                                     from_user_shows.to_string(),
-                                    CONTENT_READ,
+                                    CONTENT_GET,
                                     c,
                                 )
                             })
@@ -388,7 +408,7 @@ impl Conductor {
                         helper::resp_from_content(
                             "updated user",
                             from_user_shows,
-                            CONTENT_UPDATE,
+                            CONTENT_EDIT,
                             content,
                         )
                         .let_(|r| vec![r])
@@ -405,8 +425,13 @@ impl Conductor {
                                 )
                                 .await?;
 
-                            helper::resp_from_content("liked", from_user_shows, LIKE, content)
-                                .let_(|r| vec![r])
+                            helper::resp_from_content(
+                                "liked",
+                                from_user_shows,
+                                CONTENT_LIKE,
+                                content,
+                            )
+                            .let_(|r| vec![r])
                         },
 
                         ContentLikeOp::Undo { content_id } => {
@@ -415,8 +440,13 @@ impl Conductor {
                                 .content_like_op(content_id.let_(ContentId), executed_user_id, true)
                                 .await?;
 
-                            helper::resp_from_content("unliked", from_user_shows, LIKE, content)
-                                .let_(|r| vec![r])
+                            helper::resp_from_content(
+                                "unliked",
+                                from_user_shows,
+                                CONTENT_LIKE,
+                                content,
+                            )
+                            .let_(|r| vec![r])
                         },
 
                         ContentLikeOp::Show { page, content_id } => {
@@ -425,7 +455,7 @@ impl Conductor {
                                 .get_content_like(content_id.let_(ContentId))
                                 .await?;
 
-                            inner_op_handler!("like", LIKE, like, 20, page, from_user_shows)
+                            inner_op_handler!("like", CONTENT_LIKE, like, 20, page, from_user_shows)
                         },
                     },
 
@@ -436,8 +466,13 @@ impl Conductor {
                                 .content_pin_op(content_id.let_(ContentId), executed_user_id, false)
                                 .await?;
 
-                            helper::resp_from_content("pinned", from_user_shows, PIN, content)
-                                .let_(|r| vec![r])
+                            helper::resp_from_content(
+                                "pinned",
+                                from_user_shows,
+                                CONTENT_PIN,
+                                content,
+                            )
+                            .let_(|r| vec![r])
                         },
 
                         ContentPinOp::Undo { content_id } => {
@@ -446,8 +481,13 @@ impl Conductor {
                                 .content_pin_op(content_id.let_(ContentId), executed_user_id, true)
                                 .await?;
 
-                            helper::resp_from_content("unpinned", from_user_shows, PIN, content)
-                                .let_(|r| vec![r])
+                            helper::resp_from_content(
+                                "unpinned",
+                                from_user_shows,
+                                CONTENT_PIN,
+                                content,
+                            )
+                            .let_(|r| vec![r])
                         },
 
                         ContentPinOp::Show { page, content_id } => {
@@ -456,7 +496,7 @@ impl Conductor {
                                 .get_content_pin(content_id.let_(ContentId))
                                 .await?;
 
-                            inner_op_handler!("pin", PIN, pin, 20, page, from_user_shows)
+                            inner_op_handler!("pin", CONTENT_PIN, pin, 20, page, from_user_shows)
                         },
                     },
 
@@ -469,7 +509,7 @@ impl Conductor {
                         helper::resp_from_content(
                             "deleted content",
                             from_user_shows,
-                            CONTENT_DELETE,
+                            CONTENT_WITHDRAW,
                             content,
                         )
                         .let_(|r| vec![r])
