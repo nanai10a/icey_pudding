@@ -1,7 +1,7 @@
 use core::num::NonZeroU32;
 use std::collections::HashSet;
 
-use anyhow::Result;
+use anyhow::{bail, Result};
 use regex::Regex;
 use serde_json::{json, Number, Value};
 use serenity::builder::CreateEmbed;
@@ -487,6 +487,94 @@ pub fn append_message_reference(
     });
 
     raw.insert("message_reference", mr);
+}
+
+pub fn calc_paging(
+    full: impl ConvertRange<usize>,
+    items: usize,
+    page: usize,
+) -> Result<(::core::ops::Bound<usize>, ::core::ops::Bound<usize>)> {
+    let lim = (items * (page - 1))..(items + items * (page - 1));
+
+    if !full.contains(&lim.start) {
+        bail!("out of range ({:?} !< {:?})", full.to_turple(), lim);
+    }
+
+    let r: (::core::ops::Bound<usize>, ::core::ops::Bound<usize>) = if !full.contains(&lim.end) {
+        let (start_bo, _) = full.to_turple();
+        match start_bo {
+            ::core::ops::Bound::Included(n) | ::core::ops::Bound::Excluded(n) => (n..).to_turple(),
+            ::core::ops::Bound::Unbounded => (..).to_turple(),
+        }
+    } else {
+        lim.to_turple()
+    };
+
+    Ok(r)
+}
+
+pub fn inner_gets_handler<I, F>(
+    mut vec: Vec<I>,
+    items: usize,
+    page: usize,
+    map: F,
+) -> Result<Vec<Response>>
+where
+    F: FnMut((usize, usize, I)) -> Response,
+{
+    if vec.is_empty() {
+        bail!("matched: {}", vec.len());
+    }
+
+    let lim = calc_paging(..vec.len(), items, page)?;
+    let r = vec
+        .drain(..)
+        .enumerate()
+        .collect::<Vec<_>>()
+        .drain(lim)
+        .enumerate()
+        .map(|(s, (i, v))| (s, i, v))
+        .map(map)
+        .collect();
+
+    Ok(r)
+}
+
+pub fn inner_op_handler(
+    name: impl ::core::fmt::Display,
+    color: (u8, u8, u8),
+    mut set: ::std::collections::HashSet<impl ::core::fmt::Display>,
+    items: usize,
+    page: usize,
+    description: impl ::core::fmt::Display,
+) -> Result<Vec<Response>> {
+    if set.is_empty() {
+        bail!("{}: {}", name, set.len());
+    }
+
+    let lim = calc_paging(..set.len(), items, page)?;
+
+    let mut resp_fields = vec![];
+
+    let all_pages = ((set.len() as f32) / (items as f32)).ceil();
+    resp_fields.push(("page".to_string(), format!("{}/{}", page, all_pages)));
+
+    set.drain()
+        .enumerate()
+        .collect::<Vec<_>>()
+        .drain(lim)
+        .enumerate()
+        .for_each(|(s, (i, c))| resp_fields.push((format!("{}[{}]", i, s), c.to_string())));
+
+    let resps = Response {
+        title: format!("showing {}", name),
+        description: description.to_string(),
+        rgb: color,
+        fields: resp_fields,
+    }
+    .let_(|r| vec![r]);
+
+    Ok(resps)
 }
 
 pub trait ConvertRange<T>: ::core::ops::RangeBounds<T> {
