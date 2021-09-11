@@ -12,14 +12,9 @@ use crate::repositories::{ContentContentMutation, ContentMutation};
 use crate::utils::LetChain;
 
 mod command_colors;
-mod helper;
+mod helpers;
 
-use helper::{
-    inner_gets_handler, inner_op_handler, App, ContentEditCmd, ContentGetCmd, ContentGetsCmd,
-    ContentLikeCmd, ContentLikeOp, ContentMod, ContentPinCmd, ContentPinOp, ContentPostCmd,
-    ContentWithdrawCmd, RootMod, UserBookmarkCmd, UserBookmarkOp, UserEditCmd, UserGetCmd,
-    UserGetsCmd, UserMod, UserRegisterCmd, UserUnregisterCmd,
-};
+use helpers::*;
 
 pub struct Conductor {
     pub handler: Handler,
@@ -82,13 +77,8 @@ impl Conductor {
                     UserMod::Register(UserRegisterCmd) => {
                         let user = self.handler.register_user(executed_user_id).await?;
 
-                        helper::resp_from_user(
-                            "registered user",
-                            from_user_shows,
-                            USER_REGISTER,
-                            user,
-                        )
-                        .let_(|r| vec![r])
+                        resp_from_user("registered user", from_user_shows, USER_REGISTER, user)
+                            .let_(|r| vec![r])
                     },
 
                     UserMod::Get(UserGetCmd { user_id }) => {
@@ -97,7 +87,7 @@ impl Conductor {
                             .get_user(user_id.map(UserId).unwrap_or(executed_user_id))
                             .await?;
 
-                        helper::resp_from_user("showing user", from_user_shows, USER_GET, user)
+                        resp_from_user("showing user", from_user_shows, USER_GET, user)
                             .let_(|r| vec![r])
                     },
 
@@ -108,7 +98,7 @@ impl Conductor {
 
                         let all_pages = ((users.len() as f32) / (ITEMS as f32)).ceil();
                         inner_gets_handler(users, ITEMS, page as usize, |(s, i, u)| {
-                            helper::resp_from_user(
+                            resp_from_user(
                                 format!("showing users: {}[{}] | {}/{}", i, s, page, all_pages),
                                 from_user_shows.to_string(),
                                 USER_GET,
@@ -123,7 +113,7 @@ impl Conductor {
                             .edit_user(user_id.let_(UserId), mutation)
                             .await?;
 
-                        helper::resp_from_user("updated user", from_user_shows, USER_EDIT, user)
+                        resp_from_user("updated user", from_user_shows, USER_EDIT, user)
                             .let_(|r| vec![r])
                     },
 
@@ -138,13 +128,8 @@ impl Conductor {
                                 )
                                 .await?;
 
-                            helper::resp_from_user(
-                                "bookmarked",
-                                from_user_shows,
-                                USER_BOOKMARK,
-                                user,
-                            )
-                            .let_(|r| vec![r])
+                            resp_from_user("bookmarked", from_user_shows, USER_BOOKMARK, user)
+                                .let_(|r| vec![r])
                         },
 
                         UserBookmarkOp::Undo { content_id } => {
@@ -157,13 +142,8 @@ impl Conductor {
                                 )
                                 .await?;
 
-                            helper::resp_from_user(
-                                "unbookmarked",
-                                from_user_shows,
-                                USER_BOOKMARK,
-                                user,
-                            )
-                            .let_(|r| vec![r])
+                            resp_from_user("unbookmarked", from_user_shows, USER_BOOKMARK, user)
+                                .let_(|r| vec![r])
                         },
 
                         UserBookmarkOp::Show { user_id, page } => {
@@ -186,13 +166,8 @@ impl Conductor {
                     UserMod::Unregister(UserUnregisterCmd { user_id }) => {
                         let user = self.handler.unregister_user(user_id.let_(UserId)).await?;
 
-                        helper::resp_from_user(
-                            "deleted user.",
-                            from_user_shows,
-                            USER_UNREGISTER,
-                            user,
-                        )
-                        .let_(|r| vec![r])
+                        resp_from_user("deleted user.", from_user_shows, USER_UNREGISTER, user)
+                            .let_(|r| vec![r])
                     },
                 },
 
@@ -235,25 +210,15 @@ impl Conductor {
                             )
                             .await?;
 
-                        helper::resp_from_content(
-                            "posted content",
-                            from_user_shows,
-                            CONTENT_POST,
-                            content,
-                        )
-                        .let_(|r| vec![r])
+                        resp_from_content("posted content", from_user_shows, CONTENT_POST, content)
+                            .let_(|r| vec![r])
                     },
 
                     ContentMod::Get(ContentGetCmd { content_id }) => {
                         let content = self.handler.get_content(content_id.let_(ContentId)).await?;
 
-                        helper::resp_from_content(
-                            "showing content",
-                            from_user_shows,
-                            CONTENT_GET,
-                            content,
-                        )
-                        .let_(|r| vec![r])
+                        resp_from_content("showing content", from_user_shows, CONTENT_GET, content)
+                            .let_(|r| vec![r])
                     },
 
                     ContentMod::Gets(ContentGetsCmd { page, query }) => {
@@ -263,7 +228,7 @@ impl Conductor {
 
                         let all_pages = ((contents.len() as f32) / (ITEMS as f32)).ceil();
                         inner_gets_handler(contents, ITEMS, page as usize, |(s, i, c)| {
-                            helper::resp_from_content(
+                            resp_from_content(
                                 format!("showing contents: {}[{}] | {}/{}", i, s, page, all_pages),
                                 from_user_shows.to_string(),
                                 CONTENT_GET,
@@ -306,13 +271,8 @@ impl Conductor {
                             .edit_content(content_id.let_(ContentId), mutation)
                             .await?;
 
-                        helper::resp_from_content(
-                            "updated user",
-                            from_user_shows,
-                            CONTENT_EDIT,
-                            content,
-                        )
-                        .let_(|r| vec![r])
+                        resp_from_content("updated user", from_user_shows, CONTENT_EDIT, content)
+                            .let_(|r| vec![r])
                     },
 
                     ContentMod::Like(ContentLikeCmd { op }) => match op {
@@ -326,13 +286,8 @@ impl Conductor {
                                 )
                                 .await?;
 
-                            helper::resp_from_content(
-                                "liked",
-                                from_user_shows,
-                                CONTENT_LIKE,
-                                content,
-                            )
-                            .let_(|r| vec![r])
+                            resp_from_content("liked", from_user_shows, CONTENT_LIKE, content)
+                                .let_(|r| vec![r])
                         },
 
                         ContentLikeOp::Undo { content_id } => {
@@ -341,13 +296,8 @@ impl Conductor {
                                 .content_like_op(content_id.let_(ContentId), executed_user_id, true)
                                 .await?;
 
-                            helper::resp_from_content(
-                                "unliked",
-                                from_user_shows,
-                                CONTENT_LIKE,
-                                content,
-                            )
-                            .let_(|r| vec![r])
+                            resp_from_content("unliked", from_user_shows, CONTENT_LIKE, content)
+                                .let_(|r| vec![r])
                         },
 
                         ContentLikeOp::Show { page, content_id } => {
@@ -374,13 +324,8 @@ impl Conductor {
                                 .content_pin_op(content_id.let_(ContentId), executed_user_id, false)
                                 .await?;
 
-                            helper::resp_from_content(
-                                "pinned",
-                                from_user_shows,
-                                CONTENT_PIN,
-                                content,
-                            )
-                            .let_(|r| vec![r])
+                            resp_from_content("pinned", from_user_shows, CONTENT_PIN, content)
+                                .let_(|r| vec![r])
                         },
 
                         ContentPinOp::Undo { content_id } => {
@@ -389,13 +334,8 @@ impl Conductor {
                                 .content_pin_op(content_id.let_(ContentId), executed_user_id, true)
                                 .await?;
 
-                            helper::resp_from_content(
-                                "unpinned",
-                                from_user_shows,
-                                CONTENT_PIN,
-                                content,
-                            )
-                            .let_(|r| vec![r])
+                            resp_from_content("unpinned", from_user_shows, CONTENT_PIN, content)
+                                .let_(|r| vec![r])
                         },
 
                         ContentPinOp::Show { page, content_id } => {
@@ -421,7 +361,7 @@ impl Conductor {
                             .withdraw_content(content_id.let_(ContentId))
                             .await?;
 
-                        helper::resp_from_content(
+                        resp_from_content(
                             "deleted content",
                             from_user_shows,
                             CONTENT_WITHDRAW,
@@ -486,7 +426,7 @@ impl EventHandler for Conductor {
             return;
         }
 
-        let parse_res = match helper::parse_msg(msg.content.as_str()) {
+        let parse_res = match parse_msg(msg.content.as_str()) {
             Some(o) => o,
             None => return,
         };
@@ -504,7 +444,7 @@ impl EventHandler for Conductor {
                         });
 
                         let CreateMessage(ref mut raw, ..) = cm;
-                        helper::append_message_reference(raw, msg.id, msg.channel_id, msg.guild_id);
+                        append_message_reference(raw, msg.id, msg.channel_id, msg.guild_id);
 
                         cm
                     })
@@ -523,11 +463,11 @@ impl EventHandler for Conductor {
             .channel_id
             .send_message(ctx.http, |cm| {
                 resps.drain(..).for_each(|resp| {
-                    cm.add_embed(|ce| helper::build_embed_from_resp(ce, resp));
+                    cm.add_embed(|ce| build_embed_from_resp(ce, resp));
                 });
 
                 let CreateMessage(ref mut raw, ..) = cm;
-                helper::append_message_reference(raw, msg.id, msg.channel_id, msg.guild_id);
+                append_message_reference(raw, msg.id, msg.channel_id, msg.guild_id);
 
                 cm
             })
