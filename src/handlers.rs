@@ -251,6 +251,8 @@ impl Handler {
     }
 }
 
+// --- helper fn ---
+
 fn user_err_fmt(e: RepositoryError) -> Error {
     use anyhow::anyhow;
 

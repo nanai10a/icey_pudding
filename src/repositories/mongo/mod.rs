@@ -684,6 +684,8 @@ impl ContentRepository for MongoContentRepository {
     }
 }
 
+// --- convert fn ---
+
 fn convert_repo_err<T, E>(result: ::core::result::Result<T, E>) -> Result<T>
 where E: Sync + Send + ::std::error::Error + 'static {
     result.map_err(|e| RepositoryError::Internal(anyhow!(e)))
@@ -723,6 +725,8 @@ where N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Clone {
         n => unreachable!("expected 0 or 1, found: {}", n),
     }
 }
+
+// --- helper fn ---
 
 async fn make_session(c: &Client) -> ::mongodb::error::Result<ClientSession> {
     let mut s = c.start_session(None).await?;
