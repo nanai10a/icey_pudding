@@ -54,23 +54,6 @@ impl MongoContentRepository {
     }
 }
 
-macro_rules! exec_transaction {
-    ($f:expr $( , $a:expr )*) => {
-        async {
-            loop {
-                let r = $f($( $a, )*).await;
-                if let Err(ref e) = r {
-                    if e.contains_label(::mongodb::error::TRANSIENT_TRANSACTION_ERROR) {
-                        continue;
-                    }
-
-                    break r;
-                }
-            }
-        }
-    };
-}
-
 #[async_trait]
 impl UserRepository for MongoUserRepository {
     async fn insert(&self, user: User) -> Result<bool> {
@@ -164,7 +147,7 @@ impl UserRepository for MongoUserRepository {
             process_transaction(&mut session).await.map(|_| Some(user))
         }
 
-        let res = exec_transaction!(transaction, self, id, mutation_doc.clone()).await;
+        let res = exec_transaction(transaction, (self, id, mutation_doc)).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
@@ -251,7 +234,7 @@ impl UserRepository for MongoUserRepository {
             process_transaction(&mut session).await.map(|_| Some(user))
         }
 
-        let res = exec_transaction!(transaction, self, id).await;
+        let res = exec_transaction(transaction, (self, id)).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 }
@@ -490,7 +473,7 @@ impl ContentRepository for MongoContentRepository {
                 .map(|_| Some(new_content))
         }
 
-        let res = exec_transaction!(transaction, self, id, mutation.clone()).await;
+        let res = exec_transaction(transaction, (self, id, mutation)).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 
@@ -618,7 +601,7 @@ impl ContentRepository for MongoContentRepository {
                 .map(|_| Some(content))
         }
 
-        let res = exec_transaction!(transaction, self, id).await;
+        let res = exec_transaction(transaction, (self, id)).await;
         Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
     }
 }
@@ -711,6 +694,24 @@ async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<
         }
 
         break r;
+    }
+}
+
+async fn exec_transaction<F, I, FO, RO>(f: F, arg: I) -> ::mongodb::error::Result<RO>
+where
+    F: Fn<I, Output = FO>,
+    I: Clone,
+    FO: ::core::future::Future<Output = ::mongodb::error::Result<RO>>,
+{
+    loop {
+        let r = f.call(arg.clone()).await;
+        if let Err(ref e) = r {
+            if e.contains_label(::mongodb::error::TRANSIENT_TRANSACTION_ERROR) {
+                continue;
+            }
+
+            break r;
+        }
     }
 }
 
@@ -821,14 +822,9 @@ async fn modify_set<T>(
     let id_bson = id.into();
     let target_bson = target.into();
 
-    let res = exec_transaction!(
+    let res = exec_transaction(
         transaction,
-        name.as_ref(),
-        coll,
-        client,
-        &id_bson,
-        &target_bson,
-        ty
+        (name.as_ref(), coll, client, &id_bson, &target_bson, ty),
     )
     .await;
     Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
