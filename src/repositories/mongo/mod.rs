@@ -15,7 +15,10 @@ use super::{
 use crate::entities::{Author, Content, ContentId, User, UserId};
 use crate::utils::{self, LetChain};
 
+mod models;
 mod type_convert;
+
+use models::{MongoContentAuthorModel, MongoContentModel, MongoContentPostedModel, MongoUserModel};
 
 pub struct MongoUserRepository {
     client: Client,
@@ -73,46 +76,6 @@ impl MongoContentRepository {
 
         Ok(Self { client, coll })
     }
-}
-
-#[derive(Debug, Clone, ::serde::Serialize, ::serde::Deserialize)]
-struct MongoUserModel {
-    id: String,
-    admin: bool,
-    sub_admin: bool,
-    bookmark: HashSet<ContentId>,
-    bookmark_size: i64,
-}
-
-#[derive(Debug, Clone, ::serde::Serialize, ::serde::Deserialize)]
-struct MongoContentModel {
-    id: ContentId,
-    author: MongoContentAuthorModel,
-    posted: MongoContentPostedModel,
-    content: String,
-    liked: HashSet<String>,
-    liked_size: i64,
-    pinned: HashSet<String>,
-    pinned_size: i64,
-    created: String,
-    edited: Vec<String>,
-}
-
-#[derive(Debug, Clone, ::serde::Serialize, ::serde::Deserialize)]
-enum MongoContentAuthorModel {
-    User {
-        id: String,
-        name: String,
-        nick: Option<String>,
-    },
-    Virtual(String),
-}
-
-#[derive(Debug, Clone, ::serde::Serialize, ::serde::Deserialize)]
-struct MongoContentPostedModel {
-    id: String,
-    name: String,
-    nick: Option<String>,
 }
 
 macro_rules! exec_transaction {
