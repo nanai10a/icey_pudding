@@ -3,8 +3,7 @@ use serenity::client::EventHandler;
 use crate::conductors::Conductor;
 use crate::entities::{Content, User};
 use crate::handlers::Handler;
-use crate::repositories::mock::InMemoryRepository;
-use crate::repositories::mongo::{MongoContentRepository, MongoUserRepository};
+use crate::repositories::{InMemoryRepository, MongoContentRepository, MongoUserRepository};
 
 pub fn in_memory() -> impl EventHandler {
     Conductor {

@@ -6,12 +6,6 @@ use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
 use serenity::model::prelude::User;
 
-use crate::conductors::helper::{
-    App, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp, ContentMod,
-    ContentPinCmd, ContentPinOp, ContentPostCmd, ContentWithdrawCmd, RootMod, UserBookmarkCmd,
-    UserBookmarkOp, UserEditCmd, UserGetCmd, UserGetsCmd, UserMod, UserRegisterCmd,
-    UserUnregisterCmd,
-};
 use crate::entities::{Author, ContentId, PartialAuthor, Posted, UserId};
 use crate::handlers::Handler;
 use crate::repositories::{ContentContentMutation, ContentMutation};
@@ -19,6 +13,13 @@ use crate::utils::LetChain;
 
 mod command_colors;
 mod helper;
+
+use helper::{
+    App, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp, ContentMod,
+    ContentPinCmd, ContentPinOp, ContentPostCmd, ContentWithdrawCmd, ConvertRange, RootMod,
+    UserBookmarkCmd, UserBookmarkOp, UserEditCmd, UserGetCmd, UserGetsCmd, UserMod,
+    UserRegisterCmd, UserUnregisterCmd,
+};
 
 pub struct Conductor {
     pub handler: Handler,
@@ -561,60 +562,6 @@ impl Conductor {
             true => Ok(cmd),
             false => Err("not permitted operation".to_string()),
         }
-    }
-}
-
-trait ConvertRange<T>: ::core::ops::RangeBounds<T> {
-    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>);
-}
-impl<T> ConvertRange<T> for ::core::ops::Range<T> {
-    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
-        let ::core::ops::Range { start, end } = self;
-        (
-            ::core::ops::Bound::Included(start),
-            ::core::ops::Bound::Excluded(end),
-        )
-    }
-}
-impl<T> ConvertRange<T> for ::core::ops::RangeFrom<T> {
-    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
-        let ::core::ops::RangeFrom { start } = self;
-        (
-            ::core::ops::Bound::Included(start),
-            ::core::ops::Bound::Unbounded,
-        )
-    }
-}
-impl<T> ConvertRange<T> for ::core::ops::RangeFull {
-    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
-        (::core::ops::Bound::Unbounded, ::core::ops::Bound::Unbounded)
-    }
-}
-impl<T> ConvertRange<T> for ::core::ops::RangeInclusive<T> {
-    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
-        let (start, end) = self.into_inner();
-        (
-            ::core::ops::Bound::Included(start),
-            ::core::ops::Bound::Included(end),
-        )
-    }
-}
-impl<T> ConvertRange<T> for ::core::ops::RangeTo<T> {
-    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
-        let ::core::ops::RangeTo { end } = self;
-        (
-            ::core::ops::Bound::Unbounded,
-            ::core::ops::Bound::Excluded(end),
-        )
-    }
-}
-impl<T> ConvertRange<T> for ::core::ops::RangeToInclusive<T> {
-    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
-        let ::core::ops::RangeToInclusive { end } = self;
-        (
-            ::core::ops::Bound::Unbounded,
-            ::core::ops::Bound::Included(end),
-        )
     }
 }
 
