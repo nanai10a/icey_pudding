@@ -27,21 +27,9 @@ pub struct MongoUserRepository {
 
 impl MongoUserRepository {
     pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
-        db.run_command(
-            doc! {
-                "createIndexes": "user",
-                "indexes": [{
-                    "name": "unique_id",
-                    "key": {
-                        "id": 1
-                    },
-                    "unique": true
-                }],
-            },
-            None,
-        )
-        .await
-        .map_err(::anyhow::Error::new)?;
+        initialize_coll("user", &db)
+            .await
+            .map_err(::anyhow::Error::new)?;
 
         let coll = db.collection("user");
 
@@ -56,21 +44,9 @@ pub struct MongoContentRepository {
 
 impl MongoContentRepository {
     pub async fn new_with(client: Client, db: Database) -> ::anyhow::Result<Self> {
-        db.run_command(
-            doc! {
-                "createIndexes": "content",
-                "indexes": [{
-                    "name": "unique_id",
-                    "key": {
-                        "id": 1
-                    },
-                    "unique": true
-                }],
-            },
-            None,
-        )
-        .await
-        .map_err(::anyhow::Error::new)?;
+        initialize_coll("content", &db)
+            .await
+            .map_err(::anyhow::Error::new)?;
 
         let coll = db.collection("content");
 
@@ -690,6 +666,28 @@ where N: ::core::convert::TryInto<i8> + ::core::fmt::Debug + Clone {
 }
 
 // --- helper fn ---
+
+async fn initialize_coll(
+    coll_name: impl Into<::mongodb::bson::Bson>,
+    db: &Database,
+) -> ::mongodb::error::Result<()> {
+    db.run_command(
+        doc! {
+            "createIndexes": coll_name.into(),
+            "indexes": [{
+                "name": "unique_id",
+                "key": {
+                    "id": 1
+                },
+                "unique": true
+            }],
+        },
+        None,
+    )
+    .await?;
+
+    Ok(())
+}
 
 async fn make_session(c: &Client) -> ::mongodb::error::Result<ClientSession> {
     let mut s = c.start_session(None).await?;
