@@ -1,12 +1,15 @@
 use std::collections::HashSet;
 
-use anyhow::{bail, Error, Result};
+use anyhow::{bail, Result};
 
 use crate::entities::{Author, Content, ContentId, Date, Posted, User, UserId};
 use crate::repositories::{
-    ContentMutation, ContentQuery, ContentRepository, RepositoryError, UserMutation, UserQuery,
-    UserRepository,
+    ContentMutation, ContentQuery, ContentRepository, UserMutation, UserQuery, UserRepository,
 };
+
+mod helpers;
+
+use helpers::*;
 
 pub struct Handler {
     pub user_repository: Box<dyn UserRepository + Sync + Send>,
@@ -248,25 +251,5 @@ impl Handler {
             .delete(content_id)
             .await
             .map_err(content_err_fmt)
-    }
-}
-
-// --- helper fn ---
-
-fn user_err_fmt(e: RepositoryError) -> Error {
-    use anyhow::anyhow;
-
-    match e {
-        RepositoryError::NotFound => anyhow!("cannot find user. not registered?"),
-        e => anyhow!("repository error: {}", e),
-    }
-}
-
-fn content_err_fmt(e: RepositoryError) -> Error {
-    use anyhow::anyhow;
-
-    match e {
-        RepositoryError::NotFound => anyhow!("cannot find content."),
-        e => anyhow!("repository error: {}", e),
     }
 }
