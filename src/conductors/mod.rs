@@ -39,6 +39,33 @@ pub struct Response {
     fields: Vec<(String, String)>,
 }
 
+fn inner_gets_handler<I, F>(
+    mut vec: Vec<I>,
+    items: usize,
+    page: usize,
+    map: F,
+) -> Result<Vec<Response>>
+where
+    F: FnMut((usize, usize, I)) -> Response,
+{
+    if vec.is_empty() {
+        bail!("matched: {}", vec.len());
+    }
+
+    let lim = calc_paging(..vec.len(), items, page)?;
+    let r = vec
+        .drain(..)
+        .enumerate()
+        .collect::<Vec<_>>()
+        .drain(lim)
+        .enumerate()
+        .map(|(s, (i, v))| (s, i, v))
+        .map(map)
+        .collect();
+
+    Ok(r)
+}
+
 fn calc_paging(
     full: impl ConvertRange<usize>,
     items: usize,
@@ -163,45 +190,19 @@ impl Conductor {
                     },
 
                     UserMod::Gets(UserGetsCmd { page, query }) => {
-                        let mut users = self.handler.get_users(query).await?;
+                        let users = self.handler.get_users(query).await?;
 
-                        if users.is_empty() {
-                            Err(anyhow!("matched: {}", users.len()))?
-                        }
+                        const ITEMS: usize = 5;
 
-                        const ITEMS: usize = 5; // show 5[users]/[page]
-
-                        let lim = {
-                            let full = ..users.len();
-                            let lim = (ITEMS * (page as usize - 1))
-                                ..(ITEMS + ITEMS * (page as usize - 1));
-
-                            if !full.contains(&lim.start) {
-                                Err(anyhow!("out of range (0..{} !< {:?})", users.len(), lim))?
-                            }
-
-                            if !full.contains(&lim.end) {
-                                (lim.start..).to_turple()
-                            } else {
-                                lim.to_turple()
-                            }
-                        };
                         let all_pages = ((users.len() as f32) / (ITEMS as f32)).ceil();
-                        users
-                            .drain(..)
-                            .enumerate()
-                            .collect::<Vec<_>>()
-                            .drain(lim)
-                            .enumerate()
-                            .map(|(s, (i, u))| {
-                                helper::resp_from_user(
-                                    format!("showing users: {}[{}] | {}/{}", i, s, page, all_pages),
-                                    from_user_shows.to_string(),
-                                    USER_GET,
-                                    u,
-                                )
-                            })
-                            .collect()
+                        inner_gets_handler(users, ITEMS, page as usize, |(s, i, u)| {
+                            helper::resp_from_user(
+                                format!("showing users: {}[{}] | {}/{}", i, s, page, all_pages),
+                                from_user_shows.to_string(),
+                                USER_GET,
+                                u,
+                            )
+                        })?
                     },
 
                     UserMod::Edit(UserEditCmd { user_id, mutation }) => {
@@ -344,48 +345,19 @@ impl Conductor {
                     },
 
                     ContentMod::Gets(ContentGetsCmd { page, query }) => {
-                        let mut contents = self.handler.get_contents(query).await?;
+                        let contents = self.handler.get_contents(query).await?;
 
-                        if contents.is_empty() {
-                            Err(anyhow!("matched: {}", contents.len()))?
-                        }
+                        const ITEMS: usize = 5;
 
-                        const ITEMS: usize = 5; // show 5[contents]/[page]
-
-                        let lim = {
-                            let full = ..contents.len();
-                            let lim = (ITEMS * (page as usize - 1))
-                                ..(ITEMS + ITEMS * (page as usize - 1));
-
-                            if !full.contains(&lim.start) {
-                                Err(anyhow!("out of range (0..{} !< {:?})", contents.len(), lim))?
-                            }
-
-                            if !full.contains(&lim.end) {
-                                (lim.start..).to_turple()
-                            } else {
-                                lim.to_turple()
-                            }
-                        };
                         let all_pages = ((contents.len() as f32) / (ITEMS as f32)).ceil();
-                        contents
-                            .drain(..)
-                            .enumerate()
-                            .collect::<Vec<_>>()
-                            .drain(lim)
-                            .enumerate()
-                            .map(|(s, (i, c))| {
-                                helper::resp_from_content(
-                                    format!(
-                                        "showing contents: {}[{}] | {}/{}",
-                                        i, s, page, all_pages
-                                    ),
-                                    from_user_shows.to_string(),
-                                    CONTENT_GET,
-                                    c,
-                                )
-                            })
-                            .collect()
+                        inner_gets_handler(contents, ITEMS, page as usize, |(s, i, c)| {
+                            helper::resp_from_content(
+                                format!("showing contents: {}[{}] | {}/{}", i, s, page, all_pages),
+                                from_user_shows.to_string(),
+                                CONTENT_GET,
+                                c,
+                            )
+                        })?
                     },
 
                     ContentMod::Edit(ContentEditCmd {
