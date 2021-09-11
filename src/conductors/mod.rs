@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use async_trait::async_trait;
 use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
@@ -39,49 +39,54 @@ pub struct Response {
     fields: Vec<(String, String)>,
 }
 
-macro_rules! inner_op_handler {
-    ($n:literal, $c:path, $s:expr, $i:expr, $p:expr, $d:expr) => {{
-        if $s.is_empty() {
-            Err(anyhow!("{}: {}", $n, $s.len()))?
+fn inner_op_handler(
+    name: impl ::core::fmt::Display,
+    color: (u8, u8, u8),
+    mut set: ::std::collections::HashSet<impl ::core::fmt::Display>,
+    items: usize,
+    page: usize,
+    description: impl ::core::fmt::Display,
+) -> Result<Vec<Response>> {
+    if set.is_empty() {
+        bail!("{}: {}", name, set.len());
+    }
+
+    let lim = {
+        let full = ..set.len();
+        let lim = (items * (page - 1))..(items + items * (page - 1));
+
+        if !full.contains(&lim.start) {
+            bail!("out of range (0..{} !< {:?})", set.len(), lim);
         }
 
-        const ITEMS: usize = $i; // show num [users]/[page]
-
-        let lim = {
-            let full = ..$s.len();
-            let lim = (ITEMS * ($p as usize - 1))..(ITEMS + ITEMS * ($p as usize - 1));
-
-            if !full.contains(&lim.start) {
-                Err(anyhow!("out of range (0..{} !< {:?})", $s.len(), lim))?
-            }
-
-            if !full.contains(&lim.end) {
-                (lim.start..).to_turple()
-            } else {
-                lim.to_turple()
-            }
-        };
-
-        let mut resp_fields = vec![];
-
-        let all_pages = (($s.len() as f32) / (ITEMS as f32)).ceil();
-        resp_fields.push(("page".to_string(), format!("{}/{}", $p, all_pages)));
-
-        $s.drain()
-            .enumerate()
-            .collect::<Vec<_>>()
-            .drain(lim)
-            .enumerate()
-            .for_each(|(s, (i, c))| resp_fields.push((format!("{}[{}]", i, s), c.to_string())));
-
-        Response {
-            title: format!("showing {}", $n),
-            description: $d,
-            rgb: $c,
-            fields: resp_fields,
+        if !full.contains(&lim.end) {
+            (lim.start..).to_turple()
+        } else {
+            lim.to_turple()
         }
-        .let_(|r| vec![r])
-    }};
+    };
+
+    let mut resp_fields = vec![];
+
+    let all_pages = ((set.len() as f32) / (items as f32)).ceil();
+    resp_fields.push(("page".to_string(), format!("{}/{}", page, all_pages)));
+
+    set.drain()
+        .enumerate()
+        .collect::<Vec<_>>()
+        .drain(lim)
+        .enumerate()
+        .for_each(|(s, (i, c))| resp_fields.push((format!("{}[{}]", i, s), c.to_string())));
+
+    let resps = Response {
+        title: format!("showing {}", name),
+        description: description.to_string(),
+        rgb: color,
+        fields: resp_fields,
+    }
+    .let_(|r| vec![r]);
+
+    Ok(resps)
 }
 
 impl Conductor {
@@ -238,19 +243,19 @@ impl Conductor {
                         },
 
                         UserBookmarkOp::Show { user_id, page } => {
-                            let mut bookmark = self
+                            let bookmark = self
                                 .handler
                                 .get_user_bookmark(user_id.map(UserId).unwrap_or(executed_user_id))
                                 .await?;
 
-                            inner_op_handler!(
+                            inner_op_handler(
                                 "bookmark",
                                 USER_BOOKMARK,
                                 bookmark,
                                 20,
-                                page,
-                                from_user_shows
-                            )
+                                page as usize,
+                                from_user_shows,
+                            )?
                         },
                     },
 
@@ -451,12 +456,19 @@ impl Conductor {
                         },
 
                         ContentLikeOp::Show { page, content_id } => {
-                            let mut like = self
+                            let like = self
                                 .handler
                                 .get_content_like(content_id.let_(ContentId))
                                 .await?;
 
-                            inner_op_handler!("like", CONTENT_LIKE, like, 20, page, from_user_shows)
+                            inner_op_handler(
+                                "like",
+                                CONTENT_LIKE,
+                                like,
+                                20,
+                                page as usize,
+                                from_user_shows,
+                            )?
                         },
                     },
 
@@ -492,12 +504,19 @@ impl Conductor {
                         },
 
                         ContentPinOp::Show { page, content_id } => {
-                            let mut pin = self
+                            let pin = self
                                 .handler
                                 .get_content_pin(content_id.let_(ContentId))
                                 .await?;
 
-                            inner_op_handler!("pin", CONTENT_PIN, pin, 20, page, from_user_shows)
+                            inner_op_handler(
+                                "pin",
+                                CONTENT_PIN,
+                                pin,
+                                20,
+                                page as usize,
+                                from_user_shows,
+                            )?
                         },
                     },
 
