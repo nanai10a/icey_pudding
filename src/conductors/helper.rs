@@ -9,8 +9,7 @@ use serenity::model::id::{ChannelId, GuildId, MessageId};
 use serenity::utils::Colour;
 use uuid::Uuid;
 
-use super::Response;
-use crate::conductors::PartialContentMutation;
+use super::{PartialContentMutation, Response};
 use crate::entities::{Content, ContentId, PartialAuthor, User, UserId};
 use crate::repositories::{
     AuthorQuery, ContentContentMutation, ContentQuery, PostedQuery, UserMutation, UserQuery,
@@ -488,6 +487,60 @@ pub fn append_message_reference(
     });
 
     raw.insert("message_reference", mr);
+}
+
+pub trait ConvertRange<T>: ::core::ops::RangeBounds<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>);
+}
+impl<T> ConvertRange<T> for ::core::ops::Range<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let ::core::ops::Range { start, end } = self;
+        (
+            ::core::ops::Bound::Included(start),
+            ::core::ops::Bound::Excluded(end),
+        )
+    }
+}
+impl<T> ConvertRange<T> for ::core::ops::RangeFrom<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let ::core::ops::RangeFrom { start } = self;
+        (
+            ::core::ops::Bound::Included(start),
+            ::core::ops::Bound::Unbounded,
+        )
+    }
+}
+impl<T> ConvertRange<T> for ::core::ops::RangeFull {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        (::core::ops::Bound::Unbounded, ::core::ops::Bound::Unbounded)
+    }
+}
+impl<T> ConvertRange<T> for ::core::ops::RangeInclusive<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let (start, end) = self.into_inner();
+        (
+            ::core::ops::Bound::Included(start),
+            ::core::ops::Bound::Included(end),
+        )
+    }
+}
+impl<T> ConvertRange<T> for ::core::ops::RangeTo<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let ::core::ops::RangeTo { end } = self;
+        (
+            ::core::ops::Bound::Unbounded,
+            ::core::ops::Bound::Excluded(end),
+        )
+    }
+}
+impl<T> ConvertRange<T> for ::core::ops::RangeToInclusive<T> {
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
+        let ::core::ops::RangeToInclusive { end } = self;
+        (
+            ::core::ops::Bound::Unbounded,
+            ::core::ops::Bound::Included(end),
+        )
+    }
 }
 
 // --- parsing helpers ---

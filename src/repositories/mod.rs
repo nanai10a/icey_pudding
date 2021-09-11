@@ -1,13 +1,16 @@
+use core::ops::Bound;
 use std::collections::HashSet;
-use std::ops::Bound;
 
 use async_trait::async_trait;
 use regex::Regex;
 
 use crate::entities::{Author, Content, ContentId, Date, User, UserId};
 
-pub mod mock;
-pub mod mongo;
+mod mock;
+mod mongo;
+
+pub use mock::InMemoryRepository;
+pub use mongo::{MongoContentRepository, MongoUserRepository};
 
 type Result<T> = ::std::result::Result<T, RepositoryError>;
 

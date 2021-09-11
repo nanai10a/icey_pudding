@@ -6,8 +6,6 @@ use async_trait::async_trait;
 use mongodb::bson::{doc, Document};
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
 use mongodb::{bson, Client, ClientSession, Collection, Database};
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 use serenity::futures::TryStreamExt;
 
 use super::{
@@ -77,7 +75,7 @@ impl MongoContentRepository {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, ::serde::Serialize, ::serde::Deserialize)]
 struct MongoUserModel {
     id: String,
     admin: bool,
@@ -86,7 +84,7 @@ struct MongoUserModel {
     bookmark_size: i64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, ::serde::Serialize, ::serde::Deserialize)]
 struct MongoContentModel {
     id: ContentId,
     author: MongoContentAuthorModel,
@@ -100,7 +98,7 @@ struct MongoContentModel {
     edited: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, ::serde::Serialize, ::serde::Deserialize)]
 enum MongoContentAuthorModel {
     User {
         id: String,
@@ -110,7 +108,7 @@ enum MongoContentAuthorModel {
     Virtual(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, ::serde::Serialize, ::serde::Deserialize)]
 struct MongoContentPostedModel {
     id: String,
     name: String,
@@ -752,7 +750,7 @@ async fn process_transaction(s: &mut ClientSession) -> ::mongodb::error::Result<
 }
 
 async fn get_set<T>(coll: &Collection<T>, id: impl Into<::mongodb::bson::Bson>) -> Result<T>
-where T: Sync + Send + Unpin + DeserializeOwned {
+where T: Sync + Send + Unpin + ::serde::de::DeserializeOwned {
     let res = coll
         .find_one(doc! { "id": id.into() }, None)
         .await
