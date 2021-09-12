@@ -7,6 +7,7 @@ pub(crate) mod conductors;
 mod constructors;
 pub(crate) mod entities;
 pub(crate) mod handlers;
+pub(crate) mod interactors;
 pub(crate) mod repositories;
 pub(crate) mod usecases;
 pub(crate) mod utils;
