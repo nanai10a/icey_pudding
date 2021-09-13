@@ -1,95 +1,95 @@
 usecase! {
     post : {
-        content: String,
-        posted: entities::Posted,
-        author: entities::Author,
-        created: entities::Date,
+        pub content: String,
+        pub posted: entities::Posted,
+        pub author: entities::Author,
+        pub created: entities::Date,
     } => {
-        content: entities::Content,
+        pub content: entities::Content,
     }
 }
 
 usecase! {
     get : {
-        content_id: entities::ContentId,
+        pub content_id: entities::ContentId,
     } => {
-        content: entities::Content,
+        pub content: entities::Content,
     }
 }
 
 usecase! {
     gets : {
-        query: crate::repositories::ContentQuery,
+        pub query: crate::repositories::ContentQuery,
     } => {
-        contents: Vec<entities::Content>,
+        pub contents: Vec<entities::Content>,
     }
 }
 
 usecase! {
     edit : {
-        content_id: entities::ContentId,
-        mutation: crate::repositories::ContentMutation,
+        pub content_id: entities::ContentId,
+        pub mutation: crate::repositories::ContentMutation,
     } => {
-        content: entities::Content,
+        pub content: entities::Content,
     }
 }
 
 usecase! {
     withdraw : {
-        content_id: entities::ContentId,
+        pub content_id: entities::ContentId,
     } => {
-        content: entities::Content,
+        pub content: entities::Content,
     }
 }
 
 usecase! {
     get_like : {
-        content_id: entities::ContentId,
+        pub content_id: entities::ContentId,
     } => {
-        like: std::collections::HashSet<entities::UserId>,
+        pub like: std::collections::HashSet<entities::UserId>,
     }
 }
 
 usecase! {
     like : {
-        content_id: entities::ContentId,
-        user_id: entities::UserId,
+        pub content_id: entities::ContentId,
+        pub user_id: entities::UserId,
     } => {
-        content: entities::Content
+        pub content: entities::Content
     }
 }
 
 usecase! {
     unlike : {
-        content_id: entities::ContentId,
-        user_id: entities::UserId,
+        pub content_id: entities::ContentId,
+        pub user_id: entities::UserId,
     } => {
-        content: entities::Content
+        pub content: entities::Content
     }
 }
 
 usecase! {
     get_pin : {
-        content_id: entities::ContentId,
+        pub content_id: entities::ContentId,
     } => {
-        like: std::collections::HashSet<entities::UserId>,
+        pub like: std::collections::HashSet<entities::UserId>,
     }
 }
 
 usecase! {
     pin : {
-        content_id: entities::ContentId,
-        user_id: entities::UserId,
+        pub content_id: entities::ContentId,
+        pub user_id: entities::UserId,
     } => {
-        content: entities::Content
+        pub content: entities::Content
     }
 }
 
 usecase! {
     unpin : {
-        content_id: entities::ContentId,
-        user_id: entities::UserId,
+        pub content_id: entities::ContentId,
+        pub user_id: entities::UserId,
     } => {
-        content: entities::Content
+        pub content: entities::Content
     }
 }
