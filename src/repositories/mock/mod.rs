@@ -3,11 +3,12 @@ use core::ops::RangeBounds;
 use async_trait::async_trait;
 use tokio::sync::Mutex;
 
-use super::{
-    AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, ContentRepository,
-    PostedQuery, RepositoryError, Result, UserMutation, UserQuery, UserRepository,
-};
+use super::{ContentRepository, RepositoryError, Result, UserRepository};
 use crate::entities::{Author, Content, ContentId, User, UserId};
+use crate::usecases::content::{
+    AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, PostedQuery,
+};
+use crate::usecases::user::{UserMutation, UserQuery};
 
 mod helpers;
 

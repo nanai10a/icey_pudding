@@ -19,7 +19,7 @@ usecase! {
 
 usecase! {
     gets : {
-        pub query: crate::repositories::ContentQuery,
+        pub query: super::ContentQuery,
     } => {
         pub contents: Vec<entities::Content>,
     }
@@ -28,7 +28,7 @@ usecase! {
 usecase! {
     edit : {
         pub content_id: entities::ContentId,
-        pub mutation: crate::repositories::ContentMutation,
+        pub mutation: super::ContentMutation,
     } => {
         pub content: entities::Content,
     }
@@ -92,4 +92,53 @@ usecase! {
     } => {
         pub content: entities::Content
     }
+}
+
+use core::ops::Bound;
+use std::collections::HashSet;
+
+use regex::Regex;
+
+use crate::entities::{Author, Date, UserId};
+
+#[derive(Debug, Clone, Default)]
+pub struct ContentQuery {
+    pub author: Option<AuthorQuery>,
+    pub posted: Option<PostedQuery>,
+    pub content: Option<Regex>,
+    pub liked: Option<HashSet<UserId>>,
+    pub liked_num: Option<(Bound<u32>, Bound<u32>)>,
+    pub pinned: Option<HashSet<UserId>>,
+    pub pinned_num: Option<(Bound<u32>, Bound<u32>)>,
+    // FiF: times query
+}
+
+#[derive(Debug, Clone)]
+pub enum AuthorQuery {
+    UserId(UserId),
+    UserName(Regex),
+    UserNick(Regex),
+    Virtual(Regex),
+    Any(Regex),
+}
+
+#[derive(Debug, Clone)]
+pub enum PostedQuery {
+    UserId(UserId),
+    UserName(Regex),
+    UserNick(Regex),
+    Any(Regex),
+}
+
+#[derive(Debug, Clone)]
+pub struct ContentMutation {
+    pub author: Option<Author>,
+    pub content: Option<ContentContentMutation>,
+    pub edited: Date,
+}
+
+#[derive(Debug, Clone)]
+pub enum ContentContentMutation {
+    Complete(String),
+    Sed { capture: Regex, replace: String },
 }

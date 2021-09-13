@@ -8,7 +8,7 @@ use serenity::model::prelude::User;
 
 use crate::entities::{Author, ContentId, PartialAuthor, Posted, UserId};
 use crate::handlers::Handler;
-use crate::repositories::{ContentContentMutation, ContentMutation};
+use crate::usecases::content::{ContentContentMutation, ContentMutation};
 use crate::utils::LetChain;
 
 mod command_colors;

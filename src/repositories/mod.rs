@@ -1,10 +1,10 @@
-use core::ops::Bound;
 use std::collections::HashSet;
 
 use async_trait::async_trait;
-use regex::Regex;
 
-use crate::entities::{Author, Content, ContentId, Date, User, UserId};
+use crate::entities::{Content, ContentId, User, UserId};
+use crate::usecases::content::{ContentMutation, ContentQuery};
+use crate::usecases::user::{UserMutation, UserQuery};
 
 mod mock;
 mod mongo;
@@ -55,41 +55,6 @@ pub trait ContentRepository {
     async fn delete(&self, id: ContentId) -> Result<Content>;
 }
 
-#[derive(Debug, Clone, Default)]
-pub struct UserQuery {
-    pub bookmark: Option<HashSet<ContentId>>,
-    pub bookmark_num: Option<(Bound<u32>, Bound<u32>)>,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ContentQuery {
-    pub author: Option<AuthorQuery>,
-    pub posted: Option<PostedQuery>,
-    pub content: Option<Regex>,
-    pub liked: Option<HashSet<UserId>>,
-    pub liked_num: Option<(Bound<u32>, Bound<u32>)>,
-    pub pinned: Option<HashSet<UserId>>,
-    pub pinned_num: Option<(Bound<u32>, Bound<u32>)>,
-    // FiF: times query
-}
-
-#[derive(Debug, Clone)]
-pub enum PostedQuery {
-    UserId(UserId),
-    UserName(Regex),
-    UserNick(Regex),
-    Any(Regex),
-}
-
-#[derive(Debug, Clone)]
-pub enum AuthorQuery {
-    UserId(UserId),
-    UserName(Regex),
-    UserNick(Regex),
-    Virtual(Regex),
-    Any(Regex),
-}
-
 #[derive(Debug)]
 pub enum RepositoryError {
     NotFound,
@@ -111,22 +76,3 @@ impl ::std::fmt::Display for RepositoryError {
     }
 }
 impl ::std::error::Error for RepositoryError {}
-
-#[derive(Debug, Clone, Default)]
-pub struct UserMutation {
-    pub admin: Option<bool>,
-    pub sub_admin: Option<bool>,
-}
-
-#[derive(Debug, Clone)]
-pub struct ContentMutation {
-    pub author: Option<Author>,
-    pub content: Option<ContentContentMutation>,
-    pub edited: Date,
-}
-
-#[derive(Debug, Clone)]
-pub enum ContentContentMutation {
-    Complete(String),
-    Sed { capture: Regex, replace: String },
-}

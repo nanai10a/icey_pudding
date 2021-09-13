@@ -14,11 +14,9 @@ usecase! {
     }
 }
 
-// FIXME: move query and mutation to entities
-
 usecase! {
     gets : {
-        pub query: crate::repositories::UserQuery,
+        pub query: super::UserQuery,
     } => {
         pub users: Vec<entities::User>,
     }
@@ -27,7 +25,7 @@ usecase! {
 usecase! {
     edit : {
         pub user_id: entities::UserId,
-        pub mutation: crate::repositories::UserMutation,
+        pub mutation: super::UserMutation,
     } => {
         pub user: entities::User,
     }
@@ -65,4 +63,21 @@ usecase! {
     } => {
         pub user: entities::User,
     }
+}
+
+use core::ops::Bound;
+use std::collections::HashSet;
+
+use crate::entities::ContentId;
+
+#[derive(Debug, Clone, Default)]
+pub struct UserQuery {
+    pub bookmark: Option<HashSet<ContentId>>,
+    pub bookmark_num: Option<(Bound<u32>, Bound<u32>)>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct UserMutation {
+    pub admin: Option<bool>,
+    pub sub_admin: Option<bool>,
 }

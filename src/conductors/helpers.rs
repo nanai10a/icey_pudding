@@ -11,9 +11,8 @@ use uuid::Uuid;
 
 use super::{PartialContentMutation, Response};
 use crate::entities::{Content, ContentId, PartialAuthor, User, UserId};
-use crate::repositories::{
-    AuthorQuery, ContentContentMutation, ContentQuery, PostedQuery, UserMutation, UserQuery,
-};
+use crate::usecases::content::{AuthorQuery, ContentContentMutation, ContentQuery, PostedQuery};
+use crate::usecases::user::{UserMutation, UserQuery};
 use crate::utils::{self, LetChain};
 
 /// this is a ICEy_PUDDING.

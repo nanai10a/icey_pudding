@@ -3,9 +3,9 @@ use std::collections::HashSet;
 use anyhow::{bail, Result};
 
 use crate::entities::{Author, Content, ContentId, Date, Posted, User, UserId};
-use crate::repositories::{
-    ContentMutation, ContentQuery, ContentRepository, UserMutation, UserQuery, UserRepository,
-};
+use crate::repositories::{ContentRepository, UserRepository};
+use crate::usecases::content::{ContentMutation, ContentQuery};
+use crate::usecases::user::{UserMutation, UserQuery};
 
 pub mod helpers;
 

@@ -6,11 +6,12 @@ use mongodb::bson::{doc, Document};
 use mongodb::{bson, Client, Collection, Database};
 use serenity::futures::TryStreamExt;
 
-use super::{
-    AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, ContentRepository,
-    PostedQuery, RepositoryError, Result, UserMutation, UserQuery, UserRepository,
-};
+use super::{ContentRepository, RepositoryError, Result, UserRepository};
 use crate::entities::{Author, Content, ContentId, User, UserId};
+use crate::usecases::content::{
+    AuthorQuery, ContentContentMutation, ContentMutation, ContentQuery, PostedQuery,
+};
+use crate::usecases::user::{UserMutation, UserQuery};
 use crate::utils::{self, LetChain};
 
 mod converters;
