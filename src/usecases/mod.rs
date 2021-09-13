@@ -3,8 +3,9 @@ macro_rules! usecase {
         pub mod $n {
             use crate::entities;
 
+            #[::async_trait::async_trait]
             pub trait Usecase {
-                fn handle(&self, data: Input) -> ::anyhow::Result<()>;
+                async fn handle(&self, data: Input) -> ::anyhow::Result<()>;
             }
 
             pub struct Input { $( $i )* }
