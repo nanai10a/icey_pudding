@@ -12,7 +12,7 @@ mod mongo;
 pub use mock::InMemoryRepository;
 pub use mongo::{MongoContentRepository, MongoUserRepository};
 
-type Result<T> = ::std::result::Result<T, RepositoryError>;
+type Result<T> = ::core::result::Result<T, RepositoryError>;
 
 #[async_trait]
 pub trait UserRepository {
@@ -62,8 +62,8 @@ pub enum RepositoryError {
     Internal(anyhow::Error),
 }
 
-impl ::std::fmt::Display for RepositoryError {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+impl ::core::fmt::Display for RepositoryError {
+    fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
         match self {
             RepositoryError::NotFound => write!(f, "cannot find object."),
             RepositoryError::NoUnique { matched } => write!(
