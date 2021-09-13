@@ -72,7 +72,7 @@ usecase! {
     get_pin : {
         pub content_id: entities::ContentId,
     } => {
-        pub like: std::collections::HashSet<entities::UserId>,
+        pub pin: std::collections::HashSet<entities::UserId>,
     }
 }
 
