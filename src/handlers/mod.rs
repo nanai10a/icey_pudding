@@ -7,7 +7,7 @@ use crate::repositories::{
     ContentMutation, ContentQuery, ContentRepository, UserMutation, UserQuery, UserRepository,
 };
 
-mod helpers;
+pub mod helpers;
 
 use helpers::*;
 
