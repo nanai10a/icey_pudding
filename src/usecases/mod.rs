@@ -4,7 +4,7 @@ macro_rules! usecase {
             use crate::entities;
 
             pub trait Usecase {
-                fn handle(&self, data: Input);
+                fn handle(&self, data: Input) -> ::anyhow::Result<()>;
             }
 
             pub struct Input { $( $i )* }
