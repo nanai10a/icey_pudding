@@ -1,6 +1,7 @@
 use alloc::sync::Arc;
 
 use anyhow::Result;
+use async_recursion::async_recursion;
 use tokio::sync::{mpsc, Mutex};
 
 use crate::usecases::user::{
@@ -41,6 +42,7 @@ pub struct ReturnUserController {
     unbookmark_ret: Mutex<mpsc::Receiver<unbookmark::Output>>,
 }
 impl ReturnUserController {
+    #[async_recursion]
     pub async fn register(&self, data: register::Input) -> Result<register::Output> {
         return_inner!(self =>
             use register,
@@ -50,6 +52,7 @@ impl ReturnUserController {
         )
     }
 
+    #[async_recursion]
     pub async fn get(&self, data: get::Input) -> Result<get::Output> {
         return_inner!(self =>
             use get,
@@ -59,6 +62,7 @@ impl ReturnUserController {
         )
     }
 
+    #[async_recursion]
     pub async fn gets(&self, data: gets::Input) -> Result<gets::Output> {
         return_inner!(self =>
             use gets,
@@ -68,6 +72,7 @@ impl ReturnUserController {
         )
     }
 
+    #[async_recursion]
     pub async fn edit(&self, data: edit::Input) -> Result<edit::Output> {
         return_inner!(self =>
             use edit,
@@ -77,6 +82,7 @@ impl ReturnUserController {
         )
     }
 
+    #[async_recursion]
     pub async fn unregister(&self, data: unregister::Input) -> Result<unregister::Output> {
         return_inner!(self =>
             use unregister,
@@ -86,6 +92,7 @@ impl ReturnUserController {
         )
     }
 
+    #[async_recursion]
     pub async fn get_bookmark(&self, data: get_bookmark::Input) -> Result<get_bookmark::Output> {
         return_inner!(self =>
             use get_bookmark,
@@ -95,6 +102,7 @@ impl ReturnUserController {
         )
     }
 
+    #[async_recursion]
     pub async fn bookmark(&self, data: bookmark::Input) -> Result<bookmark::Output> {
         return_inner!(self =>
             use bookmark,
@@ -104,6 +112,7 @@ impl ReturnUserController {
         )
     }
 
+    #[async_recursion]
     pub async fn unbookmark(&self, data: unbookmark::Input) -> Result<unbookmark::Output> {
         return_inner!(self =>
             use unbookmark,
