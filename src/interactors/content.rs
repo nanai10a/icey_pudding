@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use anyhow::{bail, Result};
 use async_trait::async_trait;
-use tokio::sync::{mpsc, Mutex};
+use tokio::sync::mpsc;
 
 use crate::entities::Content;
 // FIXME: move to interactors::
@@ -17,7 +17,6 @@ use crate::utils::LetChain;
 pub struct ReturnContentPostInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<post::Output>>,
 }
 #[async_trait]
@@ -75,7 +74,6 @@ impl post::Usecase for ReturnContentPostInteractor {
 
 pub struct ReturnContentGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<get::Output>>,
 }
 #[async_trait]
@@ -96,7 +94,6 @@ impl get::Usecase for ReturnContentGetInteractor {
 
 pub struct ReturnContentGetsInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<gets::Output>>,
 }
 #[async_trait]
@@ -117,7 +114,6 @@ impl gets::Usecase for ReturnContentGetsInteractor {
 
 pub struct ReturnContentEditInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<edit::Output>>,
 }
 #[async_trait]
@@ -144,7 +140,6 @@ impl edit::Usecase for ReturnContentEditInteractor {
 
 pub struct ReturnContentWithdrawInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<withdraw::Output>>,
 }
 #[async_trait]
@@ -165,7 +160,6 @@ impl withdraw::Usecase for ReturnContentWithdrawInteractor {
 
 pub struct ReturnContentLikeGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<get_like::Output>>,
 }
 #[async_trait]
@@ -186,7 +180,6 @@ impl get_like::Usecase for ReturnContentLikeGetInteractor {
 
 pub struct ReturnContentLikeInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<like::Output>>,
 }
 #[async_trait]
@@ -223,7 +216,6 @@ impl like::Usecase for ReturnContentLikeInteractor {
 
 pub struct ReturnContentUnlikeInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<unlike::Output>>,
 }
 #[async_trait]
@@ -260,7 +252,6 @@ impl unlike::Usecase for ReturnContentUnlikeInteractor {
 
 pub struct ReturnContentPinGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<get_pin::Output>>,
 }
 #[async_trait]
@@ -281,7 +272,6 @@ impl get_pin::Usecase for ReturnContentPinGetInteractor {
 
 pub struct ReturnContentPinInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<pin::Output>>,
 }
 #[async_trait]
@@ -318,7 +308,6 @@ impl pin::Usecase for ReturnContentPinInteractor {
 
 pub struct ReturnContentUnpinInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub lock: Arc<Mutex<()>>,
     pub ret: Arc<mpsc::Sender<unpin::Output>>,
 }
 #[async_trait]
