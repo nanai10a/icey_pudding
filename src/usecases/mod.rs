@@ -8,8 +8,10 @@ macro_rules! usecase {
                 async fn handle(&self, data: Input) -> ::anyhow::Result<()>;
             }
 
+            #[derive(Debug, Clone)]
             pub struct Input { $( $i )* }
 
+            #[derive(Debug, Clone)]
             pub struct Output { $( $o )* }
         }
     };
