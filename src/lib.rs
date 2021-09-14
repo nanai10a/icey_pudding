@@ -7,6 +7,7 @@ extern crate alloc;
 
 pub(crate) mod conductors;
 mod constructors;
+pub(crate) mod controllers;
 pub(crate) mod entities;
 pub(crate) mod handlers;
 pub(crate) mod interactors;
