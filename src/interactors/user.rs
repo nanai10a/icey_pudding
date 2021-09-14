@@ -1,3 +1,4 @@
+use alloc::sync::Arc;
 use std::collections::HashSet;
 
 use anyhow::{bail, Result};
@@ -14,9 +15,9 @@ use crate::usecases::user::{
 use crate::utils::LetChain;
 
 pub struct ReturnUserRegisterInteractor {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub lock: Mutex<()>,
-    pub ret: Mutex<Option<register::Output>>,
+    pub user_repository: Arc<dyn UserRepository + Sync + Send>,
+    pub lock: Arc<Mutex<()>>,
+    pub ret: Arc<Mutex<Option<register::Output>>>,
 }
 #[async_trait]
 impl register::Usecase for ReturnUserRegisterInteractor {
@@ -41,9 +42,9 @@ impl register::Usecase for ReturnUserRegisterInteractor {
 }
 
 pub struct ReturnUserGetInteractor {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub lock: Mutex<()>,
-    pub ret: Mutex<Option<get::Output>>,
+    pub user_repository: Arc<dyn UserRepository + Sync + Send>,
+    pub lock: Arc<Mutex<()>>,
+    pub ret: Arc<Mutex<Option<get::Output>>>,
 }
 #[async_trait]
 impl get::Usecase for ReturnUserGetInteractor {
@@ -61,9 +62,9 @@ impl get::Usecase for ReturnUserGetInteractor {
 }
 
 pub struct ReturnUserGetsInteractor {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub lock: Mutex<()>,
-    pub ret: Mutex<Option<gets::Output>>,
+    pub user_repository: Arc<dyn UserRepository + Sync + Send>,
+    pub lock: Arc<Mutex<()>>,
+    pub ret: Arc<Mutex<Option<gets::Output>>>,
 }
 #[async_trait]
 impl gets::Usecase for ReturnUserGetsInteractor {
@@ -81,9 +82,9 @@ impl gets::Usecase for ReturnUserGetsInteractor {
 }
 
 pub struct ReturnUserEditInteractor {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub lock: Mutex<()>,
-    pub ret: Mutex<Option<edit::Output>>,
+    pub user_repository: Arc<dyn UserRepository + Sync + Send>,
+    pub lock: Arc<Mutex<()>>,
+    pub ret: Arc<Mutex<Option<edit::Output>>>,
 }
 #[async_trait]
 impl edit::Usecase for ReturnUserEditInteractor {
@@ -101,9 +102,9 @@ impl edit::Usecase for ReturnUserEditInteractor {
 }
 
 pub struct ReturnUserUnregisterInteractor {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub lock: Mutex<()>,
-    pub ret: Mutex<Option<unregister::Output>>,
+    pub user_repository: Arc<dyn UserRepository + Sync + Send>,
+    pub lock: Arc<Mutex<()>>,
+    pub ret: Arc<Mutex<Option<unregister::Output>>>,
 }
 #[async_trait]
 impl unregister::Usecase for ReturnUserUnregisterInteractor {
@@ -121,9 +122,9 @@ impl unregister::Usecase for ReturnUserUnregisterInteractor {
 }
 
 pub struct ReturnUserBookmarkGetInteractor {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub lock: Mutex<()>,
-    pub ret: Mutex<Option<get_bookmark::Output>>,
+    pub user_repository: Arc<dyn UserRepository + Sync + Send>,
+    pub lock: Arc<Mutex<()>>,
+    pub ret: Arc<Mutex<Option<get_bookmark::Output>>>,
 }
 #[async_trait]
 impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
@@ -141,9 +142,9 @@ impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
 }
 
 pub struct ReturnUserBookmarkInteractor {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub lock: Mutex<()>,
-    pub ret: Mutex<Option<bookmark::Output>>,
+    pub user_repository: Arc<dyn UserRepository + Sync + Send>,
+    pub lock: Arc<Mutex<()>>,
+    pub ret: Arc<Mutex<Option<bookmark::Output>>>,
 }
 #[async_trait]
 impl bookmark::Usecase for ReturnUserBookmarkInteractor {
@@ -177,9 +178,9 @@ impl bookmark::Usecase for ReturnUserBookmarkInteractor {
 }
 
 pub struct ReturnUserUnbookmarkInteractor {
-    pub user_repository: Box<dyn UserRepository + Sync + Send>,
-    pub lock: Mutex<()>,
-    pub ret: Mutex<Option<unbookmark::Output>>,
+    pub user_repository: Arc<dyn UserRepository + Sync + Send>,
+    pub lock: Arc<Mutex<()>>,
+    pub ret: Arc<Mutex<Option<unbookmark::Output>>>,
 }
 #[async_trait]
 impl unbookmark::Usecase for ReturnUserUnbookmarkInteractor {
