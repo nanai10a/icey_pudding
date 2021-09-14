@@ -19,3 +19,4 @@ serde = { version = "1.0.126", features = ["derive"] }
 async-trait = "0.1.51"
 range_parser = { git = "https://github.com/Nanai10a/range_parser" }
 lazy_static = "1.4.0"
+async-recursion = "0.3.2"
