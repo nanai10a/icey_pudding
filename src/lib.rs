@@ -3,6 +3,8 @@
 #![feature(unboxed_closures)]
 #![feature(fn_traits)]
 
+extern crate alloc;
+
 pub(crate) mod conductors;
 mod constructors;
 pub(crate) mod entities;
