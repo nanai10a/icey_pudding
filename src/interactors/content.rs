@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use anyhow::{bail, Result};
 use async_trait::async_trait;
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 
 use crate::entities::Content;
 // FIXME: move to interactors::
@@ -18,7 +18,7 @@ pub struct ReturnContentPostInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<post::Output>>>,
+    pub ret: Arc<mpsc::Sender<post::Output>>,
 }
 #[async_trait]
 impl post::Usecase for ReturnContentPostInteractor {
@@ -62,10 +62,12 @@ impl post::Usecase for ReturnContentPostInteractor {
             panic!("content_id duplicated!");
         }
 
-        *self.ret.lock().await = post::Output {
+        post::Output {
             content: new_content,
         }
-        .let_(Some);
+        .let_(|r| self.ret.send(r))
+        .await
+        .unwrap();
 
         Ok(())
     }
@@ -74,18 +76,19 @@ impl post::Usecase for ReturnContentPostInteractor {
 pub struct ReturnContentGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<get::Output>>>,
+    pub ret: Arc<mpsc::Sender<get::Output>>,
 }
 #[async_trait]
 impl get::Usecase for ReturnContentGetInteractor {
     async fn handle(&self, get::Input { content_id }: get::Input) -> anyhow::Result<()> {
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| get::Output { content })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -94,18 +97,19 @@ impl get::Usecase for ReturnContentGetInteractor {
 pub struct ReturnContentGetsInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<gets::Output>>>,
+    pub ret: Arc<mpsc::Sender<gets::Output>>,
 }
 #[async_trait]
 impl gets::Usecase for ReturnContentGetsInteractor {
     async fn handle(&self, gets::Input { query }: gets::Input) -> anyhow::Result<()> {
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .finds(query)
             .await
             .map_err(content_err_fmt)?
             .let_(|contents| gets::Output { contents })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -114,7 +118,7 @@ impl gets::Usecase for ReturnContentGetsInteractor {
 pub struct ReturnContentEditInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<edit::Output>>>,
+    pub ret: Arc<mpsc::Sender<edit::Output>>,
 }
 #[async_trait]
 impl edit::Usecase for ReturnContentEditInteractor {
@@ -125,13 +129,14 @@ impl edit::Usecase for ReturnContentEditInteractor {
             mutation,
         }: edit::Input,
     ) -> anyhow::Result<()> {
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .update(content_id, mutation)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| edit::Output { content })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -140,18 +145,19 @@ impl edit::Usecase for ReturnContentEditInteractor {
 pub struct ReturnContentWithdrawInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<withdraw::Output>>>,
+    pub ret: Arc<mpsc::Sender<withdraw::Output>>,
 }
 #[async_trait]
 impl withdraw::Usecase for ReturnContentWithdrawInteractor {
     async fn handle(&self, withdraw::Input { content_id }: withdraw::Input) -> anyhow::Result<()> {
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .delete(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| withdraw::Output { content })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -160,18 +166,19 @@ impl withdraw::Usecase for ReturnContentWithdrawInteractor {
 pub struct ReturnContentLikeGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<get_like::Output>>>,
+    pub ret: Arc<mpsc::Sender<get_like::Output>>,
 }
 #[async_trait]
 impl get_like::Usecase for ReturnContentLikeGetInteractor {
     async fn handle(&self, get_like::Input { content_id }: get_like::Input) -> anyhow::Result<()> {
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .get_liked(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|like| get_like::Output { like })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -180,7 +187,7 @@ impl get_like::Usecase for ReturnContentLikeGetInteractor {
 pub struct ReturnContentLikeInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<like::Output>>>,
+    pub ret: Arc<mpsc::Sender<like::Output>>,
 }
 #[async_trait]
 impl like::Usecase for ReturnContentLikeInteractor {
@@ -201,13 +208,14 @@ impl like::Usecase for ReturnContentLikeInteractor {
             bail!("already liked.");
         }
 
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| like::Output { content })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -216,7 +224,7 @@ impl like::Usecase for ReturnContentLikeInteractor {
 pub struct ReturnContentUnlikeInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<unlike::Output>>>,
+    pub ret: Arc<mpsc::Sender<unlike::Output>>,
 }
 #[async_trait]
 impl unlike::Usecase for ReturnContentUnlikeInteractor {
@@ -237,13 +245,14 @@ impl unlike::Usecase for ReturnContentUnlikeInteractor {
             bail!("didn't liked.")
         }
 
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| unlike::Output { content })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -252,18 +261,19 @@ impl unlike::Usecase for ReturnContentUnlikeInteractor {
 pub struct ReturnContentPinGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<get_pin::Output>>>,
+    pub ret: Arc<mpsc::Sender<get_pin::Output>>,
 }
 #[async_trait]
 impl get_pin::Usecase for ReturnContentPinGetInteractor {
     async fn handle(&self, get_pin::Input { content_id }: get_pin::Input) -> anyhow::Result<()> {
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .get_pinned(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|pin| get_pin::Output { pin })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -272,7 +282,7 @@ impl get_pin::Usecase for ReturnContentPinGetInteractor {
 pub struct ReturnContentPinInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<pin::Output>>>,
+    pub ret: Arc<mpsc::Sender<pin::Output>>,
 }
 #[async_trait]
 impl pin::Usecase for ReturnContentPinInteractor {
@@ -293,13 +303,14 @@ impl pin::Usecase for ReturnContentPinInteractor {
             bail!("already pinned.");
         }
 
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| pin::Output { content })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -308,7 +319,7 @@ impl pin::Usecase for ReturnContentPinInteractor {
 pub struct ReturnContentUnpinInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<unpin::Output>>>,
+    pub ret: Arc<mpsc::Sender<unpin::Output>>,
 }
 #[async_trait]
 impl unpin::Usecase for ReturnContentUnpinInteractor {
@@ -329,13 +340,14 @@ impl unpin::Usecase for ReturnContentUnpinInteractor {
             bail!("didn't pinned.");
         }
 
-        *self.ret.lock().await = self
-            .content_repository
+        self.content_repository
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| unpin::Output { content })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }

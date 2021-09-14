@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use anyhow::{bail, Result};
 use async_trait::async_trait;
-use tokio::sync::Mutex;
+use tokio::sync::{mpsc, Mutex};
 
 use crate::entities::User;
 // FIXME: move to interactors::
@@ -17,7 +17,7 @@ use crate::utils::LetChain;
 pub struct ReturnUserRegisterInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<register::Output>>>,
+    pub ret: Arc<mpsc::Sender<register::Output>>,
 }
 #[async_trait]
 impl register::Usecase for ReturnUserRegisterInteractor {
@@ -35,7 +35,10 @@ impl register::Usecase for ReturnUserRegisterInteractor {
             bail!("already registered.");
         }
 
-        *self.ret.lock().await = register::Output { user: new_user }.let_(Some);
+        register::Output { user: new_user }
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -44,18 +47,19 @@ impl register::Usecase for ReturnUserRegisterInteractor {
 pub struct ReturnUserGetInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<get::Output>>>,
+    pub ret: Arc<mpsc::Sender<get::Output>>,
 }
 #[async_trait]
 impl get::Usecase for ReturnUserGetInteractor {
     async fn handle(&self, get::Input { user_id }: get::Input) -> Result<()> {
-        *self.ret.lock().await = self
-            .user_repository
+        self.user_repository
             .find(user_id)
             .await
             .map_err(user_err_fmt)?
             .let_(|user| get::Output { user })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -64,18 +68,19 @@ impl get::Usecase for ReturnUserGetInteractor {
 pub struct ReturnUserGetsInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<gets::Output>>>,
+    pub ret: Arc<mpsc::Sender<gets::Output>>,
 }
 #[async_trait]
 impl gets::Usecase for ReturnUserGetsInteractor {
     async fn handle(&self, gets::Input { query }: gets::Input) -> Result<()> {
-        *self.ret.lock().await = self
-            .user_repository
+        self.user_repository
             .finds(query)
             .await
             .map_err(user_err_fmt)?
             .let_(|users| gets::Output { users })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -84,18 +89,19 @@ impl gets::Usecase for ReturnUserGetsInteractor {
 pub struct ReturnUserEditInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<edit::Output>>>,
+    pub ret: Arc<mpsc::Sender<edit::Output>>,
 }
 #[async_trait]
 impl edit::Usecase for ReturnUserEditInteractor {
     async fn handle(&self, edit::Input { user_id, mutation }: edit::Input) -> Result<()> {
-        *self.ret.lock().await = self
-            .user_repository
+        self.user_repository
             .update(user_id, mutation)
             .await
             .map_err(user_err_fmt)?
             .let_(|user| edit::Output { user })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -104,18 +110,19 @@ impl edit::Usecase for ReturnUserEditInteractor {
 pub struct ReturnUserUnregisterInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<unregister::Output>>>,
+    pub ret: Arc<mpsc::Sender<unregister::Output>>,
 }
 #[async_trait]
 impl unregister::Usecase for ReturnUserUnregisterInteractor {
     async fn handle(&self, unregister::Input { user_id }: unregister::Input) -> Result<()> {
-        *self.ret.lock().await = self
-            .user_repository
+        self.user_repository
             .delete(user_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|user| unregister::Output { user })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -124,18 +131,19 @@ impl unregister::Usecase for ReturnUserUnregisterInteractor {
 pub struct ReturnUserBookmarkGetInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<get_bookmark::Output>>>,
+    pub ret: Arc<mpsc::Sender<get_bookmark::Output>>,
 }
 #[async_trait]
 impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
     async fn handle(&self, get_bookmark::Input { user_id }: get_bookmark::Input) -> Result<()> {
-        *self.ret.lock().await = self
-            .user_repository
+        self.user_repository
             .get_bookmark(user_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|bookmark| get_bookmark::Output { bookmark })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -144,7 +152,7 @@ impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
 pub struct ReturnUserBookmarkInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<bookmark::Output>>>,
+    pub ret: Arc<mpsc::Sender<bookmark::Output>>,
 }
 #[async_trait]
 impl bookmark::Usecase for ReturnUserBookmarkInteractor {
@@ -165,13 +173,14 @@ impl bookmark::Usecase for ReturnUserBookmarkInteractor {
             bail!("already bookmarked.");
         }
 
-        *self.ret.lock().await = self
-            .user_repository
+        self.user_repository
             .find(user_id)
             .await
             .map_err(user_err_fmt)?
             .let_(|user| bookmark::Output { user })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
@@ -180,7 +189,7 @@ impl bookmark::Usecase for ReturnUserBookmarkInteractor {
 pub struct ReturnUserUnbookmarkInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub lock: Arc<Mutex<()>>,
-    pub ret: Arc<Mutex<Option<unbookmark::Output>>>,
+    pub ret: Arc<mpsc::Sender<unbookmark::Output>>,
 }
 #[async_trait]
 impl unbookmark::Usecase for ReturnUserUnbookmarkInteractor {
@@ -201,13 +210,14 @@ impl unbookmark::Usecase for ReturnUserUnbookmarkInteractor {
             bail!("didn't bookmarked.");
         }
 
-        *self.ret.lock().await = self
-            .user_repository
+        self.user_repository
             .find(user_id)
             .await
             .map_err(user_err_fmt)?
             .let_(|user| unbookmark::Output { user })
-            .let_(Some);
+            .let_(|r| self.ret.send(r))
+            .await
+            .unwrap();
 
         Ok(())
     }
