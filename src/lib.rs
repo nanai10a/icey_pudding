@@ -11,6 +11,7 @@ pub(crate) mod controllers;
 pub(crate) mod entities;
 pub(crate) mod handlers;
 pub(crate) mod interactors;
+pub(crate) mod presenters;
 pub(crate) mod repositories;
 pub(crate) mod usecases;
 pub(crate) mod utils;
