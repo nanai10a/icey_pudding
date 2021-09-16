@@ -4,25 +4,25 @@ use std::collections::HashSet;
 use anyhow::{bail, Result};
 use async_trait::async_trait;
 use smallvec::SmallVec;
-use tokio::sync::mpsc;
 
 // FIXME: move to interactors::
 use crate::conductors::calc_paging;
 use crate::entities::User;
 // FIXME: move to interactors::
 use crate::handlers::helpers::*;
+use crate::presenters::user::{
+    UserBookmarkGetPresenter, UserBookmarkPresenter, UserEditPresenter, UserGetPresenter,
+    UserGetsPresenter, UserRegisterPresenter, UserUnbookmarkPresenter, UserUnregisterPresenter,
+};
 use crate::repositories::UserRepository;
 use crate::usecases::user::{
     bookmark, edit, get, get_bookmark, gets, register, unbookmark, unregister,
 };
 use crate::utils::LetChain;
 
-// FIXME: Sender not required shared reference
-// FIXME: replace `ret` to `presenter:
-//     Arc<dyn [entity][op]Presenter + Sync + Send>`
 pub struct ReturnUserRegisterInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<register::Output>>,
+    pub pres: Arc<dyn UserRegisterPresenter + Sync + Send>,
 }
 #[async_trait]
 impl register::Usecase for ReturnUserRegisterInteractor {
@@ -41,7 +41,7 @@ impl register::Usecase for ReturnUserRegisterInteractor {
         }
 
         register::Output { user: new_user }
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -51,7 +51,7 @@ impl register::Usecase for ReturnUserRegisterInteractor {
 
 pub struct ReturnUserGetInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<get::Output>>,
+    pub pres: Arc<dyn UserGetPresenter + Sync + Send>,
 }
 #[async_trait]
 impl get::Usecase for ReturnUserGetInteractor {
@@ -61,7 +61,7 @@ impl get::Usecase for ReturnUserGetInteractor {
             .await
             .map_err(user_err_fmt)?
             .let_(|user| get::Output { user })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -71,7 +71,7 @@ impl get::Usecase for ReturnUserGetInteractor {
 
 pub struct ReturnUserGetsInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<gets::Output>>,
+    pub pres: Arc<dyn UserGetsPresenter + Sync + Send>,
 }
 #[async_trait]
 impl gets::Usecase for ReturnUserGetsInteractor {
@@ -89,7 +89,7 @@ impl gets::Usecase for ReturnUserGetsInteractor {
                 })
             })?
             .let_(|users| gets::Output { users, page })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -99,7 +99,7 @@ impl gets::Usecase for ReturnUserGetsInteractor {
 
 pub struct ReturnUserEditInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<edit::Output>>,
+    pub pres: Arc<dyn UserEditPresenter + Sync + Send>,
 }
 #[async_trait]
 impl edit::Usecase for ReturnUserEditInteractor {
@@ -109,7 +109,7 @@ impl edit::Usecase for ReturnUserEditInteractor {
             .await
             .map_err(user_err_fmt)?
             .let_(|user| edit::Output { user })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -119,7 +119,7 @@ impl edit::Usecase for ReturnUserEditInteractor {
 
 pub struct ReturnUserUnregisterInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<unregister::Output>>,
+    pub pres: Arc<dyn UserUnregisterPresenter + Sync + Send>,
 }
 #[async_trait]
 impl unregister::Usecase for ReturnUserUnregisterInteractor {
@@ -129,7 +129,7 @@ impl unregister::Usecase for ReturnUserUnregisterInteractor {
             .await
             .map_err(content_err_fmt)?
             .let_(|user| unregister::Output { user })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -139,7 +139,7 @@ impl unregister::Usecase for ReturnUserUnregisterInteractor {
 
 pub struct ReturnUserBookmarkGetInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<get_bookmark::Output>>,
+    pub pres: Arc<dyn UserBookmarkGetPresenter + Sync + Send>,
 }
 #[async_trait]
 impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
@@ -162,7 +162,7 @@ impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
                 })
             })?
             .let_(|bookmark| get_bookmark::Output { bookmark, page })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -172,7 +172,7 @@ impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
 
 pub struct ReturnUserBookmarkInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<bookmark::Output>>,
+    pub pres: Arc<dyn UserBookmarkPresenter + Sync + Send>,
 }
 #[async_trait]
 impl bookmark::Usecase for ReturnUserBookmarkInteractor {
@@ -201,7 +201,7 @@ impl bookmark::Usecase for ReturnUserBookmarkInteractor {
                 user,
                 id: content_id,
             })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -211,7 +211,7 @@ impl bookmark::Usecase for ReturnUserBookmarkInteractor {
 
 pub struct ReturnUserUnbookmarkInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<unbookmark::Output>>,
+    pub pres: Arc<dyn UserUnbookmarkPresenter + Sync + Send>,
 }
 #[async_trait]
 impl unbookmark::Usecase for ReturnUserUnbookmarkInteractor {
@@ -240,7 +240,7 @@ impl unbookmark::Usecase for ReturnUserUnbookmarkInteractor {
                 user,
                 id: content_id,
             })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 

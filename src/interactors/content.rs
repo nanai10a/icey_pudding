@@ -4,13 +4,17 @@ use std::collections::HashSet;
 use anyhow::{bail, Result};
 use async_trait::async_trait;
 use smallvec::SmallVec;
-use tokio::sync::mpsc;
 
 // FIXME: move to interactors::
 use crate::conductors::calc_paging;
 use crate::entities::Content;
 // FIXME: move to interactors::
 use crate::handlers::helpers::*;
+use crate::presenters::content::{
+    ContentEditPresenter, ContentGetPresenter, ContentGetsPresenter, ContentLikeGetPresenter,
+    ContentLikePresenter, ContentPinGetPresenter, ContentPinPresenter, ContentPostPresenter,
+    ContentUnlikePresenter, ContentUnpinPresenter, ContentWithdrawPresenter,
+};
 use crate::repositories::{ContentRepository, UserRepository};
 use crate::usecases::content::{
     edit, get, get_like, get_pin, gets, like, pin, post, unlike, unpin, withdraw,
@@ -20,7 +24,7 @@ use crate::utils::LetChain;
 pub struct ReturnContentPostInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<post::Output>>,
+    pub pres: Arc<dyn ContentPostPresenter + Sync + Send>,
 }
 #[async_trait]
 impl post::Usecase for ReturnContentPostInteractor {
@@ -67,7 +71,7 @@ impl post::Usecase for ReturnContentPostInteractor {
         post::Output {
             content: new_content,
         }
-        .let_(|r| self.ret.send(r))
+        .let_(|r| self.pres.complete(r))
         .await
         .unwrap();
 
@@ -77,7 +81,7 @@ impl post::Usecase for ReturnContentPostInteractor {
 
 pub struct ReturnContentGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<get::Output>>,
+    pub pres: Arc<dyn ContentGetPresenter + Sync + Send>,
 }
 #[async_trait]
 impl get::Usecase for ReturnContentGetInteractor {
@@ -87,7 +91,7 @@ impl get::Usecase for ReturnContentGetInteractor {
             .await
             .map_err(content_err_fmt)?
             .let_(|content| get::Output { content })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -97,7 +101,7 @@ impl get::Usecase for ReturnContentGetInteractor {
 
 pub struct ReturnContentGetsInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<gets::Output>>,
+    pub pres: Arc<dyn ContentGetsPresenter + Sync + Send>,
 }
 #[async_trait]
 impl gets::Usecase for ReturnContentGetsInteractor {
@@ -115,7 +119,7 @@ impl gets::Usecase for ReturnContentGetsInteractor {
                 })
             })?
             .let_(|contents| gets::Output { contents, page })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -125,7 +129,7 @@ impl gets::Usecase for ReturnContentGetsInteractor {
 
 pub struct ReturnContentEditInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<edit::Output>>,
+    pub pres: Arc<dyn ContentEditPresenter + Sync + Send>,
 }
 #[async_trait]
 impl edit::Usecase for ReturnContentEditInteractor {
@@ -141,7 +145,7 @@ impl edit::Usecase for ReturnContentEditInteractor {
             .await
             .map_err(content_err_fmt)?
             .let_(|content| edit::Output { content })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -151,7 +155,7 @@ impl edit::Usecase for ReturnContentEditInteractor {
 
 pub struct ReturnContentWithdrawInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<withdraw::Output>>,
+    pub pres: Arc<dyn ContentWithdrawPresenter + Sync + Send>,
 }
 #[async_trait]
 impl withdraw::Usecase for ReturnContentWithdrawInteractor {
@@ -161,7 +165,7 @@ impl withdraw::Usecase for ReturnContentWithdrawInteractor {
             .await
             .map_err(content_err_fmt)?
             .let_(|content| withdraw::Output { content })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -171,7 +175,7 @@ impl withdraw::Usecase for ReturnContentWithdrawInteractor {
 
 pub struct ReturnContentLikeGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<get_like::Output>>,
+    pub pres: Arc<dyn ContentLikeGetPresenter + Sync + Send>,
 }
 #[async_trait]
 impl get_like::Usecase for ReturnContentLikeGetInteractor {
@@ -194,7 +198,7 @@ impl get_like::Usecase for ReturnContentLikeGetInteractor {
                 })
             })?
             .let_(|like| get_like::Output { like, page })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -204,7 +208,7 @@ impl get_like::Usecase for ReturnContentLikeGetInteractor {
 
 pub struct ReturnContentLikeInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<like::Output>>,
+    pub pres: Arc<dyn ContentLikePresenter + Sync + Send>,
 }
 #[async_trait]
 impl like::Usecase for ReturnContentLikeInteractor {
@@ -233,7 +237,7 @@ impl like::Usecase for ReturnContentLikeInteractor {
                 content,
                 id: user_id,
             })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -243,7 +247,7 @@ impl like::Usecase for ReturnContentLikeInteractor {
 
 pub struct ReturnContentUnlikeInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<unlike::Output>>,
+    pub pres: Arc<dyn ContentUnlikePresenter + Sync + Send>,
 }
 #[async_trait]
 impl unlike::Usecase for ReturnContentUnlikeInteractor {
@@ -272,7 +276,7 @@ impl unlike::Usecase for ReturnContentUnlikeInteractor {
                 content,
                 id: user_id,
             })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -282,7 +286,7 @@ impl unlike::Usecase for ReturnContentUnlikeInteractor {
 
 pub struct ReturnContentPinGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<get_pin::Output>>,
+    pub pres: Arc<dyn ContentPinGetPresenter + Sync + Send>,
 }
 #[async_trait]
 impl get_pin::Usecase for ReturnContentPinGetInteractor {
@@ -305,7 +309,7 @@ impl get_pin::Usecase for ReturnContentPinGetInteractor {
                 })
             })?
             .let_(|pin| get_pin::Output { pin, page })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -315,7 +319,7 @@ impl get_pin::Usecase for ReturnContentPinGetInteractor {
 
 pub struct ReturnContentPinInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<pin::Output>>,
+    pub pres: Arc<dyn ContentPinPresenter + Sync + Send>,
 }
 #[async_trait]
 impl pin::Usecase for ReturnContentPinInteractor {
@@ -344,7 +348,7 @@ impl pin::Usecase for ReturnContentPinInteractor {
                 content,
                 id: user_id,
             })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
@@ -354,7 +358,7 @@ impl pin::Usecase for ReturnContentPinInteractor {
 
 pub struct ReturnContentUnpinInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
-    pub ret: Arc<mpsc::Sender<unpin::Output>>,
+    pub pres: Arc<dyn ContentUnpinPresenter + Sync + Send>,
 }
 #[async_trait]
 impl unpin::Usecase for ReturnContentUnpinInteractor {
@@ -383,7 +387,7 @@ impl unpin::Usecase for ReturnContentUnpinInteractor {
                 content,
                 id: user_id,
             })
-            .let_(|r| self.ret.send(r))
+            .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
 
