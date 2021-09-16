@@ -1,4 +1,4 @@
-type View = dyn FnOnce(&mut ::serenity::builder::CreateEmbed) -> &mut ::serenity::builder::CreateEmbed
+pub type View = dyn FnOnce(&mut ::serenity::builder::CreateEmbed) -> &mut ::serenity::builder::CreateEmbed
     + Sync
     + Send;
 
