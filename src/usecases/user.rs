@@ -17,8 +17,10 @@ usecase! {
 usecase! {
     gets : {
         pub query: super::UserQuery,
+        pub page: u32,
     } => {
-        pub users: Vec<entities::User>,
+        pub users: Vec<(u32, entities::User)>,
+        pub page: u32,
     }
 }
 
@@ -42,8 +44,10 @@ usecase! {
 usecase! {
     get_bookmark : {
         pub user_id: entities::UserId,
+        pub page: u32,
     } => {
-        pub bookmark: std::collections::HashSet<entities::ContentId>,
+        pub bookmark: std::collections::HashSet<(u32, entities::ContentId)>,
+        pub page: u32,
     }
 }
 
