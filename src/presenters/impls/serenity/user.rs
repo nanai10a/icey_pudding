@@ -27,7 +27,7 @@ impl user::UserRegisterPresenter for SerenityUserRegisterPresenter {
                 },
         }: register::Output,
     ) -> Result<()> {
-        pub const COLOR: (u8, u8, u8) = (0xd5, 0xc4, 0xa1);
+        const COLOR: (u8, u8, u8) = (0xd5, 0xc4, 0xa1);
 
         self.out
             .send(box move |ce| {
@@ -59,7 +59,7 @@ impl user::UserGetPresenter for SerenityUserGetPresenter {
                 },
         }: get::Output,
     ) -> Result<()> {
-        pub const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
+        const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
 
         self.out
             .send(box move |ce| {
@@ -85,7 +85,7 @@ pub struct SerenityUserGetsPresenter {
 #[async_trait]
 impl user::UserGetsPresenter for SerenityUserGetsPresenter {
     async fn complete(&self, gets::Output { mut users, page }: gets::Output) -> Result<()> {
-        pub const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
+        const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
 
         self.out
             .send(
@@ -140,7 +140,7 @@ impl user::UserEditPresenter for SerenityUserEditPresenter {
                 },
         }: edit::Output,
     ) -> Result<()> {
-        pub const COLOR: (u8, u8, u8) = (0xb8, 0xb2, 0x26);
+        const COLOR: (u8, u8, u8) = (0xb8, 0xb2, 0x26);
 
         self.out
             .send(box move |ce| {
@@ -177,7 +177,7 @@ impl user::UserUnregisterPresenter for SerenityUserUnregisterPresenter {
                 },
         }: unregister::Output,
     ) -> Result<()> {
-        pub const COLOR: (u8, u8, u8) = (0x1d, 0x20, 0x21);
+        const COLOR: (u8, u8, u8) = (0x1d, 0x20, 0x21);
 
         self.out
             .send(box move |ce| {
@@ -215,7 +215,7 @@ impl user::UserBookmarkGetPresenter for SerenityUserBookmarkGetPresenter {
         &self,
         get_bookmark::Output { mut bookmark, page }: get_bookmark::Output,
     ) -> Result<()> {
-        pub const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
+        const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
 
         self.out
             .send(
@@ -223,9 +223,10 @@ impl user::UserBookmarkGetPresenter for SerenityUserBookmarkGetPresenter {
                     .drain(..)
                     .map::<Box<View>, _>(|(idx, id)| {
                         box move |ce| {
-                            ce.title(id)
+                            ce.title("showing bookmark")
                                 .color(COLOR)
                                 .description(format!("{} in {}", idx, page))
+                                .fields([("id", id, true)])
                         }
                     })
                     .collect(),
@@ -255,7 +256,7 @@ impl user::UserBookmarkPresenter for SerenityUserBookmarkPresenter {
             id,
         }: bookmark::Output,
     ) -> Result<()> {
-        pub const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
+        const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
 
         self.out
             .send(box move |ce| {
@@ -289,7 +290,7 @@ impl user::UserUnbookmarkPresenter for SerenityUserUnbookmarkPresenter {
             id,
         }: unbookmark::Output,
     ) -> Result<()> {
-        pub const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
+        const COLOR: (u8, u8, u8) = (0x83, 0xa5, 0x98);
 
         self.out
             .send(box move |ce| {
