@@ -5,6 +5,8 @@ use anyhow::{bail, Result};
 use async_trait::async_trait;
 use tokio::sync::mpsc;
 
+// FIXME: move to interactors::
+use crate::conductors::calc_paging;
 use crate::entities::User;
 // FIXME: move to interactors::
 use crate::handlers::helpers::*;
@@ -69,12 +71,22 @@ pub struct ReturnUserGetsInteractor {
 }
 #[async_trait]
 impl gets::Usecase for ReturnUserGetsInteractor {
-    async fn handle(&self, gets::Input { query }: gets::Input) -> Result<()> {
+    async fn handle(&self, gets::Input { query, page }: gets::Input) -> Result<()> {
+        const ITEMS: usize = 5;
+
         self.user_repository
             .finds(query)
             .await
             .map_err(user_err_fmt)?
-            .let_(|users| gets::Output { users })
+            .let_(|mut v| {
+                calc_paging(0..v.len(), ITEMS, page as usize).map(move |lim| {
+                    v.drain(lim)
+                        .enumerate()
+                        .map(|(i, u)| (i as u32, u))
+                        .collect::<Vec<_>>()
+                })
+            })?
+            .let_(|users| gets::Output { users, page })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
@@ -129,12 +141,27 @@ pub struct ReturnUserBookmarkGetInteractor {
 }
 #[async_trait]
 impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
-    async fn handle(&self, get_bookmark::Input { user_id }: get_bookmark::Input) -> Result<()> {
+    async fn handle(
+        &self,
+        get_bookmark::Input { user_id, page }: get_bookmark::Input,
+    ) -> Result<()> {
+        const ITEMS: usize = 20;
+
         self.user_repository
             .get_bookmark(user_id)
             .await
             .map_err(content_err_fmt)?
-            .let_(|bookmark| get_bookmark::Output { bookmark })
+            .drain()
+            .collect::<Vec<_>>()
+            .let_(|mut v| {
+                calc_paging(0..v.len(), ITEMS, page as usize).map(move |lim| {
+                    v.drain(lim)
+                        .enumerate()
+                        .map(|(i, d)| (i as u32, d))
+                        .collect::<HashSet<_>>()
+                })
+            })?
+            .let_(|bookmark| get_bookmark::Output { bookmark, page })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();

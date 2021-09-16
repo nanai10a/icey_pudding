@@ -14,7 +14,7 @@ use crate::utils::LetChain;
 mod command_colors;
 mod helpers;
 
-use helpers::*;
+pub use helpers::*;
 
 pub struct Conductor {
     pub handler: Handler,

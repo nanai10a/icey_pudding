@@ -5,6 +5,8 @@ use anyhow::{bail, Result};
 use async_trait::async_trait;
 use tokio::sync::mpsc;
 
+// FIXME: move to interactors::
+use crate::conductors::calc_paging;
 use crate::entities::Content;
 // FIXME: move to interactors::
 use crate::handlers::helpers::*;
@@ -98,12 +100,22 @@ pub struct ReturnContentGetsInteractor {
 }
 #[async_trait]
 impl gets::Usecase for ReturnContentGetsInteractor {
-    async fn handle(&self, gets::Input { query }: gets::Input) -> anyhow::Result<()> {
+    async fn handle(&self, gets::Input { query, page }: gets::Input) -> anyhow::Result<()> {
+        const ITEMS: usize = 5;
+
         self.content_repository
             .finds(query)
             .await
             .map_err(content_err_fmt)?
-            .let_(|contents| gets::Output { contents })
+            .let_(|mut v| {
+                calc_paging(0..v.len(), ITEMS, page as usize).map(move |lim| {
+                    v.drain(lim)
+                        .enumerate()
+                        .map(|(i, c)| (i as u32, c))
+                        .collect::<Vec<_>>()
+                })
+            })?
+            .let_(|contents| gets::Output { contents, page })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
@@ -164,12 +176,27 @@ pub struct ReturnContentLikeGetInteractor {
 }
 #[async_trait]
 impl get_like::Usecase for ReturnContentLikeGetInteractor {
-    async fn handle(&self, get_like::Input { content_id }: get_like::Input) -> anyhow::Result<()> {
+    async fn handle(
+        &self,
+        get_like::Input { content_id, page }: get_like::Input,
+    ) -> anyhow::Result<()> {
+        const ITEMS: usize = 20;
+
         self.content_repository
             .get_liked(content_id)
             .await
             .map_err(content_err_fmt)?
-            .let_(|like| get_like::Output { like })
+            .drain()
+            .collect::<Vec<_>>()
+            .let_(|mut v| {
+                calc_paging(0..v.len(), ITEMS, page as usize).map(|lim| {
+                    v.drain(lim)
+                        .enumerate()
+                        .map(|(idx, id)| (idx as u32, id))
+                        .collect::<HashSet<_>>()
+                })
+            })?
+            .let_(|like| get_like::Output { like, page })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
@@ -256,12 +283,27 @@ pub struct ReturnContentPinGetInteractor {
 }
 #[async_trait]
 impl get_pin::Usecase for ReturnContentPinGetInteractor {
-    async fn handle(&self, get_pin::Input { content_id }: get_pin::Input) -> anyhow::Result<()> {
+    async fn handle(
+        &self,
+        get_pin::Input { content_id, page }: get_pin::Input,
+    ) -> anyhow::Result<()> {
+        const ITEMS: usize = 20;
+
         self.content_repository
             .get_pinned(content_id)
             .await
             .map_err(content_err_fmt)?
-            .let_(|pin| get_pin::Output { pin })
+            .drain()
+            .collect::<Vec<_>>()
+            .let_(|mut v| {
+                calc_paging(0..v.len(), ITEMS, page as usize).map(move |lim| {
+                    v.drain(lim)
+                        .enumerate()
+                        .map(|(idx, id)| (idx as u32, id))
+                        .collect::<HashSet<_>>()
+                })
+            })?
+            .let_(|pin| get_pin::Output { pin, page })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
