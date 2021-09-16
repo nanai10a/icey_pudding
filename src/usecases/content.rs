@@ -22,7 +22,7 @@ usecase! {
         pub query: super::ContentQuery,
         pub page: u32,
     } => {
-        pub contents: [(u32, entities::Content); 5],
+        pub contents: ::smallvec::SmallVec<[(u32, entities::Content); 5]>,
         pub page: u32,
     }
 }
@@ -49,7 +49,7 @@ usecase! {
         pub content_id: entities::ContentId,
         pub page: u32,
     } => {
-        pub like: [(u32, entities::UserId); 20],
+        pub like: ::smallvec::SmallVec<[(u32, entities::UserId); 20]>,
         pub page: u32,
     }
 }
@@ -79,7 +79,7 @@ usecase! {
         pub content_id: entities::ContentId,
         pub page: u32,
     } => {
-        pub pin: [(u32, entities::UserId); 20]
+        pub pin: ::smallvec::SmallVec<[(u32, entities::UserId); 20]>,
         pub page: u32,
     }
 }

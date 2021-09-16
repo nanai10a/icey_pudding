@@ -19,7 +19,7 @@ usecase! {
         pub query: super::UserQuery,
         pub page: u32,
     } => {
-        pub users: [(u32, entities::User); 5],
+        pub users: ::smallvec::SmallVec<[(u32, entities::User); 5]>,
         pub page: u32,
     }
 }
@@ -46,7 +46,7 @@ usecase! {
         pub user_id: entities::UserId,
         pub page: u32,
     } => {
-        pub bookmark: [(u32, entities::ContentId); 20],
+        pub bookmark: ::smallvec::SmallVec<[(u32, entities::ContentId); 20]>,
         pub page: u32,
     }
 }
