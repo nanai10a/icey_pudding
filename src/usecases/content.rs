@@ -59,7 +59,8 @@ usecase! {
         pub content_id: entities::ContentId,
         pub user_id: entities::UserId,
     } => {
-        pub content: entities::Content
+        pub content: entities::Content,
+        pub id: entities::UserId,
     }
 }
 
@@ -68,7 +69,8 @@ usecase! {
         pub content_id: entities::ContentId,
         pub user_id: entities::UserId,
     } => {
-        pub content: entities::Content
+        pub content: entities::Content,
+        pub id: entities::UserId,
     }
 }
 
@@ -87,7 +89,8 @@ usecase! {
         pub content_id: entities::ContentId,
         pub user_id: entities::UserId,
     } => {
-        pub content: entities::Content
+        pub content: entities::Content,
+        pub id: entities::UserId,
     }
 }
 
@@ -96,7 +99,8 @@ usecase! {
         pub content_id: entities::ContentId,
         pub user_id: entities::UserId,
     } => {
-        pub content: entities::Content
+        pub content: entities::Content,
+        pub id: entities::UserId,
     }
 }
 

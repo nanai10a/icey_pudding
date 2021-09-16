@@ -57,6 +57,7 @@ usecase! {
         pub content_id: entities::ContentId,
     } => {
         pub user: entities::User,
+        pub id: entities::ContentId,
     }
 }
 
@@ -66,6 +67,7 @@ usecase! {
         pub content_id: entities::ContentId,
     } => {
         pub user: entities::User,
+        pub id: entities::ContentId,
     }
 }
 
