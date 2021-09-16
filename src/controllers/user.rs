@@ -2,8 +2,10 @@ use alloc::sync::Arc;
 
 use anyhow::Result;
 use async_recursion::async_recursion;
+use smallvec::SmallVec;
 use tokio::sync::{mpsc, Mutex};
 
+use crate::presenters::impls::serenity::View;
 use crate::usecases::user::{
     bookmark, edit, get, get_bookmark, gets, register, unbookmark, unregister,
 };
@@ -11,39 +13,39 @@ use crate::usecases::user::{
 pub struct ReturnUserController {
     register: Arc<dyn register::Usecase + Sync + Send>,
     register_lock: Mutex<()>,
-    register_ret: Mutex<mpsc::Receiver<register::Output>>,
+    register_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
     get: Arc<dyn get::Usecase + Sync + Send>,
     get_lock: Mutex<()>,
-    get_ret: Mutex<mpsc::Receiver<get::Output>>,
+    get_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
     gets: Arc<dyn gets::Usecase + Sync + Send>,
     gets_lock: Mutex<()>,
-    gets_ret: Mutex<mpsc::Receiver<gets::Output>>,
+    gets_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 5]>>>,
 
     edit: Arc<dyn edit::Usecase + Sync + Send>,
     edit_lock: Mutex<()>,
-    edit_ret: Mutex<mpsc::Receiver<edit::Output>>,
+    edit_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
     unregister: Arc<dyn unregister::Usecase + Sync + Send>,
     unregister_lock: Mutex<()>,
-    unregister_ret: Mutex<mpsc::Receiver<unregister::Output>>,
+    unregister_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
     get_bookmark: Arc<dyn get_bookmark::Usecase + Sync + Send>,
     get_bookmark_lock: Mutex<()>,
-    get_bookmark_ret: Mutex<mpsc::Receiver<get_bookmark::Output>>,
+    get_bookmark_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 20]>>>,
 
     bookmark: Arc<dyn bookmark::Usecase + Sync + Send>,
     bookmark_lock: Mutex<()>,
-    bookmark_ret: Mutex<mpsc::Receiver<bookmark::Output>>,
+    bookmark_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
     unbookmark: Arc<dyn unbookmark::Usecase + Sync + Send>,
     unbookmark_lock: Mutex<()>,
-    unbookmark_ret: Mutex<mpsc::Receiver<unbookmark::Output>>,
+    unbookmark_ret: Mutex<mpsc::Receiver<Box<View>>>,
 }
 impl ReturnUserController {
     #[async_recursion]
-    pub async fn register(&self, data: register::Input) -> Result<register::Output> {
+    pub async fn register(&self, data: register::Input) -> Result<Box<View>> {
         return_inner!(self =>
             use register,
             lock register_lock,
@@ -53,7 +55,7 @@ impl ReturnUserController {
     }
 
     #[async_recursion]
-    pub async fn get(&self, data: get::Input) -> Result<get::Output> {
+    pub async fn get(&self, data: get::Input) -> Result<Box<View>> {
         return_inner!(self =>
             use get,
             lock get_lock,
@@ -63,7 +65,7 @@ impl ReturnUserController {
     }
 
     #[async_recursion]
-    pub async fn gets(&self, data: gets::Input) -> Result<gets::Output> {
+    pub async fn gets(&self, data: gets::Input) -> Result<SmallVec<[Box<View>; 5]>> {
         return_inner!(self =>
             use gets,
             lock gets_lock,
@@ -73,7 +75,7 @@ impl ReturnUserController {
     }
 
     #[async_recursion]
-    pub async fn edit(&self, data: edit::Input) -> Result<edit::Output> {
+    pub async fn edit(&self, data: edit::Input) -> Result<Box<View>> {
         return_inner!(self =>
             use edit,
             lock edit_lock,
@@ -83,7 +85,7 @@ impl ReturnUserController {
     }
 
     #[async_recursion]
-    pub async fn unregister(&self, data: unregister::Input) -> Result<unregister::Output> {
+    pub async fn unregister(&self, data: unregister::Input) -> Result<Box<View>> {
         return_inner!(self =>
             use unregister,
             lock unregister_lock,
@@ -93,7 +95,10 @@ impl ReturnUserController {
     }
 
     #[async_recursion]
-    pub async fn get_bookmark(&self, data: get_bookmark::Input) -> Result<get_bookmark::Output> {
+    pub async fn get_bookmark(
+        &self,
+        data: get_bookmark::Input,
+    ) -> Result<SmallVec<[Box<View>; 20]>> {
         return_inner!(self =>
             use get_bookmark,
             lock get_bookmark_lock,
@@ -103,7 +108,7 @@ impl ReturnUserController {
     }
 
     #[async_recursion]
-    pub async fn bookmark(&self, data: bookmark::Input) -> Result<bookmark::Output> {
+    pub async fn bookmark(&self, data: bookmark::Input) -> Result<Box<View>> {
         return_inner!(self =>
             use bookmark,
             lock bookmark_lock,
@@ -113,7 +118,7 @@ impl ReturnUserController {
     }
 
     #[async_recursion]
-    pub async fn unbookmark(&self, data: unbookmark::Input) -> Result<unbookmark::Output> {
+    pub async fn unbookmark(&self, data: unbookmark::Input) -> Result<Box<View>> {
         return_inner!(self =>
             use unbookmark,
             lock unbookmark_lock,
