@@ -16,6 +16,9 @@ use crate::usecases::user::{
 };
 use crate::utils::LetChain;
 
+// FIXME: Sender not required shared reference
+// FIXME: replace `ret` to `presenter:
+//     Arc<dyn [entity][op]Presenter + Sync + Send>`
 pub struct ReturnUserRegisterInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub ret: Arc<mpsc::Sender<register::Output>>,
