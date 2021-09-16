@@ -3,6 +3,7 @@ use std::collections::HashSet;
 
 use anyhow::{bail, Result};
 use async_trait::async_trait;
+use smallvec::SmallVec;
 use tokio::sync::mpsc;
 
 // FIXME: move to interactors::
@@ -101,18 +102,16 @@ pub struct ReturnContentGetsInteractor {
 #[async_trait]
 impl gets::Usecase for ReturnContentGetsInteractor {
     async fn handle(&self, gets::Input { query, page }: gets::Input) -> anyhow::Result<()> {
-        const ITEMS: usize = 5;
-
         self.content_repository
             .finds(query)
             .await
             .map_err(content_err_fmt)?
             .let_(|mut v| {
-                calc_paging(0..v.len(), ITEMS, page as usize).map(move |lim| {
+                calc_paging(0..v.len(), 5, page as usize).map(move |lim| {
                     v.drain(lim)
                         .enumerate()
                         .map(|(i, c)| (i as u32, c))
-                        .collect::<Vec<_>>()
+                        .collect::<SmallVec<[_; 5]>>()
                 })
             })?
             .let_(|contents| gets::Output { contents, page })
@@ -180,8 +179,6 @@ impl get_like::Usecase for ReturnContentLikeGetInteractor {
         &self,
         get_like::Input { content_id, page }: get_like::Input,
     ) -> anyhow::Result<()> {
-        const ITEMS: usize = 20;
-
         self.content_repository
             .get_liked(content_id)
             .await
@@ -189,11 +186,11 @@ impl get_like::Usecase for ReturnContentLikeGetInteractor {
             .drain()
             .collect::<Vec<_>>()
             .let_(|mut v| {
-                calc_paging(0..v.len(), ITEMS, page as usize).map(|lim| {
+                calc_paging(0..v.len(), 20, page as usize).map(|lim| {
                     v.drain(lim)
                         .enumerate()
                         .map(|(idx, id)| (idx as u32, id))
-                        .collect::<HashSet<_>>()
+                        .collect::<SmallVec<[_; 20]>>()
                 })
             })?
             .let_(|like| get_like::Output { like, page })
@@ -232,7 +229,10 @@ impl like::Usecase for ReturnContentLikeInteractor {
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
-            .let_(|content| like::Output { content })
+            .let_(|content| like::Output {
+                content,
+                id: user_id,
+            })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
@@ -268,7 +268,10 @@ impl unlike::Usecase for ReturnContentUnlikeInteractor {
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
-            .let_(|content| unlike::Output { content })
+            .let_(|content| unlike::Output {
+                content,
+                id: user_id,
+            })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
@@ -287,8 +290,6 @@ impl get_pin::Usecase for ReturnContentPinGetInteractor {
         &self,
         get_pin::Input { content_id, page }: get_pin::Input,
     ) -> anyhow::Result<()> {
-        const ITEMS: usize = 20;
-
         self.content_repository
             .get_pinned(content_id)
             .await
@@ -296,11 +297,11 @@ impl get_pin::Usecase for ReturnContentPinGetInteractor {
             .drain()
             .collect::<Vec<_>>()
             .let_(|mut v| {
-                calc_paging(0..v.len(), ITEMS, page as usize).map(move |lim| {
+                calc_paging(0..v.len(), 20, page as usize).map(move |lim| {
                     v.drain(lim)
                         .enumerate()
                         .map(|(idx, id)| (idx as u32, id))
-                        .collect::<HashSet<_>>()
+                        .collect::<SmallVec<[_; 20]>>()
                 })
             })?
             .let_(|pin| get_pin::Output { pin, page })
@@ -339,7 +340,10 @@ impl pin::Usecase for ReturnContentPinInteractor {
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
-            .let_(|content| pin::Output { content })
+            .let_(|content| pin::Output {
+                content,
+                id: user_id,
+            })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
@@ -375,7 +379,10 @@ impl unpin::Usecase for ReturnContentUnpinInteractor {
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
-            .let_(|content| unpin::Output { content })
+            .let_(|content| unpin::Output {
+                content,
+                id: user_id,
+            })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();

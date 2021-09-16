@@ -3,6 +3,7 @@ use std::collections::HashSet;
 
 use anyhow::{bail, Result};
 use async_trait::async_trait;
+use smallvec::SmallVec;
 use tokio::sync::mpsc;
 
 // FIXME: move to interactors::
@@ -75,18 +76,16 @@ pub struct ReturnUserGetsInteractor {
 #[async_trait]
 impl gets::Usecase for ReturnUserGetsInteractor {
     async fn handle(&self, gets::Input { query, page }: gets::Input) -> Result<()> {
-        const ITEMS: usize = 5;
-
         self.user_repository
             .finds(query)
             .await
             .map_err(user_err_fmt)?
             .let_(|mut v| {
-                calc_paging(0..v.len(), ITEMS, page as usize).map(move |lim| {
+                calc_paging(0..v.len(), 5, page as usize).map(move |lim| {
                     v.drain(lim)
                         .enumerate()
                         .map(|(i, u)| (i as u32, u))
-                        .collect::<Vec<_>>()
+                        .collect::<SmallVec<[_; 5]>>()
                 })
             })?
             .let_(|users| gets::Output { users, page })
@@ -148,8 +147,6 @@ impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
         &self,
         get_bookmark::Input { user_id, page }: get_bookmark::Input,
     ) -> Result<()> {
-        const ITEMS: usize = 20;
-
         self.user_repository
             .get_bookmark(user_id)
             .await
@@ -157,11 +154,11 @@ impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
             .drain()
             .collect::<Vec<_>>()
             .let_(|mut v| {
-                calc_paging(0..v.len(), ITEMS, page as usize).map(move |lim| {
+                calc_paging(0..v.len(), 20, page as usize).map(move |lim| {
                     v.drain(lim)
                         .enumerate()
                         .map(|(i, d)| (i as u32, d))
-                        .collect::<HashSet<_>>()
+                        .collect::<SmallVec<[_; 20]>>()
                 })
             })?
             .let_(|bookmark| get_bookmark::Output { bookmark, page })
@@ -200,7 +197,10 @@ impl bookmark::Usecase for ReturnUserBookmarkInteractor {
             .find(user_id)
             .await
             .map_err(user_err_fmt)?
-            .let_(|user| bookmark::Output { user })
+            .let_(|user| bookmark::Output {
+                user,
+                id: content_id,
+            })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
@@ -236,7 +236,10 @@ impl unbookmark::Usecase for ReturnUserUnbookmarkInteractor {
             .find(user_id)
             .await
             .map_err(user_err_fmt)?
-            .let_(|user| unbookmark::Output { user })
+            .let_(|user| unbookmark::Output {
+                user,
+                id: content_id,
+            })
             .let_(|r| self.ret.send(r))
             .await
             .unwrap();
