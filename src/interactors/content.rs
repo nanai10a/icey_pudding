@@ -21,13 +21,13 @@ use crate::usecases::content::{
 };
 use crate::utils::LetChain;
 
-pub struct ReturnContentPostInteractor {
+pub struct ContentPostInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentPostPresenter + Sync + Send>,
 }
 #[async_trait]
-impl post::Usecase for ReturnContentPostInteractor {
+impl post::Usecase for ContentPostInteractor {
     async fn handle(
         &self,
         post::Input {
@@ -79,12 +79,12 @@ impl post::Usecase for ReturnContentPostInteractor {
     }
 }
 
-pub struct ReturnContentGetInteractor {
+pub struct ContentGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentGetPresenter + Sync + Send>,
 }
 #[async_trait]
-impl get::Usecase for ReturnContentGetInteractor {
+impl get::Usecase for ContentGetInteractor {
     async fn handle(&self, get::Input { content_id }: get::Input) -> anyhow::Result<()> {
         self.content_repository
             .find(content_id)
@@ -99,12 +99,12 @@ impl get::Usecase for ReturnContentGetInteractor {
     }
 }
 
-pub struct ReturnContentGetsInteractor {
+pub struct ContentGetsInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentGetsPresenter + Sync + Send>,
 }
 #[async_trait]
-impl gets::Usecase for ReturnContentGetsInteractor {
+impl gets::Usecase for ContentGetsInteractor {
     async fn handle(&self, gets::Input { query, page }: gets::Input) -> anyhow::Result<()> {
         self.content_repository
             .finds(query)
@@ -127,12 +127,12 @@ impl gets::Usecase for ReturnContentGetsInteractor {
     }
 }
 
-pub struct ReturnContentEditInteractor {
+pub struct ContentEditInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentEditPresenter + Sync + Send>,
 }
 #[async_trait]
-impl edit::Usecase for ReturnContentEditInteractor {
+impl edit::Usecase for ContentEditInteractor {
     async fn handle(
         &self,
         edit::Input {
@@ -153,12 +153,12 @@ impl edit::Usecase for ReturnContentEditInteractor {
     }
 }
 
-pub struct ReturnContentWithdrawInteractor {
+pub struct ContentWithdrawInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentWithdrawPresenter + Sync + Send>,
 }
 #[async_trait]
-impl withdraw::Usecase for ReturnContentWithdrawInteractor {
+impl withdraw::Usecase for ContentWithdrawInteractor {
     async fn handle(&self, withdraw::Input { content_id }: withdraw::Input) -> anyhow::Result<()> {
         self.content_repository
             .delete(content_id)
@@ -173,12 +173,12 @@ impl withdraw::Usecase for ReturnContentWithdrawInteractor {
     }
 }
 
-pub struct ReturnContentLikeGetInteractor {
+pub struct ContentLikeGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentLikeGetPresenter + Sync + Send>,
 }
 #[async_trait]
-impl get_like::Usecase for ReturnContentLikeGetInteractor {
+impl get_like::Usecase for ContentLikeGetInteractor {
     async fn handle(
         &self,
         get_like::Input { content_id, page }: get_like::Input,
@@ -206,12 +206,12 @@ impl get_like::Usecase for ReturnContentLikeGetInteractor {
     }
 }
 
-pub struct ReturnContentLikeInteractor {
+pub struct ContentLikeInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentLikePresenter + Sync + Send>,
 }
 #[async_trait]
-impl like::Usecase for ReturnContentLikeInteractor {
+impl like::Usecase for ContentLikeInteractor {
     async fn handle(
         &self,
         like::Input {
@@ -245,12 +245,12 @@ impl like::Usecase for ReturnContentLikeInteractor {
     }
 }
 
-pub struct ReturnContentUnlikeInteractor {
+pub struct ContentUnlikeInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentUnlikePresenter + Sync + Send>,
 }
 #[async_trait]
-impl unlike::Usecase for ReturnContentUnlikeInteractor {
+impl unlike::Usecase for ContentUnlikeInteractor {
     async fn handle(
         &self,
         unlike::Input {
@@ -284,12 +284,12 @@ impl unlike::Usecase for ReturnContentUnlikeInteractor {
     }
 }
 
-pub struct ReturnContentPinGetInteractor {
+pub struct ContentPinGetInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentPinGetPresenter + Sync + Send>,
 }
 #[async_trait]
-impl get_pin::Usecase for ReturnContentPinGetInteractor {
+impl get_pin::Usecase for ContentPinGetInteractor {
     async fn handle(
         &self,
         get_pin::Input { content_id, page }: get_pin::Input,
@@ -317,12 +317,12 @@ impl get_pin::Usecase for ReturnContentPinGetInteractor {
     }
 }
 
-pub struct ReturnContentPinInteractor {
+pub struct ContentPinInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentPinPresenter + Sync + Send>,
 }
 #[async_trait]
-impl pin::Usecase for ReturnContentPinInteractor {
+impl pin::Usecase for ContentPinInteractor {
     async fn handle(
         &self,
         pin::Input {
@@ -356,12 +356,12 @@ impl pin::Usecase for ReturnContentPinInteractor {
     }
 }
 
-pub struct ReturnContentUnpinInteractor {
+pub struct ContentUnpinInteractor {
     pub content_repository: Arc<dyn ContentRepository + Sync + Send>,
     pub pres: Arc<dyn ContentUnpinPresenter + Sync + Send>,
 }
 #[async_trait]
-impl unpin::Usecase for ReturnContentUnpinInteractor {
+impl unpin::Usecase for ContentUnpinInteractor {
     async fn handle(
         &self,
         unpin::Input {

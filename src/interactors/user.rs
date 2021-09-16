@@ -20,12 +20,12 @@ use crate::usecases::user::{
 };
 use crate::utils::LetChain;
 
-pub struct ReturnUserRegisterInteractor {
+pub struct UserRegisterInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub pres: Arc<dyn UserRegisterPresenter + Sync + Send>,
 }
 #[async_trait]
-impl register::Usecase for ReturnUserRegisterInteractor {
+impl register::Usecase for UserRegisterInteractor {
     async fn handle(&self, register::Input { user_id }: register::Input) -> Result<()> {
         let new_user = User {
             id: user_id,
@@ -49,12 +49,12 @@ impl register::Usecase for ReturnUserRegisterInteractor {
     }
 }
 
-pub struct ReturnUserGetInteractor {
+pub struct UserGetInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub pres: Arc<dyn UserGetPresenter + Sync + Send>,
 }
 #[async_trait]
-impl get::Usecase for ReturnUserGetInteractor {
+impl get::Usecase for UserGetInteractor {
     async fn handle(&self, get::Input { user_id }: get::Input) -> Result<()> {
         self.user_repository
             .find(user_id)
@@ -69,12 +69,12 @@ impl get::Usecase for ReturnUserGetInteractor {
     }
 }
 
-pub struct ReturnUserGetsInteractor {
+pub struct UserGetsInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub pres: Arc<dyn UserGetsPresenter + Sync + Send>,
 }
 #[async_trait]
-impl gets::Usecase for ReturnUserGetsInteractor {
+impl gets::Usecase for UserGetsInteractor {
     async fn handle(&self, gets::Input { query, page }: gets::Input) -> Result<()> {
         self.user_repository
             .finds(query)
@@ -97,12 +97,12 @@ impl gets::Usecase for ReturnUserGetsInteractor {
     }
 }
 
-pub struct ReturnUserEditInteractor {
+pub struct UserEditInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub pres: Arc<dyn UserEditPresenter + Sync + Send>,
 }
 #[async_trait]
-impl edit::Usecase for ReturnUserEditInteractor {
+impl edit::Usecase for UserEditInteractor {
     async fn handle(&self, edit::Input { user_id, mutation }: edit::Input) -> Result<()> {
         self.user_repository
             .update(user_id, mutation)
@@ -117,12 +117,12 @@ impl edit::Usecase for ReturnUserEditInteractor {
     }
 }
 
-pub struct ReturnUserUnregisterInteractor {
+pub struct UserUnregisterInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub pres: Arc<dyn UserUnregisterPresenter + Sync + Send>,
 }
 #[async_trait]
-impl unregister::Usecase for ReturnUserUnregisterInteractor {
+impl unregister::Usecase for UserUnregisterInteractor {
     async fn handle(&self, unregister::Input { user_id }: unregister::Input) -> Result<()> {
         self.user_repository
             .delete(user_id)
@@ -137,12 +137,12 @@ impl unregister::Usecase for ReturnUserUnregisterInteractor {
     }
 }
 
-pub struct ReturnUserBookmarkGetInteractor {
+pub struct UserBookmarkGetInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub pres: Arc<dyn UserBookmarkGetPresenter + Sync + Send>,
 }
 #[async_trait]
-impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
+impl get_bookmark::Usecase for UserBookmarkGetInteractor {
     async fn handle(
         &self,
         get_bookmark::Input { user_id, page }: get_bookmark::Input,
@@ -170,12 +170,12 @@ impl get_bookmark::Usecase for ReturnUserBookmarkGetInteractor {
     }
 }
 
-pub struct ReturnUserBookmarkInteractor {
+pub struct UserBookmarkInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub pres: Arc<dyn UserBookmarkPresenter + Sync + Send>,
 }
 #[async_trait]
-impl bookmark::Usecase for ReturnUserBookmarkInteractor {
+impl bookmark::Usecase for UserBookmarkInteractor {
     async fn handle(
         &self,
         bookmark::Input {
@@ -209,12 +209,12 @@ impl bookmark::Usecase for ReturnUserBookmarkInteractor {
     }
 }
 
-pub struct ReturnUserUnbookmarkInteractor {
+pub struct UserUnbookmarkInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
     pub pres: Arc<dyn UserUnbookmarkPresenter + Sync + Send>,
 }
 #[async_trait]
-impl unbookmark::Usecase for ReturnUserUnbookmarkInteractor {
+impl unbookmark::Usecase for UserUnbookmarkInteractor {
     async fn handle(
         &self,
         unbookmark::Input {
