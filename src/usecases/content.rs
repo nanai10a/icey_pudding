@@ -22,7 +22,7 @@ usecase! {
         pub query: super::ContentQuery,
         pub page: u32,
     } => {
-        pub contents: Vec<(u32, entities::Content)>,
+        pub contents: [(u32, entities::Content); 5],
         pub page: u32,
     }
 }
@@ -49,7 +49,7 @@ usecase! {
         pub content_id: entities::ContentId,
         pub page: u32,
     } => {
-        pub like: std::collections::HashSet<(u32, entities::UserId)>,
+        pub like: [(u32, entities::UserId); 20],
         pub page: u32,
     }
 }
@@ -77,7 +77,7 @@ usecase! {
         pub content_id: entities::ContentId,
         pub page: u32,
     } => {
-        pub pin: std::collections::HashSet<(u32, entities::UserId)>,
+        pub pin: [(u32, entities::UserId); 20]
         pub page: u32,
     }
 }
