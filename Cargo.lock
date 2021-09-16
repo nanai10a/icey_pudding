@@ -640,6 +640,7 @@ dependencies = [
  "serde_json",
  "serenity",
  "shell-words",
+ "smallvec",
  "tokio",
  "uuid",
  "yaml-rust",
