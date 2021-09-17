@@ -14,6 +14,8 @@ macro_rules! return_inner {
 pub mod content;
 pub mod user;
 
+use alloc::sync::Arc;
+
 use anyhow::{anyhow, bail, Result};
 use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
@@ -34,6 +36,8 @@ use crate::utils::LetChain;
 pub struct SerenityReturnController {
     user: user::ReturnUserController,
     content: content::ReturnContentController,
+    user_getter: UserGetHelper,
+    content_getter: ContentGetHelper,
 }
 
 impl SerenityReturnController {
@@ -334,7 +338,7 @@ impl SerenityReturnController {
     }
 
     async fn authorize_cmd(&self, cmd: App, ex_user_id: UserId) -> Result<App> {
-        let ex_user_res = self.get_user(ex_user_id).await;
+        let ex_user_res = self.user_getter.get(ex_user_id).await;
 
         let res = match &cmd.cmd {
             RootMod::User { cmd } => match cmd {
@@ -346,7 +350,10 @@ impl SerenityReturnController {
                 | ContentMod::Withdraw(ContentWithdrawCmd { content_id, .. }) => {
                     let ex_user = ex_user_res?;
 
-                    let content = self.get_content((*content_id).let_(ContentId)).await?;
+                    let content = self
+                        .content_getter
+                        .get((*content_id).let_(ContentId))
+                        .await?;
 
                     content.posted.id == ex_user_id || ex_user.admin || ex_user.sub_admin
                 },
@@ -359,8 +366,46 @@ impl SerenityReturnController {
             false => Err(anyhow!("not permitted operation")),
         }
     }
+}
 
-    async fn get_user(&self, user_id: UserId) -> Result<User> { unimplemented!() }
+use tokio::sync::{mpsc, Mutex};
 
-    async fn get_content(&self, content_id: ContentId) -> Result<Content> { unimplemented!() }
+pub struct UserGetHelper {
+    usecase: Arc<dyn usecases::user::get::Usecase>,
+    lock: Mutex<()>,
+    ret: Mutex<mpsc::Receiver<User>>,
+}
+impl UserGetHelper {
+    pub async fn get(&self, user_id: UserId) -> Result<User> {
+        let guard = self.lock.lock().await;
+
+        self.usecase
+            .handle(usecases::user::get::Input { user_id })
+            .await?;
+        let user = self.ret.lock().await.recv().await.unwrap();
+
+        drop(guard);
+
+        Ok(user)
+    }
+}
+
+pub struct ContentGetHelper {
+    usecase: Arc<dyn usecases::content::get::Usecase>,
+    lock: Mutex<()>,
+    ret: Mutex<mpsc::Receiver<Content>>,
+}
+impl ContentGetHelper {
+    pub async fn get(&self, content_id: ContentId) -> Result<Content> {
+        let guard = self.lock.lock().await;
+
+        self.usecase
+            .handle(usecases::content::get::Input { content_id })
+            .await?;
+        let content = self.ret.lock().await.recv().await.unwrap();
+
+        drop(guard);
+
+        Ok(content)
+    }
 }
