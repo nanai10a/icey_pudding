@@ -5,7 +5,7 @@ use serenity::client::{Context, EventHandler};
 use serenity::model::channel::Message;
 use serenity::model::id::{ChannelId, GuildId, MessageId};
 
-use crate::controllers::SerenityReturnController;
+use crate::controllers::serenity::SerenityReturnController;
 use crate::utils::LetChain;
 
 pub struct Conductor {

@@ -4,9 +4,11 @@ use serenity::client::EventHandler;
 use tokio::sync::{mpsc, Mutex};
 
 use crate::conductors::Conductor;
-use crate::controllers::content::SerenityContentController;
-use crate::controllers::user::SerenityUserController;
-use crate::controllers::{ContentGetHelper, SerenityReturnController, UserGetHelper};
+use crate::controllers::ret::content::ReturnContentController;
+use crate::controllers::ret::user::ReturnUserController;
+use crate::controllers::serenity::content::SerenityContentController;
+use crate::controllers::serenity::user::SerenityUserController;
+use crate::controllers::serenity::SerenityReturnController;
 use crate::entities::*;
 use crate::interactors::content::*;
 use crate::interactors::user::*;
@@ -28,7 +30,7 @@ fn contr(
     SerenityReturnController {
         user: user_contr,
         content: content_contr,
-        user_getter: UserGetHelper {
+        return_user_contr: ReturnUserController {
             usecase: Arc::new(UserGetInteractor {
                 user_repository: user_repo.clone(),
                 pres: Arc::new(ReturnUserGetPresenter { ret: user_in }),
@@ -36,7 +38,7 @@ fn contr(
             lock: Mutex::new(()),
             ret: Mutex::new(user_out),
         },
-        content_getter: ContentGetHelper {
+        return_content_contr: ReturnContentController {
             usecase: Arc::new(ContentGetInteractor {
                 content_repository: content_repo.clone(),
                 pres: Arc::new(ReturnContentGetPresenter { ret: content_in }),
