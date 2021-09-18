@@ -22,7 +22,7 @@ use serenity::model::channel::Message;
 use smallvec::{smallvec, SmallVec};
 
 use crate::cmds::{
-    App, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp, ContentMod,
+    Cmd, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp, ContentMod,
     ContentPinCmd, ContentPinOp, ContentPostCmd, ContentWithdrawCmd, PartialContentMutation,
     RootMod, UserBookmarkCmd, UserBookmarkOp, UserEditCmd, UserGetCmd, UserGetsCmd, UserMod,
     UserRegisterCmd, UserUnregisterCmd,
@@ -62,7 +62,7 @@ impl SerenityReturnController {
         Some(Ok(res))
     }
 
-    async fn parse_str(raw: &str) -> Option<Result<App>> {
+    async fn parse_str(raw: &str) -> Option<Result<Cmd>> {
         let split_res = ::shell_words::split(raw)
             .map(|mut v| {
                 v.drain(..)
@@ -83,14 +83,14 @@ impl SerenityReturnController {
 
         use clap::Clap;
 
-        App::try_parse_from(splitted)
+        Cmd::try_parse_from(splitted)
             .map_err(|e| anyhow!(e.to_string()))
             .let_(Some)
     }
 
     async fn handle_cmd(
         &self,
-        app: App,
+        app: Cmd,
         msg: &Message,
         http: impl CacheHttp + Clone,
     ) -> Result<SmallVec<[Box<View>; 20]>> {
@@ -102,7 +102,7 @@ impl SerenityReturnController {
         let ex_user_nick = msg.author_nick(&http).await;
 
         use usecases::{content, user};
-        let App { cmd } = self.authorize_cmd(app, ex_user_id).await?;
+        let Cmd { cmd } = self.authorize_cmd(app, ex_user_id).await?;
         match cmd {
             RootMod::User { cmd } => match cmd {
                 UserMod::Register(UserRegisterCmd) => self
@@ -337,7 +337,7 @@ impl SerenityReturnController {
         }
     }
 
-    async fn authorize_cmd(&self, cmd: App, ex_user_id: UserId) -> Result<App> {
+    async fn authorize_cmd(&self, cmd: Cmd, ex_user_id: UserId) -> Result<Cmd> {
         let ex_user_res = self.user_getter.get(ex_user_id).await;
 
         let res = match &cmd.cmd {

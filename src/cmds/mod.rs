@@ -11,7 +11,7 @@ use parser::*;
 /// this is a ICEy_PUDDING.
 #[derive(Debug, Clone, ::clap::Clap)]
 #[clap(author, version)]
-pub struct App {
+pub struct Cmd {
     #[clap(subcommand)]
     pub cmd: RootMod,
 }
