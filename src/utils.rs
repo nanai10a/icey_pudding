@@ -95,7 +95,5 @@ impl<T> ConvertRange<T> for ::core::ops::RangeToInclusive<T> {
     }
 }
 impl<T> ConvertRange<T> for (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
-    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
-        self
-    }
+    fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) { self }
 }
