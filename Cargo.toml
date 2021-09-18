@@ -2,6 +2,7 @@
 name = "icey_pudding"
 version = "0.1.0-beta.2"
 edition = "2018"
+authors = ["Nanai10a (github.com/Nanai10a)"]
 
 [dependencies]
 tokio = { version = "1.7.1", features = ["full"] }
