@@ -21,7 +21,7 @@ use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
 use smallvec::{smallvec, SmallVec};
 
-use crate::conductors::{
+use crate::cmds::{
     App, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp, ContentMod,
     ContentPinCmd, ContentPinOp, ContentPostCmd, ContentWithdrawCmd, PartialContentMutation,
     RootMod, UserBookmarkCmd, UserBookmarkOp, UserEditCmd, UserGetCmd, UserGetsCmd, UserMod,

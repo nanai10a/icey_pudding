@@ -1,422 +1,15 @@
-use anyhow::{anyhow, Result};
 use async_trait::async_trait;
+use serde_json::{json, Number, Value};
 use serenity::builder::CreateMessage;
 use serenity::client::{Context, EventHandler};
-use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
-use serenity::model::prelude::User;
+use serenity::model::id::{ChannelId, GuildId, MessageId};
 
-use crate::entities::{Author, ContentId, PartialAuthor, Posted, UserId};
-use crate::handlers::Handler;
-use crate::usecases::content::{ContentContentMutation, ContentMutation};
+use crate::controllers::SerenityReturnController;
 use crate::utils::LetChain;
 
-mod command_colors;
-mod helpers;
-
-pub use helpers::*;
-
 pub struct Conductor {
-    pub handler: Handler,
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct PartialContentMutation {
-    pub author: Option<PartialAuthor>,
-    pub content: Option<ContentContentMutation>,
-}
-
-#[derive(Debug)]
-pub struct Response {
-    title: String,
-    rgb: (u8, u8, u8),
-    description: String,
-    fields: Vec<(String, String)>,
-}
-
-impl Conductor {
-    pub async fn conduct(
-        &self,
-        cmd: App,
-        http: impl CacheHttp + Clone,
-        msg: &Message,
-    ) -> Vec<Response> {
-        let user_nick = msg.author_nick(&http).await;
-
-        let Message {
-            guild_id: guild_id_raw,
-            author:
-                User {
-                    id: executed_user_id_raw,
-                    name: user_name,
-                    ..
-                },
-            timestamp,
-            ..
-        } = msg;
-
-        let executed_user_id = UserId(executed_user_id_raw.0);
-        let guild_id = guild_id_raw.as_ref().map(|r| r.0);
-
-        let from_user_shows = format!(
-            "from: {} ({})",
-            user_name,
-            user_nick.as_ref().unwrap_or(&"".to_string())
-        );
-
-        use command_colors::*;
-
-        let res: Result<Vec<Response>> = try {
-            let App { cmd } = self
-                .authorize_cmd(cmd, executed_user_id)
-                .await
-                .map_err(|e| anyhow!(e))?;
-
-            match cmd {
-                RootMod::User { cmd } => match cmd {
-                    UserMod::Register(UserRegisterCmd) => {
-                        let user = self.handler.register_user(executed_user_id).await?;
-
-                        resp_from_user("registered user", from_user_shows, USER_REGISTER, user)
-                            .let_(|r| vec![r])
-                    },
-
-                    UserMod::Get(UserGetCmd { user_id }) => {
-                        let user = self
-                            .handler
-                            .get_user(user_id.map(UserId).unwrap_or(executed_user_id))
-                            .await?;
-
-                        resp_from_user("showing user", from_user_shows, USER_GET, user)
-                            .let_(|r| vec![r])
-                    },
-
-                    UserMod::Gets(UserGetsCmd { page, query }) => {
-                        let users = self.handler.get_users(query).await?;
-
-                        const ITEMS: usize = 5;
-
-                        let all_pages = ((users.len() as f32) / (ITEMS as f32)).ceil();
-                        inner_gets_handler(users, ITEMS, page as usize, |(s, i, u)| {
-                            resp_from_user(
-                                format!("showing users: {}[{}] | {}/{}", i, s, page, all_pages),
-                                from_user_shows.to_string(),
-                                USER_GET,
-                                u,
-                            )
-                        })?
-                    },
-
-                    UserMod::Edit(UserEditCmd { user_id, mutation }) => {
-                        let user = self
-                            .handler
-                            .edit_user(user_id.let_(UserId), mutation)
-                            .await?;
-
-                        resp_from_user("updated user", from_user_shows, USER_EDIT, user)
-                            .let_(|r| vec![r])
-                    },
-
-                    UserMod::Bookmark(UserBookmarkCmd { op }) => match op {
-                        UserBookmarkOp::Do { content_id } => {
-                            let (user, _) = self
-                                .handler
-                                .user_bookmark_op(
-                                    executed_user_id,
-                                    content_id.let_(ContentId),
-                                    false,
-                                )
-                                .await?;
-
-                            resp_from_user("bookmarked", from_user_shows, USER_BOOKMARK, user)
-                                .let_(|r| vec![r])
-                        },
-
-                        UserBookmarkOp::Undo { content_id } => {
-                            let (user, _) = self
-                                .handler
-                                .user_bookmark_op(
-                                    executed_user_id,
-                                    content_id.let_(ContentId),
-                                    true,
-                                )
-                                .await?;
-
-                            resp_from_user("unbookmarked", from_user_shows, USER_BOOKMARK, user)
-                                .let_(|r| vec![r])
-                        },
-
-                        UserBookmarkOp::Show { user_id, page } => {
-                            let bookmark = self
-                                .handler
-                                .get_user_bookmark(user_id.map(UserId).unwrap_or(executed_user_id))
-                                .await?;
-
-                            inner_op_handler(
-                                "bookmark",
-                                USER_BOOKMARK,
-                                bookmark,
-                                20,
-                                page as usize,
-                                from_user_shows,
-                            )?
-                        },
-                    },
-
-                    UserMod::Unregister(UserUnregisterCmd { user_id }) => {
-                        let user = self.handler.unregister_user(user_id.let_(UserId)).await?;
-
-                        resp_from_user("deleted user.", from_user_shows, USER_UNREGISTER, user)
-                            .let_(|r| vec![r])
-                    },
-                },
-
-                RootMod::Content { cmd } => match cmd {
-                    ContentMod::Post(ContentPostCmd {
-                        virt,
-                        user_id,
-                        content,
-                    }) => {
-                        let author = match (user_id, virt) {
-                            (Some(v), None) => {
-                                let user = http.http().get_user(v).await?;
-                                let nick = match guild_id {
-                                    Some(i) => user.nick_in(http, i).await,
-                                    None => None,
-                                };
-
-                                Author::User {
-                                    id: v.let_(UserId),
-                                    name: user.name,
-                                    nick,
-                                }
-                            },
-
-                            (None, Some(v)) => Author::Virtual(v),
-                            v => unreachable!("found: {:?}", v),
-                        };
-
-                        let content = self
-                            .handler
-                            .content_post(
-                                content,
-                                Posted {
-                                    id: executed_user_id,
-                                    name: user_name.clone(),
-                                    nick: user_nick,
-                                },
-                                author,
-                                *timestamp,
-                            )
-                            .await?;
-
-                        resp_from_content("posted content", from_user_shows, CONTENT_POST, content)
-                            .let_(|r| vec![r])
-                    },
-
-                    ContentMod::Get(ContentGetCmd { content_id }) => {
-                        let content = self.handler.get_content(content_id.let_(ContentId)).await?;
-
-                        resp_from_content("showing content", from_user_shows, CONTENT_GET, content)
-                            .let_(|r| vec![r])
-                    },
-
-                    ContentMod::Gets(ContentGetsCmd { page, query }) => {
-                        let contents = self.handler.get_contents(query).await?;
-
-                        const ITEMS: usize = 5;
-
-                        let all_pages = ((contents.len() as f32) / (ITEMS as f32)).ceil();
-                        inner_gets_handler(contents, ITEMS, page as usize, |(s, i, c)| {
-                            resp_from_content(
-                                format!("showing contents: {}[{}] | {}/{}", i, s, page, all_pages),
-                                from_user_shows.to_string(),
-                                CONTENT_GET,
-                                c,
-                            )
-                        })?
-                    },
-
-                    ContentMod::Edit(ContentEditCmd {
-                        content_id,
-                        mutation:
-                            PartialContentMutation {
-                                author: p_author,
-                                content,
-                            },
-                    }) => {
-                        let author = match p_author {
-                            Some(PartialAuthor::Virtual(s)) => Some(Author::Virtual(s)),
-                            Some(PartialAuthor::User(id)) => {
-                                let user = http.http().get_user(id.0).await?;
-
-                                let nick = match guild_id {
-                                    Some(i) => user.nick_in(http, i).await,
-                                    None => None,
-                                };
-                                let name = user.name;
-
-                                Some(Author::User { id, name, nick })
-                            },
-                            None => None,
-                        };
-
-                        let mutation = ContentMutation {
-                            author,
-                            content,
-                            edited: *timestamp,
-                        };
-                        let content = self
-                            .handler
-                            .edit_content(content_id.let_(ContentId), mutation)
-                            .await?;
-
-                        resp_from_content("updated user", from_user_shows, CONTENT_EDIT, content)
-                            .let_(|r| vec![r])
-                    },
-
-                    ContentMod::Like(ContentLikeCmd { op }) => match op {
-                        ContentLikeOp::Do { content_id } => {
-                            let content = self
-                                .handler
-                                .content_like_op(
-                                    content_id.let_(ContentId),
-                                    executed_user_id,
-                                    false,
-                                )
-                                .await?;
-
-                            resp_from_content("liked", from_user_shows, CONTENT_LIKE, content)
-                                .let_(|r| vec![r])
-                        },
-
-                        ContentLikeOp::Undo { content_id } => {
-                            let content = self
-                                .handler
-                                .content_like_op(content_id.let_(ContentId), executed_user_id, true)
-                                .await?;
-
-                            resp_from_content("unliked", from_user_shows, CONTENT_LIKE, content)
-                                .let_(|r| vec![r])
-                        },
-
-                        ContentLikeOp::Show { page, content_id } => {
-                            let like = self
-                                .handler
-                                .get_content_like(content_id.let_(ContentId))
-                                .await?;
-
-                            inner_op_handler(
-                                "like",
-                                CONTENT_LIKE,
-                                like,
-                                20,
-                                page as usize,
-                                from_user_shows,
-                            )?
-                        },
-                    },
-
-                    ContentMod::Pin(ContentPinCmd { op }) => match op {
-                        ContentPinOp::Do { content_id } => {
-                            let content = self
-                                .handler
-                                .content_pin_op(content_id.let_(ContentId), executed_user_id, false)
-                                .await?;
-
-                            resp_from_content("pinned", from_user_shows, CONTENT_PIN, content)
-                                .let_(|r| vec![r])
-                        },
-
-                        ContentPinOp::Undo { content_id } => {
-                            let content = self
-                                .handler
-                                .content_pin_op(content_id.let_(ContentId), executed_user_id, true)
-                                .await?;
-
-                            resp_from_content("unpinned", from_user_shows, CONTENT_PIN, content)
-                                .let_(|r| vec![r])
-                        },
-
-                        ContentPinOp::Show { page, content_id } => {
-                            let pin = self
-                                .handler
-                                .get_content_pin(content_id.let_(ContentId))
-                                .await?;
-
-                            inner_op_handler(
-                                "pin",
-                                CONTENT_PIN,
-                                pin,
-                                20,
-                                page as usize,
-                                from_user_shows,
-                            )?
-                        },
-                    },
-
-                    ContentMod::Withdraw(ContentWithdrawCmd { content_id }) => {
-                        let content = self
-                            .handler
-                            .withdraw_content(content_id.let_(ContentId))
-                            .await?;
-
-                        resp_from_content(
-                            "deleted content",
-                            from_user_shows,
-                            CONTENT_WITHDRAW,
-                            content,
-                        )
-                        .let_(|r| vec![r])
-                    },
-                },
-            }
-        };
-
-        res.unwrap_or_else(|e| {
-            Response {
-                title: "response".to_string(),
-                rgb: ERROR,
-                description: e.to_string(),
-                fields: vec![],
-            }
-            .let_(|r| vec![r])
-        })
-    }
-
-    pub async fn authorize_cmd(&self, cmd: App, user_id: UserId) -> Result<App, String> {
-        let user_res = self
-            .handler
-            .get_user(user_id)
-            .await
-            .map_err(|e| format!("auth error: {}", e));
-
-        let res = match &cmd.cmd {
-            RootMod::User { cmd } => match cmd {
-                UserMod::Edit(..) | UserMod::Unregister(..) => user_res?.admin,
-                _ => true,
-            },
-            RootMod::Content { cmd } => match cmd {
-                ContentMod::Edit(ContentEditCmd { content_id, .. })
-                | ContentMod::Withdraw(ContentWithdrawCmd { content_id, .. }) => {
-                    let user = user_res?;
-                    let content = self
-                        .handler
-                        .get_content(content_id.let_(|r| *r).let_(ContentId))
-                        .await
-                        .map_err(|e| format!("auth error: {}", e))?;
-
-                    content.posted.id == user_id || user.admin || user.sub_admin
-                },
-                _ => true,
-            },
-        };
-
-        match res {
-            true => Ok(cmd),
-            false => Err("not permitted operation".to_string()),
-        }
-    }
+    pub contr: SerenityReturnController,
 }
 
 #[async_trait]
@@ -426,56 +19,57 @@ impl EventHandler for Conductor {
             return;
         }
 
-        let parse_res = match parse_msg(msg.content.as_str()) {
-            Some(o) => o,
+        let res = match match self.contr.parse(&msg, &ctx).await {
+            Some(r) => r,
             None => return,
-        };
-
-        let cmd = match parse_res {
-            Ok(o) => o,
-            Err(e) => {
-                let res = msg
-                    .channel_id
-                    .send_message(ctx.http, |cm| {
-                        cm.add_embed(|ce| {
-                            ce.title("response")
-                                .colour(command_colors::ERROR)
-                                .description(format!("```{}```", e))
-                        });
-
-                        let CreateMessage(ref mut raw, ..) = cm;
-                        append_message_reference(raw, msg.id, msg.channel_id, msg.guild_id);
-
-                        cm
+        } {
+            Ok(mut sv) =>
+                msg.channel_id
+                    .send_message(&ctx, |cm| {
+                        #[allow(clippy::unit_arg)]
+                        sv.drain(..)
+                            .for_each(|v| cm.add_embed(v).let_(::core::mem::drop))
+                            .let_(move |()| {
+                                append_message_reference(cm, msg.id, msg.channel_id, msg.guild_id)
+                            })
                     })
-                    .await;
-
-                return match res {
-                    Ok(_) => (),
-                    Err(e) => eprintln!("err: {}", e),
-                };
-            },
+                    .await,
+            Err(e) =>
+                msg.channel_id
+                    .send_message(&ctx, |cm| {
+                        cm.content(format!("```{}```", e)).let_(|cm| {
+                            append_message_reference(cm, msg.id, msg.channel_id, msg.guild_id)
+                        })
+                    })
+                    .await,
         };
 
-        let mut resps = self.conduct(cmd, ctx.clone(), &msg).await;
-
-        let res = msg
-            .channel_id
-            .send_message(ctx.http, |cm| {
-                resps.drain(..).for_each(|resp| {
-                    cm.add_embed(|ce| build_embed_from_resp(ce, resp));
-                });
-
-                let CreateMessage(ref mut raw, ..) = cm;
-                append_message_reference(raw, msg.id, msg.channel_id, msg.guild_id);
-
-                cm
-            })
-            .await;
-
+        #[cfg(not(debug))]
         match res {
-            Ok(_) => (),
-            Err(e) => eprintln!("{}", e),
+            Ok(o) => println!("success: {:?}", o),
+            Err(e) => eprintln!("error: {}", e),
         }
     }
+}
+
+fn append_message_reference<'a, 'b>(
+    raw: &'a mut CreateMessage<'b>,
+    id: MessageId,
+    channel_id: ChannelId,
+    guild_id: Option<GuildId>,
+) -> &'a mut CreateMessage<'b> {
+    let CreateMessage(map, ..) = raw;
+
+    let mr = json!({
+        "message_id": id,
+        "channel_id": channel_id,
+        "guild_id": match guild_id {
+            Some(GuildId(i)) => Value::Number(Number::from(i)),
+            None => Value::Null
+        },
+    });
+
+    map.insert("message_reference", mr);
+
+    raw
 }

@@ -5,11 +5,8 @@ use anyhow::{bail, Result};
 use async_trait::async_trait;
 use smallvec::SmallVec;
 
-// FIXME: move to interactors::
-use crate::conductors::calc_paging;
+use super::*;
 use crate::entities::Content;
-// FIXME: move to interactors::
-use crate::handlers::helpers::*;
 use crate::presenters::content::{
     ContentEditPresenter, ContentGetPresenter, ContentGetsPresenter, ContentLikeGetPresenter,
     ContentLikePresenter, ContentPinGetPresenter, ContentPinPresenter, ContentPostPresenter,
