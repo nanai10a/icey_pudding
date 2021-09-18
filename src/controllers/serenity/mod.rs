@@ -19,6 +19,8 @@ use serenity::http::CacheHttp;
 use serenity::model::channel::Message;
 use smallvec::{smallvec, SmallVec};
 
+use super::ret::content::ReturnContentController;
+use super::ret::user::ReturnUserController;
 use crate::cmds::{
     Cmd, ContentEditCmd, ContentGetCmd, ContentGetsCmd, ContentLikeCmd, ContentLikeOp, ContentMod,
     ContentPinCmd, ContentPinOp, ContentPostCmd, ContentWithdrawCmd, PartialContentMutation,
@@ -30,9 +32,6 @@ use crate::presenters::impls::serenity::View;
 use crate::usecases;
 use crate::usecases::content::ContentMutation;
 use crate::utils::LetChain;
-
-use super::ret::content::ReturnContentController;
-use super::ret::user::ReturnUserController;
 
 pub struct SerenityReturnController {
     pub user: user::SerenityUserController,
