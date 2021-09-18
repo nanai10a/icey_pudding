@@ -19,7 +19,7 @@ impl EventHandler for Conductor {
             return;
         }
 
-        let res = match match self.contr.parse(&msg, &ctx).await {
+        let _res = match match self.contr.parse(&msg, &ctx).await {
             Some(r) => r,
             None => return,
         } {
@@ -44,10 +44,10 @@ impl EventHandler for Conductor {
                     .await,
         };
 
-        #[cfg(not(debug))]
-        match res {
-            Ok(o) => println!("success: {:?}", o),
-            Err(e) => eprintln!("error: {}", e),
+        #[cfg(debug)]
+        match _res {
+            Ok(o) => dbg!(o).let_(::core::mem::drop),
+            Err(e) => dbg!(e).let_(::core::mem::drop),
         }
     }
 }
