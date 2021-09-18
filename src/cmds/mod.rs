@@ -94,10 +94,6 @@ pub struct UserGetCmd {
 /// get users with query.
 #[derive(Debug, Clone, ::clap::Clap)]
 pub struct UserGetsCmd {
-    /// u32 (1 =< n)
-    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
-    pub page: u32,
-
     /// json
     ///
     /// schema: {
@@ -106,6 +102,10 @@ pub struct UserGetsCmd {
     /// }
     #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_user_query))]
     pub query: UserQuery,
+
+    /// u32 (1 =< n)
+    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+    pub page: u32,
 }
 
 /// edit user with id and mutation.
@@ -153,13 +153,13 @@ pub enum UserBookmarkOp {
     /// get bookmarks.
     #[clap(short_flag = 's')]
     Show {
-        /// u32 (1 =< n)
-        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
-        page: u32,
-
         /// u64
         #[clap(name = "USER_ID")]
         user_id: Option<u64>,
+
+        /// u32 (1 =< n)
+        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+        page: u32,
     },
 }
 
@@ -199,10 +199,6 @@ pub struct ContentGetCmd {
 /// get contents with query.
 #[derive(Debug, Clone, ::clap::Clap)]
 pub struct ContentGetsCmd {
-    /// u32 (1 =< n)
-    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
-    pub page: u32,
-
     /// json
     ///
     /// schema: {
@@ -239,6 +235,10 @@ pub struct ContentGetsCmd {
     /// }
     #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_content_query))]
     pub query: ContentQuery,
+
+    /// u32 (1 =< n)
+    #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+    pub page: u32,
 }
 
 /// edit content with id and mutation.
@@ -296,13 +296,13 @@ pub enum ContentLikeOp {
     /// get liked users.
     #[clap(short_flag = 's')]
     Show {
-        /// u32 (1 =< n)
-        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
-        page: u32,
-
         /// uuid
         #[clap(name = "CONTENT_ID")]
         content_id: Uuid,
+
+        /// u32 (1 =< n)
+        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+        page: u32,
     },
 }
 
@@ -334,13 +334,13 @@ pub enum ContentPinOp {
     /// get pinned users.
     #[clap(short_flag = 's')]
     Show {
-        /// u32 (1 =< n)
-        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
-        page: u32,
-
         /// uuid
         #[clap(name = "CONTENT_ID")]
         content_id: Uuid,
+
+        /// u32 (1 =< n)
+        #[clap(name = "PAGE", default_value = "1", parse(try_from_str = parse_nonzero_num))]
+        page: u32,
     },
 }
 
