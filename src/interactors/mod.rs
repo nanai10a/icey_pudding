@@ -4,7 +4,7 @@ pub mod user;
 use anyhow::{anyhow, bail, Error, Result};
 
 use crate::repositories::RepositoryError;
-use crate::utils::ConvertRange;
+use crate::utils::{convert_range_display, ConvertRange};
 
 fn user_err_fmt(e: RepositoryError) -> Error {
     match e {
@@ -21,14 +21,18 @@ fn content_err_fmt(e: RepositoryError) -> Error {
 }
 
 fn calc_paging(
-    full: impl ConvertRange<usize>,
+    full: impl ConvertRange<usize> + Clone,
     items: usize,
     page: usize,
 ) -> Result<impl ConvertRange<usize>> {
     let lim = (items * (page - 1))..(items + items * (page - 1));
 
     if !full.contains(&lim.start) {
-        bail!("out of range ({:?} !< {:?})", full.to_turple(), lim);
+        bail!(
+            "out of range ({} !< {})",
+            convert_range_display(full),
+            convert_range_display(lim)
+        );
     }
 
     let r: (::core::ops::Bound<usize>, ::core::ops::Bound<usize>) = if !full.contains(&lim.end) {

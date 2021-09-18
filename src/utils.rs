@@ -97,3 +97,23 @@ impl<T> ConvertRange<T> for ::core::ops::RangeToInclusive<T> {
 impl<T> ConvertRange<T> for (::core::ops::Bound<T>, ::core::ops::Bound<T>) {
     fn to_turple(self) -> (::core::ops::Bound<T>, ::core::ops::Bound<T>) { self }
 }
+
+pub fn convert_range_display<T: ConvertRange<R> + Clone, R: ToString>(t: T) -> String {
+    use ::core::ops::Bound::*;
+
+    let (s, e) = t.to_turple();
+
+    let ss = match s {
+        Included(n) => n.to_string(),
+        Excluded(n) => n.to_string(),
+        Unbounded => String::new(),
+    };
+
+    let es = match e {
+        Included(n) => n.to_string(),
+        Excluded(n) => n.to_string(),
+        Unbounded => String::new(),
+    };
+
+    format!("{}..{}", ss, es)
+}
