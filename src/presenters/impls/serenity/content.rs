@@ -4,7 +4,7 @@ use smallvec::SmallVec;
 use tokio::sync::mpsc;
 
 use super::super::super::content;
-use super::View;
+use super::{View, EMPTY_FIELD};
 use crate::entities::Content;
 use crate::usecases::content::{
     edit, get, get_like, get_pin, gets, like, pin, post, unlike, unpin, withdraw,
@@ -37,13 +37,14 @@ impl content::ContentPostPresenter for SerenityContentPostPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("posted content")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(id)
                     .fields([
                         ("author", author.to_string(), true),
                         ("posted", posted.to_string(), true),
-                        ("created", created.to_string(), true),
-                        ("content", content, true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                        ("created", created.to_string(), false),
+                        ("content", content, false),
                     ])
             })
             .await
@@ -80,12 +81,13 @@ impl content::ContentGetPresenter for SerenityContentGetPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("showing content")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(id)
                     .fields([
                         ("author", author.to_string(), true),
                         ("posted", posted.to_string(), true),
-                        ("created", created.to_string(), true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                        ("created", created.to_string(), false),
                         ("edited_times", edited.len().to_string(), true),
                         (
                             "last_edited",
@@ -95,9 +97,11 @@ impl content::ContentGetPresenter for SerenityContentGetPresenter {
                                 .unwrap_or_else(|| "None".to_string()),
                             true,
                         ),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
                         ("like", liked.len().to_string(), true),
                         ("pin", pinned.len().to_string(), true),
-                        ("content", content, true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                        ("content", content, false),
                     ])
             })
             .await
@@ -136,12 +140,13 @@ impl content::ContentGetsPresenter for SerenityContentGetsPresenter {
                         )| {
                             box move |ce| {
                                 ce.title("showing contents.")
-                                    .colour(COLOR)
+                                    .color(COLOR)
                                     .description(format!("{} in {} | {}", idx, page, id))
                                     .fields([
                                         ("author", author.to_string(), true),
                                         ("posted", posted.to_string(), true),
-                                        ("created", created.to_string(), true),
+                                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                                        ("created", created.to_string(), false),
                                         ("edited_times", edited.len().to_string(), true),
                                         (
                                             "last_edited",
@@ -151,9 +156,11 @@ impl content::ContentGetsPresenter for SerenityContentGetsPresenter {
                                                 .unwrap_or_else(|| "None".to_string()),
                                             true,
                                         ),
+                                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
                                         ("like", liked.len().to_string(), true),
                                         ("pin", pinned.len().to_string(), true),
-                                        ("content", content, true),
+                                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                                        ("content", content, false),
                                     ])
                             }
                         },
@@ -194,12 +201,13 @@ impl content::ContentEditPresenter for SerenityContentEditPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("updated content.")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(id)
                     .fields([
                         ("author", author.to_string(), true),
                         ("posted", posted.to_string(), true),
-                        ("created", created.to_string(), true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                        ("created", created.to_string(), false),
                         ("edited_times", edited.len().to_string(), true),
                         (
                             "last_edited",
@@ -209,9 +217,11 @@ impl content::ContentEditPresenter for SerenityContentEditPresenter {
                                 .unwrap_or_else(|| "None".to_string()),
                             true,
                         ),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
                         ("like", liked.len().to_string(), true),
                         ("pin", pinned.len().to_string(), true),
-                        ("content", content, true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                        ("content", content, false),
                     ])
             })
             .await
@@ -248,12 +258,13 @@ impl content::ContentWithdrawPresenter for SerenityContentWithdrawPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("deleted content.")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(id)
                     .fields([
                         ("author", author.to_string(), true),
                         ("posted", posted.to_string(), true),
-                        ("created", created.to_string(), true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                        ("created", created.to_string(), false),
                         ("edited_times", edited.len().to_string(), true),
                         (
                             "edit_history",
@@ -264,7 +275,8 @@ impl content::ContentWithdrawPresenter for SerenityContentWithdrawPresenter {
                                 .join(", "),
                             true,
                         ),
-                        ("like_times", liked.len().to_string(), true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                        ("like_times", liked.len().to_string(), false),
                         (
                             "liked",
                             liked
@@ -272,9 +284,9 @@ impl content::ContentWithdrawPresenter for SerenityContentWithdrawPresenter {
                                 .map(|i| i.to_string())
                                 .collect::<Vec<_>>()
                                 .join(", "),
-                            true,
+                            false,
                         ),
-                        ("pinned_times", pinned.len().to_string(), true),
+                        ("pinned_times", pinned.len().to_string(), false),
                         (
                             "pinned",
                             pinned
@@ -282,9 +294,9 @@ impl content::ContentWithdrawPresenter for SerenityContentWithdrawPresenter {
                                 .map(|i| i.to_string())
                                 .collect::<Vec<_>>()
                                 .join(", "),
-                            true,
+                            false,
                         ),
-                        ("content", content, true),
+                        ("content", content, false),
                     ])
             })
             .await
@@ -351,7 +363,7 @@ impl content::ContentLikePresenter for SerenityContentLikePresenter {
         self.out
             .send(box move |ce| {
                 ce.title("like")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(format!("{} => {}", id, content_id))
                     .fields([("like", liked.len(), true)])
             })
@@ -390,7 +402,7 @@ impl content::ContentUnlikePresenter for SerenityContentUnlikePresenter {
         self.out
             .send(box move |ce| {
                 ce.title("unlike")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(format!("{} =/> {}", id, content_id))
                     .fields([("like", liked.len(), true)])
             })
@@ -458,7 +470,7 @@ impl content::ContentPinPresenter for SerenityContentPinPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("pin")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(format!("{} => {}", id, content_id))
                     .fields([("pin", pinned.len(), true)])
             })
@@ -497,7 +509,7 @@ impl content::ContentUnpinPresenter for SerenityContentUnpinPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("unpin")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(format!("{} =/> {}", id, content_id))
                     .fields([("pin", pinned.len(), true)])
             })

@@ -4,7 +4,7 @@ use smallvec::SmallVec;
 use tokio::sync::mpsc;
 
 use super::super::super::user;
-use super::View;
+use super::{View, EMPTY_FIELD};
 use crate::entities::User;
 use crate::usecases::user::{
     bookmark, edit, get, get_bookmark, gets, register, unbookmark, unregister,
@@ -30,11 +30,7 @@ impl user::UserRegisterPresenter for SerenityUserRegisterPresenter {
         const COLOR: (u8, u8, u8) = (0xd5, 0xc4, 0xa1);
 
         self.out
-            .send(box move |ce| {
-                ce.title("registered user")
-                    .colour(COLOR)
-                    .description(format!("id: {}", id))
-            })
+            .send(box move |ce| ce.title("registered user").color(COLOR).description(id))
             .await
             .map_err(|e| e.to_string())
             .unwrap();
@@ -64,11 +60,12 @@ impl user::UserGetPresenter for SerenityUserGetPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("showing user")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(id)
                     .fields([
                         ("admin", admin.to_string(), true),
                         ("sub_admin", sub_admin.to_string(), true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
                         ("bookmark", bookmark.len().to_string(), true),
                     ])
             })
@@ -103,11 +100,12 @@ impl user::UserGetsPresenter for SerenityUserGetsPresenter {
                         )| {
                             box move |ce| {
                                 ce.title("showing users")
-                                    .colour(COLOR)
+                                    .color(COLOR)
                                     .description(format!("{} in {} | {}", idx, page, id))
                                     .fields([
                                         ("admin", admin.to_string(), true),
                                         ("sub_admin", sub_admin.to_string(), true),
+                                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
                                         ("bookmark", bookmark.len().to_string(), true),
                                     ])
                             }
@@ -145,11 +143,12 @@ impl user::UserEditPresenter for SerenityUserEditPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("updated user")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(id)
                     .fields([
                         ("admin", admin.to_string(), true),
                         ("sub_admin", sub_admin.to_string(), true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
                         ("bookmark", bookmark.len().to_string(), true),
                     ])
             })
@@ -182,12 +181,13 @@ impl user::UserUnregisterPresenter for SerenityUserUnregisterPresenter {
         self.out
             .send(box move |ce| {
                 ce.title("deleted user")
-                    .colour(COLOR)
+                    .color(COLOR)
                     .description(id)
                     .fields([
                         ("admin", admin.to_string(), true),
                         ("sub_admin", sub_admin.to_string(), true),
-                        ("bookmark", bookmark.len().to_string(), true),
+                        (EMPTY_FIELD.0, EMPTY_FIELD.1.into(), EMPTY_FIELD.2),
+                        ("bookmark", bookmark.len().to_string(), false),
                         (
                             "bookmark",
                             bookmark
