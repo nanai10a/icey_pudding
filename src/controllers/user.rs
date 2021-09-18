@@ -10,7 +10,7 @@ use crate::usecases::user::{
     bookmark, edit, get, get_bookmark, gets, register, unbookmark, unregister,
 };
 
-pub struct ReturnUserController {
+pub struct SerenityUserController {
     pub register: Arc<dyn register::Usecase + Sync + Send>,
     pub register_lock: Mutex<()>,
     pub register_ret: Mutex<mpsc::Receiver<Box<View>>>,
@@ -43,7 +43,7 @@ pub struct ReturnUserController {
     pub unbookmark_lock: Mutex<()>,
     pub unbookmark_ret: Mutex<mpsc::Receiver<Box<View>>>,
 }
-impl ReturnUserController {
+impl SerenityUserController {
     #[async_recursion]
     pub async fn register(&self, data: register::Input) -> Result<Box<View>> {
         return_inner!(self =>

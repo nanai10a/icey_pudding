@@ -10,7 +10,7 @@ use crate::usecases::content::{
     edit, get, get_like, get_pin, gets, like, pin, post, unlike, unpin, withdraw,
 };
 
-pub struct ReturnContentController {
+pub struct SerenityContentController {
     pub post: Arc<dyn post::Usecase + Sync + Send>,
     pub post_lock: Mutex<()>,
     pub post_ret: Mutex<mpsc::Receiver<Box<View>>>,
@@ -56,7 +56,7 @@ pub struct ReturnContentController {
     pub unpin_ret: Mutex<mpsc::Receiver<Box<View>>>,
 }
 
-impl ReturnContentController {
+impl SerenityContentController {
     #[async_recursion]
     pub async fn post(&self, data: post::Input) -> Result<Box<View>> {
         return_inner!(self =>

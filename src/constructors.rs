@@ -4,8 +4,8 @@ use serenity::client::EventHandler;
 use tokio::sync::{mpsc, Mutex};
 
 use crate::conductors::Conductor;
-use crate::controllers::content::ReturnContentController;
-use crate::controllers::user::ReturnUserController;
+use crate::controllers::content::SerenityContentController;
+use crate::controllers::user::SerenityUserController;
 use crate::controllers::{ContentGetHelper, SerenityReturnController, UserGetHelper};
 use crate::entities::*;
 use crate::interactors::content::*;
@@ -17,8 +17,8 @@ use crate::presenters::impls::serenity::user::*;
 use crate::repositories::*;
 
 fn contr(
-    user_contr: ReturnUserController,
-    content_contr: ReturnContentController,
+    user_contr: SerenityUserController,
+    content_contr: SerenityContentController,
     user_repo: Arc<dyn UserRepository + Sync + Send>,
     content_repo: Arc<dyn ContentRepository + Sync + Send>,
 ) -> SerenityReturnController {
@@ -47,7 +47,7 @@ fn contr(
     }
 }
 
-fn user(repo: Arc<dyn UserRepository + Sync + Send>) -> ReturnUserController {
+fn user(repo: Arc<dyn UserRepository + Sync + Send>) -> SerenityUserController {
     let (register_in, register_out) = mpsc::channel(1);
     let (get_in, get_out) = mpsc::channel(1);
     let (gets_in, gets_out) = mpsc::channel(1);
@@ -57,7 +57,7 @@ fn user(repo: Arc<dyn UserRepository + Sync + Send>) -> ReturnUserController {
     let (bookmark_in, bookmark_out) = mpsc::channel(1);
     let (unbookmark_in, unbookmark_out) = mpsc::channel(1);
 
-    ReturnUserController {
+    SerenityUserController {
         register: Arc::new(UserRegisterInteractor {
             user_repository: repo.clone(),
             pres: Arc::new(SerenityUserRegisterPresenter { out: register_in }),
@@ -121,7 +121,7 @@ fn user(repo: Arc<dyn UserRepository + Sync + Send>) -> ReturnUserController {
 fn content(
     repo: Arc<dyn ContentRepository + Sync + Send>,
     user_repo: Arc<dyn UserRepository + Sync + Send>,
-) -> ReturnContentController {
+) -> SerenityContentController {
     let (post_in, post_out) = mpsc::channel(1);
     let (get_in, get_out) = mpsc::channel(1);
     let (gets_in, gets_out) = mpsc::channel(1);
@@ -134,7 +134,7 @@ fn content(
     let (pin_in, pin_out) = mpsc::channel(1);
     let (unpin_in, unpin_out) = mpsc::channel(1);
 
-    ReturnContentController {
+    SerenityContentController {
         post: Arc::new(ContentPostInteractor {
             user_repository: user_repo.clone(),
             content_repository: repo.clone(),

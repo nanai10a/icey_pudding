@@ -34,8 +34,8 @@ use crate::usecases::content::ContentMutation;
 use crate::utils::LetChain;
 
 pub struct SerenityReturnController {
-    pub user: user::ReturnUserController,
-    pub content: content::ReturnContentController,
+    pub user: user::SerenityUserController,
+    pub content: content::SerenityContentController,
     pub user_getter: UserGetHelper,
     pub content_getter: ContentGetHelper,
 }
