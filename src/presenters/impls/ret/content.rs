@@ -7,7 +7,7 @@ use crate::entities::Content;
 use crate::usecases::content::get;
 
 pub struct ReturnContentGetPresenter {
-    ret: mpsc::Sender<Content>,
+    pub ret: mpsc::Sender<Content>,
 }
 #[async_trait]
 impl content::ContentGetPresenter for ReturnContentGetPresenter {

@@ -11,49 +11,49 @@ use crate::usecases::content::{
 };
 
 pub struct ReturnContentController {
-    post: Arc<dyn post::Usecase + Sync + Send>,
-    post_lock: Mutex<()>,
-    post_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub post: Arc<dyn post::Usecase + Sync + Send>,
+    pub post_lock: Mutex<()>,
+    pub post_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    get: Arc<dyn get::Usecase + Sync + Send>,
-    get_lock: Mutex<()>,
-    get_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub get: Arc<dyn get::Usecase + Sync + Send>,
+    pub get_lock: Mutex<()>,
+    pub get_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    gets: Arc<dyn gets::Usecase + Sync + Send>,
-    gets_lock: Mutex<()>,
-    gets_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 5]>>>,
+    pub gets: Arc<dyn gets::Usecase + Sync + Send>,
+    pub gets_lock: Mutex<()>,
+    pub gets_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 5]>>>,
 
-    edit: Arc<dyn edit::Usecase + Sync + Send>,
-    edit_lock: Mutex<()>,
-    edit_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub edit: Arc<dyn edit::Usecase + Sync + Send>,
+    pub edit_lock: Mutex<()>,
+    pub edit_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    withdraw: Arc<dyn withdraw::Usecase + Sync + Send>,
-    withdraw_lock: Mutex<()>,
-    withdraw_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub withdraw: Arc<dyn withdraw::Usecase + Sync + Send>,
+    pub withdraw_lock: Mutex<()>,
+    pub withdraw_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    get_like: Arc<dyn get_like::Usecase + Sync + Send>,
-    get_like_lock: Mutex<()>,
-    get_like_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 20]>>>,
+    pub get_like: Arc<dyn get_like::Usecase + Sync + Send>,
+    pub get_like_lock: Mutex<()>,
+    pub get_like_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 20]>>>,
 
-    like: Arc<dyn like::Usecase + Sync + Send>,
-    like_lock: Mutex<()>,
-    like_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub like: Arc<dyn like::Usecase + Sync + Send>,
+    pub like_lock: Mutex<()>,
+    pub like_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    unlike: Arc<dyn unlike::Usecase + Sync + Send>,
-    unlike_lock: Mutex<()>,
-    unlike_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub unlike: Arc<dyn unlike::Usecase + Sync + Send>,
+    pub unlike_lock: Mutex<()>,
+    pub unlike_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    get_pin: Arc<dyn get_pin::Usecase + Sync + Send>,
-    get_pin_lock: Mutex<()>,
-    get_pin_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 20]>>>,
+    pub get_pin: Arc<dyn get_pin::Usecase + Sync + Send>,
+    pub get_pin_lock: Mutex<()>,
+    pub get_pin_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 20]>>>,
 
-    pin: Arc<dyn pin::Usecase + Sync + Send>,
-    pin_lock: Mutex<()>,
-    pin_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub pin: Arc<dyn pin::Usecase + Sync + Send>,
+    pub pin_lock: Mutex<()>,
+    pub pin_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    unpin: Arc<dyn unpin::Usecase + Sync + Send>,
-    unpin_lock: Mutex<()>,
-    unpin_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub unpin: Arc<dyn unpin::Usecase + Sync + Send>,
+    pub unpin_lock: Mutex<()>,
+    pub unpin_ret: Mutex<mpsc::Receiver<Box<View>>>,
 }
 
 impl ReturnContentController {

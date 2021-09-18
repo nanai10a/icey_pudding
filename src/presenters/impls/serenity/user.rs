@@ -11,7 +11,7 @@ use crate::usecases::user::{
 };
 
 pub struct SerenityUserRegisterPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl user::UserRegisterPresenter for SerenityUserRegisterPresenter {
@@ -43,7 +43,7 @@ impl user::UserRegisterPresenter for SerenityUserRegisterPresenter {
 }
 
 pub struct SerenityUserGetPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl user::UserGetPresenter for SerenityUserGetPresenter {
@@ -80,7 +80,7 @@ impl user::UserGetPresenter for SerenityUserGetPresenter {
 }
 
 pub struct SerenityUserGetsPresenter {
-    out: mpsc::Sender<SmallVec<[Box<View>; 5]>>,
+    pub out: mpsc::Sender<SmallVec<[Box<View>; 5]>>,
 }
 #[async_trait]
 impl user::UserGetsPresenter for SerenityUserGetsPresenter {
@@ -124,7 +124,7 @@ impl user::UserGetsPresenter for SerenityUserGetsPresenter {
 }
 
 pub struct SerenityUserEditPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl user::UserEditPresenter for SerenityUserEditPresenter {
@@ -161,7 +161,7 @@ impl user::UserEditPresenter for SerenityUserEditPresenter {
 }
 
 pub struct SerenityUserUnregisterPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl user::UserUnregisterPresenter for SerenityUserUnregisterPresenter {
@@ -207,7 +207,7 @@ impl user::UserUnregisterPresenter for SerenityUserUnregisterPresenter {
 }
 
 pub struct SerenityUserBookmarkGetPresenter {
-    out: mpsc::Sender<SmallVec<[Box<View>; 20]>>,
+    pub out: mpsc::Sender<SmallVec<[Box<View>; 20]>>,
 }
 #[async_trait]
 impl user::UserBookmarkGetPresenter for SerenityUserBookmarkGetPresenter {
@@ -239,7 +239,7 @@ impl user::UserBookmarkGetPresenter for SerenityUserBookmarkGetPresenter {
 }
 
 pub struct SerenityUserBookmarkPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl user::UserBookmarkPresenter for SerenityUserBookmarkPresenter {
@@ -273,7 +273,7 @@ impl user::UserBookmarkPresenter for SerenityUserBookmarkPresenter {
 }
 
 pub struct SerenityUserUnbookmarkPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl user::UserUnbookmarkPresenter for SerenityUserUnbookmarkPresenter {

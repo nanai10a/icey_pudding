@@ -11,37 +11,37 @@ use crate::usecases::user::{
 };
 
 pub struct ReturnUserController {
-    register: Arc<dyn register::Usecase + Sync + Send>,
-    register_lock: Mutex<()>,
-    register_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub register: Arc<dyn register::Usecase + Sync + Send>,
+    pub register_lock: Mutex<()>,
+    pub register_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    get: Arc<dyn get::Usecase + Sync + Send>,
-    get_lock: Mutex<()>,
-    get_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub get: Arc<dyn get::Usecase + Sync + Send>,
+    pub get_lock: Mutex<()>,
+    pub get_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    gets: Arc<dyn gets::Usecase + Sync + Send>,
-    gets_lock: Mutex<()>,
-    gets_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 5]>>>,
+    pub gets: Arc<dyn gets::Usecase + Sync + Send>,
+    pub gets_lock: Mutex<()>,
+    pub gets_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 5]>>>,
 
-    edit: Arc<dyn edit::Usecase + Sync + Send>,
-    edit_lock: Mutex<()>,
-    edit_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub edit: Arc<dyn edit::Usecase + Sync + Send>,
+    pub edit_lock: Mutex<()>,
+    pub edit_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    unregister: Arc<dyn unregister::Usecase + Sync + Send>,
-    unregister_lock: Mutex<()>,
-    unregister_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub unregister: Arc<dyn unregister::Usecase + Sync + Send>,
+    pub unregister_lock: Mutex<()>,
+    pub unregister_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    get_bookmark: Arc<dyn get_bookmark::Usecase + Sync + Send>,
-    get_bookmark_lock: Mutex<()>,
-    get_bookmark_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 20]>>>,
+    pub get_bookmark: Arc<dyn get_bookmark::Usecase + Sync + Send>,
+    pub get_bookmark_lock: Mutex<()>,
+    pub get_bookmark_ret: Mutex<mpsc::Receiver<SmallVec<[Box<View>; 20]>>>,
 
-    bookmark: Arc<dyn bookmark::Usecase + Sync + Send>,
-    bookmark_lock: Mutex<()>,
-    bookmark_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub bookmark: Arc<dyn bookmark::Usecase + Sync + Send>,
+    pub bookmark_lock: Mutex<()>,
+    pub bookmark_ret: Mutex<mpsc::Receiver<Box<View>>>,
 
-    unbookmark: Arc<dyn unbookmark::Usecase + Sync + Send>,
-    unbookmark_lock: Mutex<()>,
-    unbookmark_ret: Mutex<mpsc::Receiver<Box<View>>>,
+    pub unbookmark: Arc<dyn unbookmark::Usecase + Sync + Send>,
+    pub unbookmark_lock: Mutex<()>,
+    pub unbookmark_ret: Mutex<mpsc::Receiver<Box<View>>>,
 }
 impl ReturnUserController {
     #[async_recursion]

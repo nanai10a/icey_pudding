@@ -34,10 +34,10 @@ use crate::usecases::content::ContentMutation;
 use crate::utils::LetChain;
 
 pub struct SerenityReturnController {
-    user: user::ReturnUserController,
-    content: content::ReturnContentController,
-    user_getter: UserGetHelper,
-    content_getter: ContentGetHelper,
+    pub user: user::ReturnUserController,
+    pub content: content::ReturnContentController,
+    pub user_getter: UserGetHelper,
+    pub content_getter: ContentGetHelper,
 }
 
 impl SerenityReturnController {
@@ -371,9 +371,9 @@ impl SerenityReturnController {
 use tokio::sync::{mpsc, Mutex};
 
 pub struct UserGetHelper {
-    usecase: Arc<dyn usecases::user::get::Usecase>,
-    lock: Mutex<()>,
-    ret: Mutex<mpsc::Receiver<User>>,
+    pub usecase: Arc<dyn usecases::user::get::Usecase + Sync + Send>,
+    pub lock: Mutex<()>,
+    pub ret: Mutex<mpsc::Receiver<User>>,
 }
 impl UserGetHelper {
     pub async fn get(&self, user_id: UserId) -> Result<User> {
@@ -391,9 +391,9 @@ impl UserGetHelper {
 }
 
 pub struct ContentGetHelper {
-    usecase: Arc<dyn usecases::content::get::Usecase>,
-    lock: Mutex<()>,
-    ret: Mutex<mpsc::Receiver<Content>>,
+    pub usecase: Arc<dyn usecases::content::get::Usecase + Sync + Send>,
+    pub lock: Mutex<()>,
+    pub ret: Mutex<mpsc::Receiver<Content>>,
 }
 impl ContentGetHelper {
     pub async fn get(&self, content_id: ContentId) -> Result<Content> {

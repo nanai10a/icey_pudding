@@ -12,7 +12,7 @@ use crate::usecases::content::{
 use crate::utils::date_to_string;
 
 pub struct SerenityContentPostPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl content::ContentPostPresenter for SerenityContentPostPresenter {
@@ -55,7 +55,7 @@ impl content::ContentPostPresenter for SerenityContentPostPresenter {
 }
 
 pub struct SerenityContentGetPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl content::ContentGetPresenter for SerenityContentGetPresenter {
@@ -109,7 +109,7 @@ impl content::ContentGetPresenter for SerenityContentGetPresenter {
 }
 
 pub struct SerenityContentGetsPresenter {
-    out: mpsc::Sender<SmallVec<[Box<View>; 5]>>,
+    pub out: mpsc::Sender<SmallVec<[Box<View>; 5]>>,
 }
 #[async_trait]
 impl content::ContentGetsPresenter for SerenityContentGetsPresenter {
@@ -169,7 +169,7 @@ impl content::ContentGetsPresenter for SerenityContentGetsPresenter {
 }
 
 pub struct SerenityContentEditPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl content::ContentEditPresenter for SerenityContentEditPresenter {
@@ -223,7 +223,7 @@ impl content::ContentEditPresenter for SerenityContentEditPresenter {
 }
 
 pub struct SerenityContentWithdrawPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl content::ContentWithdrawPresenter for SerenityContentWithdrawPresenter {
@@ -296,7 +296,7 @@ impl content::ContentWithdrawPresenter for SerenityContentWithdrawPresenter {
 }
 
 pub struct SerenityContentLikeGetPresenter {
-    out: mpsc::Sender<SmallVec<[Box<View>; 20]>>,
+    pub out: mpsc::Sender<SmallVec<[Box<View>; 20]>>,
 }
 #[async_trait]
 impl content::ContentLikeGetPresenter for SerenityContentLikeGetPresenter {
@@ -325,7 +325,7 @@ impl content::ContentLikeGetPresenter for SerenityContentLikeGetPresenter {
 }
 
 pub struct SerenityContentLikePresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl content::ContentLikePresenter for SerenityContentLikePresenter {
@@ -364,7 +364,7 @@ impl content::ContentLikePresenter for SerenityContentLikePresenter {
 }
 
 pub struct SerenityContentUnlikePresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl content::ContentUnlikePresenter for SerenityContentUnlikePresenter {
@@ -403,7 +403,7 @@ impl content::ContentUnlikePresenter for SerenityContentUnlikePresenter {
 }
 
 pub struct SerenityContentPinGetPresenter {
-    out: mpsc::Sender<SmallVec<[Box<View>; 20]>>,
+    pub out: mpsc::Sender<SmallVec<[Box<View>; 20]>>,
 }
 #[async_trait]
 impl content::ContentPinGetPresenter for SerenityContentPinGetPresenter {
@@ -432,7 +432,7 @@ impl content::ContentPinGetPresenter for SerenityContentPinGetPresenter {
 }
 
 pub struct SerenityContentPinPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl content::ContentPinPresenter for SerenityContentPinPresenter {
@@ -471,7 +471,7 @@ impl content::ContentPinPresenter for SerenityContentPinPresenter {
 }
 
 pub struct SerenityContentUnpinPresenter {
-    out: mpsc::Sender<Box<View>>,
+    pub out: mpsc::Sender<Box<View>>,
 }
 #[async_trait]
 impl content::ContentUnpinPresenter for SerenityContentUnpinPresenter {

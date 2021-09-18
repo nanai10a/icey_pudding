@@ -7,7 +7,7 @@ use crate::entities::User;
 use crate::usecases::user::get;
 
 pub struct ReturnUserGetPresenter {
-    ret: mpsc::Sender<User>,
+    pub ret: mpsc::Sender<User>,
 }
 #[async_trait]
 impl user::UserGetPresenter for ReturnUserGetPresenter {
