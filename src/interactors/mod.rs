@@ -24,7 +24,7 @@ fn calc_paging(
     full: impl ConvertRange<usize>,
     items: usize,
     page: usize,
-) -> Result<(::core::ops::Bound<usize>, ::core::ops::Bound<usize>)> {
+) -> Result<impl ConvertRange<usize>> {
     let lim = (items * (page - 1))..(items + items * (page - 1));
 
     if !full.contains(&lim.start) {
