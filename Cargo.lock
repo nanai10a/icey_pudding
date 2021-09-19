@@ -624,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "icey_pudding"
-version = "0.1.0-beta.2"
+version = "0.1.0-beta.3"
 dependencies = [
  "anyhow",
  "async-recursion",
