@@ -100,6 +100,13 @@ pub struct UserGetsCmd {
     ///   bookmark?: [uuid],
     ///   bookmark_num?: range<u32>,
     /// }
+    ///
+    /// # example
+    ///
+    /// {
+    ///   "bookmark": "00000000-0000-0000-0000-000000000000",
+    ///   "bookmark_num": "0..10"
+    /// }
     #[clap(name = "QUERY", default_value = "{}", parse(try_from_str = parse_user_query))]
     pub query: UserQuery,
 
@@ -120,6 +127,12 @@ pub struct UserEditCmd {
     /// schema: {
     ///   admin?: bool,
     ///   sub_admin?: bool,
+    /// }
+    ///
+    /// # example
+    ///
+    /// {
+    ///   "sub_admin": true,
     /// }
     #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_user_mutation))]
     pub mutation: UserMutation,
@@ -263,6 +276,14 @@ pub struct ContentEditCmd {
     /// enum Content {
     ///   Complete(str),
     ///   Sed { capture: regex, replace: str }
+    /// }
+    ///
+    /// # example
+    ///
+    /// {
+    ///   "author": {
+    ///     "User": "18446744073709551615"
+    ///   }
     /// }
     #[clap(name = "MUTATION", default_value = "{}", parse(try_from_str = parse_partial_content_mutation))]
     pub mutation: PartialContentMutation,
