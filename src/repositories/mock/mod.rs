@@ -34,6 +34,8 @@ impl UserRepository for InMemoryRepository<User> {
             Err(e) => return Err(e),
         }
 
+        tracing::trace!("insert - {:?}", item);
+
         guard.push(item);
         Ok(true)
     }
@@ -54,6 +56,7 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(find_ref(&guard, |v| v.id == id)?.clone())
     }
 
+    #[tracing::instrument(skip(self))]
     async fn finds(
         &self,
         UserQuery {
@@ -81,22 +84,21 @@ impl UserRepository for InMemoryRepository<User> {
             .cloned()
             .collect();
 
+        tracing::trace!("found - {:?}", res);
+
         Ok(res)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn update(
         &self,
         id: UserId,
         UserMutation { admin, sub_admin }: UserMutation,
     ) -> Result<User> {
         let mut guard = self.0.lock().await;
+        let item = find_mut(&mut guard, |v| v.id == id)?;
 
-        let mut res = guard.iter_mut().filter(|v| v.id == id).collect::<Vec<_>>();
-        let item = match res.len() {
-            0 => return Err(RepositoryError::NotFound),
-            1 => res.remove(0),
-            i => return Err(RepositoryError::NoUnique { matched: i as u32 }),
-        };
+        tracing::trace!("found - {:?}", item);
 
         if let Some(val) = admin {
             item.admin = val;
@@ -104,6 +106,8 @@ impl UserRepository for InMemoryRepository<User> {
         if let Some(val) = sub_admin {
             item.sub_admin = val;
         }
+
+        tracing::trace!("mutated - {:?}", item);
 
         Ok(item.clone())
     }
@@ -139,6 +143,7 @@ impl UserRepository for InMemoryRepository<User> {
         Ok(item.bookmark.remove(&content_id))
     }
 
+    #[tracing::instrument(skip(self))]
     async fn delete(&self, id: UserId) -> Result<User> {
         let mut guard = self.0.lock().await;
         let mut res = guard
@@ -147,6 +152,8 @@ impl UserRepository for InMemoryRepository<User> {
             .filter(|(_, v)| v.id == id)
             .map(|(i, _)| i)
             .collect::<Vec<_>>();
+
+        tracing::trace!("found - {:?}", res);
 
         let index = match res.len() {
             0 => return Err(RepositoryError::NotFound),
@@ -169,6 +176,8 @@ impl ContentRepository for InMemoryRepository<Content> {
             Err(e) => return Err(e),
         }
 
+        tracing::trace!("insert - {:?}", item);
+
         guard.push(item);
         Ok(true)
     }
@@ -189,6 +198,7 @@ impl ContentRepository for InMemoryRepository<Content> {
         Ok(find_ref(&guard, |v| v.id == id)?.clone())
     }
 
+    #[tracing::instrument(skip(self))]
     async fn finds(
         &self,
         ContentQuery {
@@ -288,9 +298,12 @@ impl ContentRepository for InMemoryRepository<Content> {
             .cloned()
             .collect();
 
+        tracing::trace!("found - {:?}", res);
+
         Ok(res)
     }
 
+    #[tracing::instrument(skip(self))]
     async fn update(
         &self,
         id: ContentId,
@@ -302,6 +315,8 @@ impl ContentRepository for InMemoryRepository<Content> {
     ) -> Result<Content> {
         let mut guard = self.0.lock().await;
         let item = find_mut(&mut guard, |c| c.id == id)?;
+
+        tracing::trace!("found - {:?}", item);
 
         if let Some(new_author) = author {
             item.author = new_author;
@@ -317,6 +332,8 @@ impl ContentRepository for InMemoryRepository<Content> {
         };
 
         item.edited.push(edited);
+
+        tracing::trace!("mutated - {:?}", item);
 
         Ok(item.clone())
     }
@@ -391,6 +408,8 @@ impl ContentRepository for InMemoryRepository<Content> {
             .filter(|(_, v)| v.id == id)
             .map(|(i, _)| i)
             .collect::<Vec<_>>();
+
+        tracing::trace!("found - {:?}", res);
 
         let index = match res.len() {
             0 => return Err(RepositoryError::NotFound),

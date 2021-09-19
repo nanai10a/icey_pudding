@@ -54,6 +54,17 @@ impl SerenityReturnController {
             Err(e) => return Some(Err(anyhow!(e))),
         };
 
+        tracing::info!(
+            "recognized - id {} | channel_id {} | guild_id {} | time {} | cmd {:?}",
+            msg.id,
+            msg.channel_id,
+            msg.guild_id
+                .map(|i| i.to_string())
+                .unwrap_or_else(|| "None".to_string()),
+            msg.timestamp,
+            parsed
+        );
+
         let res = match self.handle_cmd(parsed, msg, http).await {
             Ok(o) => o,
             Err(e) => return Some(Err(e)),
@@ -80,6 +91,8 @@ impl SerenityReturnController {
         } else {
             return None;
         }
+
+        tracing::debug!("split - '{}' to {:?}", raw, splitted);
 
         use clap::Clap;
 

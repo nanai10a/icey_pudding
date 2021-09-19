@@ -16,7 +16,7 @@ use crate::repositories::{ContentRepository, UserRepository};
 use crate::usecases::content::{
     edit, get, get_like, get_pin, gets, like, pin, post, unlike, unpin, withdraw,
 };
-use crate::utils::LetChain;
+use crate::utils::{AlsoChain, LetChain};
 
 pub struct ContentPostInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
@@ -25,15 +25,17 @@ pub struct ContentPostInteractor {
 }
 #[async_trait]
 impl post::Usecase for ContentPostInteractor {
-    async fn handle(
-        &self,
-        post::Input {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: post::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let post::Input {
             content,
             posted,
             author,
             created,
-        }: post::Input,
-    ) -> Result<()> {
+        } = data;
+
         let user_is_exists = self
             .user_repository
             .is_exists(posted.id)
@@ -68,6 +70,7 @@ impl post::Usecase for ContentPostInteractor {
         post::Output {
             content: new_content,
         }
+        .also_(|o| tracing::trace!("output - {:?}", o))
         .let_(|r| self.pres.complete(r))
         .await
         .unwrap();
@@ -82,12 +85,18 @@ pub struct ContentGetInteractor {
 }
 #[async_trait]
 impl get::Usecase for ContentGetInteractor {
-    async fn handle(&self, get::Input { content_id }: get::Input) -> anyhow::Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: get::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let get::Input { content_id } = data;
+
         self.content_repository
             .find(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| get::Output { content })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -102,7 +111,12 @@ pub struct ContentGetsInteractor {
 }
 #[async_trait]
 impl gets::Usecase for ContentGetsInteractor {
-    async fn handle(&self, gets::Input { query, page }: gets::Input) -> anyhow::Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: gets::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let gets::Input { query, page } = data;
+
         self.content_repository
             .finds(query)
             .await
@@ -116,6 +130,7 @@ impl gets::Usecase for ContentGetsInteractor {
                 })
             })?
             .let_(|contents| gets::Output { contents, page })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -130,18 +145,21 @@ pub struct ContentEditInteractor {
 }
 #[async_trait]
 impl edit::Usecase for ContentEditInteractor {
-    async fn handle(
-        &self,
-        edit::Input {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: edit::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let edit::Input {
             content_id,
             mutation,
-        }: edit::Input,
-    ) -> anyhow::Result<()> {
+        } = data;
+
         self.content_repository
             .update(content_id, mutation)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| edit::Output { content })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -156,12 +174,18 @@ pub struct ContentWithdrawInteractor {
 }
 #[async_trait]
 impl withdraw::Usecase for ContentWithdrawInteractor {
-    async fn handle(&self, withdraw::Input { content_id }: withdraw::Input) -> anyhow::Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: withdraw::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let withdraw::Input { content_id } = data;
+
         self.content_repository
             .delete(content_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|content| withdraw::Output { content })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -176,10 +200,12 @@ pub struct ContentLikeGetInteractor {
 }
 #[async_trait]
 impl get_like::Usecase for ContentLikeGetInteractor {
-    async fn handle(
-        &self,
-        get_like::Input { content_id, page }: get_like::Input,
-    ) -> anyhow::Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: get_like::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let get_like::Input { content_id, page } = data;
+
         self.content_repository
             .get_liked(content_id)
             .await
@@ -195,6 +221,7 @@ impl get_like::Usecase for ContentLikeGetInteractor {
                 })
             })?
             .let_(|like| get_like::Output { like, page })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -209,13 +236,15 @@ pub struct ContentLikeInteractor {
 }
 #[async_trait]
 impl like::Usecase for ContentLikeInteractor {
-    async fn handle(
-        &self,
-        like::Input {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: like::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let like::Input {
             content_id,
             user_id,
-        }: like::Input,
-    ) -> anyhow::Result<()> {
+        } = data;
+
         let can_insert = self
             .content_repository
             .insert_liked(content_id, user_id)
@@ -234,6 +263,7 @@ impl like::Usecase for ContentLikeInteractor {
                 content,
                 id: user_id,
             })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -248,13 +278,15 @@ pub struct ContentUnlikeInteractor {
 }
 #[async_trait]
 impl unlike::Usecase for ContentUnlikeInteractor {
-    async fn handle(
-        &self,
-        unlike::Input {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: unlike::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let unlike::Input {
             content_id,
             user_id,
-        }: unlike::Input,
-    ) -> anyhow::Result<()> {
+        } = data;
+
         let can_insert = self
             .content_repository
             .delete_liked(content_id, user_id)
@@ -273,6 +305,7 @@ impl unlike::Usecase for ContentUnlikeInteractor {
                 content,
                 id: user_id,
             })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -287,10 +320,12 @@ pub struct ContentPinGetInteractor {
 }
 #[async_trait]
 impl get_pin::Usecase for ContentPinGetInteractor {
-    async fn handle(
-        &self,
-        get_pin::Input { content_id, page }: get_pin::Input,
-    ) -> anyhow::Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: get_pin::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let get_pin::Input { content_id, page } = data;
+
         self.content_repository
             .get_pinned(content_id)
             .await
@@ -306,6 +341,7 @@ impl get_pin::Usecase for ContentPinGetInteractor {
                 })
             })?
             .let_(|pin| get_pin::Output { pin, page })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -320,13 +356,15 @@ pub struct ContentPinInteractor {
 }
 #[async_trait]
 impl pin::Usecase for ContentPinInteractor {
-    async fn handle(
-        &self,
-        pin::Input {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: pin::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let pin::Input {
             content_id,
             user_id,
-        }: pin::Input,
-    ) -> anyhow::Result<()> {
+        } = data;
+
         let can_insert = self
             .content_repository
             .insert_pinned(content_id, user_id)
@@ -345,6 +383,7 @@ impl pin::Usecase for ContentPinInteractor {
                 content,
                 id: user_id,
             })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -359,13 +398,15 @@ pub struct ContentUnpinInteractor {
 }
 #[async_trait]
 impl unpin::Usecase for ContentUnpinInteractor {
-    async fn handle(
-        &self,
-        unpin::Input {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: unpin::Input) -> anyhow::Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let unpin::Input {
             content_id,
             user_id,
-        }: unpin::Input,
-    ) -> anyhow::Result<()> {
+        } = data;
+
         let can_insert = self
             .content_repository
             .delete_pinned(content_id, user_id)
@@ -384,6 +425,7 @@ impl unpin::Usecase for ContentUnpinInteractor {
                 content,
                 id: user_id,
             })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();

@@ -15,7 +15,7 @@ use crate::repositories::UserRepository;
 use crate::usecases::user::{
     bookmark, edit, get, get_bookmark, gets, register, unbookmark, unregister,
 };
-use crate::utils::LetChain;
+use crate::utils::{AlsoChain, LetChain};
 
 pub struct UserRegisterInteractor {
     pub user_repository: Arc<dyn UserRepository + Sync + Send>,
@@ -23,7 +23,12 @@ pub struct UserRegisterInteractor {
 }
 #[async_trait]
 impl register::Usecase for UserRegisterInteractor {
-    async fn handle(&self, register::Input { user_id }: register::Input) -> Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: register::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let register::Input { user_id } = data;
+
         let new_user = User {
             id: user_id,
             admin: false,
@@ -38,6 +43,7 @@ impl register::Usecase for UserRegisterInteractor {
         }
 
         register::Output { user: new_user }
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -52,12 +58,18 @@ pub struct UserGetInteractor {
 }
 #[async_trait]
 impl get::Usecase for UserGetInteractor {
-    async fn handle(&self, get::Input { user_id }: get::Input) -> Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: get::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let get::Input { user_id } = data;
+
         self.user_repository
             .find(user_id)
             .await
             .map_err(user_err_fmt)?
             .let_(|user| get::Output { user })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -72,7 +84,12 @@ pub struct UserGetsInteractor {
 }
 #[async_trait]
 impl gets::Usecase for UserGetsInteractor {
-    async fn handle(&self, gets::Input { query, page }: gets::Input) -> Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: gets::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let gets::Input { query, page } = data;
+
         self.user_repository
             .finds(query)
             .await
@@ -86,6 +103,7 @@ impl gets::Usecase for UserGetsInteractor {
                 })
             })?
             .let_(|users| gets::Output { users, page })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -100,12 +118,18 @@ pub struct UserEditInteractor {
 }
 #[async_trait]
 impl edit::Usecase for UserEditInteractor {
-    async fn handle(&self, edit::Input { user_id, mutation }: edit::Input) -> Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: edit::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let edit::Input { user_id, mutation } = data;
+
         self.user_repository
             .update(user_id, mutation)
             .await
             .map_err(user_err_fmt)?
             .let_(|user| edit::Output { user })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -120,12 +144,18 @@ pub struct UserUnregisterInteractor {
 }
 #[async_trait]
 impl unregister::Usecase for UserUnregisterInteractor {
-    async fn handle(&self, unregister::Input { user_id }: unregister::Input) -> Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: unregister::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let unregister::Input { user_id } = data;
+
         self.user_repository
             .delete(user_id)
             .await
             .map_err(content_err_fmt)?
             .let_(|user| unregister::Output { user })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -140,10 +170,12 @@ pub struct UserBookmarkGetInteractor {
 }
 #[async_trait]
 impl get_bookmark::Usecase for UserBookmarkGetInteractor {
-    async fn handle(
-        &self,
-        get_bookmark::Input { user_id, page }: get_bookmark::Input,
-    ) -> Result<()> {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: get_bookmark::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let get_bookmark::Input { user_id, page } = data;
+
         self.user_repository
             .get_bookmark(user_id)
             .await
@@ -159,6 +191,7 @@ impl get_bookmark::Usecase for UserBookmarkGetInteractor {
                 })
             })?
             .let_(|bookmark| get_bookmark::Output { bookmark, page })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -173,13 +206,15 @@ pub struct UserBookmarkInteractor {
 }
 #[async_trait]
 impl bookmark::Usecase for UserBookmarkInteractor {
-    async fn handle(
-        &self,
-        bookmark::Input {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: bookmark::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let bookmark::Input {
             user_id,
             content_id,
-        }: bookmark::Input,
-    ) -> Result<()> {
+        } = data;
+
         let can_insert = self
             .user_repository
             .insert_bookmark(user_id, content_id)
@@ -198,6 +233,7 @@ impl bookmark::Usecase for UserBookmarkInteractor {
                 user,
                 id: content_id,
             })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();
@@ -212,13 +248,15 @@ pub struct UserUnbookmarkInteractor {
 }
 #[async_trait]
 impl unbookmark::Usecase for UserUnbookmarkInteractor {
-    async fn handle(
-        &self,
-        unbookmark::Input {
+    #[tracing::instrument(skip(self))]
+    async fn handle(&self, data: unbookmark::Input) -> Result<()> {
+        tracing::trace!("input - {:?}", data);
+
+        let unbookmark::Input {
             user_id,
             content_id,
-        }: unbookmark::Input,
-    ) -> Result<()> {
+        } = data;
+
         let can_insert = self
             .user_repository
             .delete_bookmark(user_id, content_id)
@@ -237,6 +275,7 @@ impl unbookmark::Usecase for UserUnbookmarkInteractor {
                 user,
                 id: content_id,
             })
+            .also_(|o| tracing::trace!("output - {:?}", o))
             .let_(|r| self.pres.complete(r))
             .await
             .unwrap();

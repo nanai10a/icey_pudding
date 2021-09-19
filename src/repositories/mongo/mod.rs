@@ -5,6 +5,7 @@ use async_trait::async_trait;
 use mongodb::bson::{doc, Document};
 use mongodb::{bson, Client, Collection, Database};
 use serenity::futures::TryStreamExt;
+use tracing::Instrument;
 
 use super::{ContentRepository, RepositoryError, Result, UserRepository};
 use crate::entities::{Author, Content, ContentId, User, UserId};
@@ -62,9 +63,12 @@ impl UserRepository for MongoUserRepository {
     async fn insert(&self, user: User) -> Result<bool> {
         let model: MongoUserModel = user.into();
 
+        tracing::trace!("insert - {:?}", model);
+
         let res = self
             .coll
             .insert_one(model, None)
+            .instrument(tracing::trace_span!("insert_one"))
             .await
             .let_(try_unique_check)?;
 
@@ -75,6 +79,7 @@ impl UserRepository for MongoUserRepository {
         let res = self
             .coll
             .count_documents(doc! { "id": id }, None)
+            .instrument(tracing::trace_span!("count_documents"))
             .await
             .let_(convert_repo_err)?
             .let_(to_bool);
@@ -86,6 +91,7 @@ impl UserRepository for MongoUserRepository {
         let user: User = self
             .coll
             .find_one(doc! { "id": id }, None)
+            .instrument(tracing::trace_span!("find_one"))
             .await
             .let_(convert_repo_err)?
             .let_(convert_404_or)?
@@ -101,9 +107,11 @@ impl UserRepository for MongoUserRepository {
         let res = self
             .coll
             .find(query_doc, None)
+            .instrument(tracing::trace_span!("find"))
             .await
             .let_(convert_repo_err)?
             .try_collect::<Vec<_>>()
+            .instrument(tracing::trace_span!("try_collect"))
             .await
             .let_(convert_repo_err)?
             .drain(..)
@@ -131,6 +139,7 @@ impl UserRepository for MongoUserRepository {
                     None,
                     &mut session,
                 )
+                .instrument(tracing::trace_span!("update_one_with_session"))
                 .await?
                 .matched_count
                 .let_(to_bool)
@@ -142,6 +151,7 @@ impl UserRepository for MongoUserRepository {
             let user: User = this
                 .coll
                 .find_one_with_session(doc! { "id": id }, None, &mut session)
+                .instrument(tracing::trace_span!("find_one_with_session"))
                 .await?
                 .unwrap()
                 .into();
@@ -215,6 +225,7 @@ impl UserRepository for MongoUserRepository {
             let user: User = match this
                 .coll
                 .find_one_with_session(doc! { "id": id }, None, &mut session)
+                .instrument(tracing::trace_span!("find_one_with_session"))
                 .await?
                 .map(|m| m.into())
             {
@@ -225,7 +236,7 @@ impl UserRepository for MongoUserRepository {
 
             match this
                 .coll
-                .delete_one_with_session(doc! { "id": id }, None, &mut session)
+                .delete_one_with_session(doc! { "id": id }, None, &mut session).instrument(tracing::trace_span!("delete_one_with_session"))
                 .await?
                 .deleted_count
                 .let_(to_bool) // checking "is `0 | 1`" (= "unique")
@@ -250,6 +261,7 @@ impl ContentRepository for MongoContentRepository {
         let res = self
             .coll
             .insert_one(model, None)
+            .instrument(tracing::trace_span!("insert_one"))
             .await
             .let_(try_unique_check)?;
 
@@ -260,6 +272,7 @@ impl ContentRepository for MongoContentRepository {
         let res = self
             .coll
             .count_documents(doc! { "id": id }, None)
+            .instrument(tracing::trace_span!("count_documents"))
             .await
             .let_(convert_repo_err)?
             .let_(to_bool);
@@ -271,6 +284,7 @@ impl ContentRepository for MongoContentRepository {
         let content: Content = self
             .coll
             .find_one(doc! { "id": id }, None)
+            .instrument(tracing::trace_span!("find_one"))
             .await
             .let_(convert_repo_err)?
             .let_(convert_404_or)?
@@ -353,9 +367,11 @@ impl ContentRepository for MongoContentRepository {
         let mut tmp_res = self
             .coll
             .find(query_doc, None)
+            .instrument(tracing::trace_span!("find"))
             .await
             .let_(convert_repo_err)?
             .try_collect::<Vec<_>>()
+            .instrument(tracing::trace_span!("try_collect"))
             .await
             .let_(convert_repo_err)?
             .drain(..)
@@ -430,6 +446,7 @@ impl ContentRepository for MongoContentRepository {
             let mut target_content: Content = match this
                 .coll
                 .find_one_with_session(doc! { "id": id }, None, &mut session)
+                .instrument(tracing::trace_span!("find_one_with_session"))
                 .await?
             {
                 Some(c) => c.into(),
@@ -462,11 +479,13 @@ impl ContentRepository for MongoContentRepository {
                     None,
                     &mut session,
                 )
+                .instrument(tracing::trace_span!("update_one_with_session"))
                 .await?;
 
             let new_content = this
                 .coll
                 .find_one_with_session(doc! { "id": id }, None, &mut session)
+                .instrument(tracing::trace_span!("find_one_with_session"))
                 .await?
                 .unwrap()
                 .into();
@@ -580,6 +599,7 @@ impl ContentRepository for MongoContentRepository {
             let content: Content = match this
                 .coll
                 .find_one_with_session(doc! { "id": id }, None, &mut session)
+                .instrument(tracing::trace_span!("find_one_with_session"))
                 .await?
                 .map(|m| m.into())
             {
@@ -591,6 +611,7 @@ impl ContentRepository for MongoContentRepository {
             match this
                 .coll
                 .delete_one_with_session(doc! { "id": id }, None, &mut session)
+                .instrument(tracing::trace_span!("delete_one_with_session"))
                 .await?
                 .deleted_count
                 .let_(to_bool)

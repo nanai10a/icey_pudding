@@ -2,6 +2,7 @@ use mongodb::bson::doc;
 use mongodb::error::Result as MongoResult;
 use mongodb::options::{Acknowledgment, ReadConcern, TransactionOptions, WriteConcern};
 use mongodb::{Client, ClientSession, Collection, Database};
+use tracing::Instrument;
 
 use super::converters::{convert_404_or, convert_repo_err, to_bool};
 use super::Result as RepoResult;
@@ -24,26 +25,35 @@ pub async fn initialize_coll(
         },
         None,
     )
+    .instrument(tracing::trace_span!("run_command"))
     .await?;
 
     Ok(())
 }
 
 pub async fn make_session(c: &Client) -> MongoResult<ClientSession> {
-    let mut s = c.start_session(None).await?;
+    let mut s = c
+        .start_session(None)
+        .instrument(tracing::trace_span!("start_session"))
+        .await?;
 
     let ta_opt = TransactionOptions::builder()
         .read_concern(ReadConcern::snapshot())
         .write_concern(WriteConcern::builder().w(Acknowledgment::Majority).build())
         .build();
-    s.start_transaction(ta_opt).await?;
+    s.start_transaction(ta_opt)
+        .instrument(tracing::trace_span!("start_transaction"))
+        .await?;
 
     Ok(s)
 }
 
 pub async fn process_transaction(s: &mut ClientSession) -> MongoResult<()> {
     loop {
-        let r = s.commit_transaction().await;
+        let r = s
+            .commit_transaction()
+            .instrument(tracing::trace_span!("commit_transaction"))
+            .await;
         if let Err(ref e) = r {
             if e.contains_label(::mongodb::error::UNKNOWN_TRANSACTION_COMMIT_RESULT) {
                 continue;
@@ -81,6 +91,7 @@ where
 {
     let res = coll
         .find_one(doc! { "id": id.into() }, None)
+        .instrument(tracing::trace_span!("find_one"))
         .await
         .let_(convert_repo_err)?
         .let_(convert_404_or)?;
@@ -102,6 +113,7 @@ pub async fn is_contains<T>(
             },
             None,
         )
+        .instrument(tracing::trace_span!("count_documents"))
         .await
         .let_(convert_repo_err)?
         .let_(to_bool);
@@ -144,6 +156,7 @@ pub async fn modify_set<T>(
                 None,
                 &mut session,
             )
+            .instrument(tracing::trace_span!("update_one_with_session"))
             .await?;
 
         if !res.matched_count.let_(to_bool) {
@@ -165,6 +178,7 @@ pub async fn modify_set<T>(
                 None,
                 &mut session,
             )
+            .instrument(tracing::trace_span!("update_one_with_session"))
             .await?;
 
         if !res.matched_count.let_(to_bool) {
