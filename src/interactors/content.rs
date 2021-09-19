@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use smallvec::SmallVec;
 
 use super::*;
-use crate::entities::Content;
+use crate::entities::{Author, Content};
 use crate::presenters::content::{
     ContentEditPresenter, ContentGetPresenter, ContentGetsPresenter, ContentLikeGetPresenter,
     ContentLikePresenter, ContentPinGetPresenter, ContentPinPresenter, ContentPostPresenter,
@@ -44,6 +44,16 @@ impl post::Usecase for ContentPostInteractor {
 
         if !user_is_exists {
             bail!("cannot find user. not registered?");
+        }
+
+        if let Author::Virtual(s) = &author {
+            if s.is_empty() {
+                bail!("(virtual)username cannot be empty.");
+            }
+        }
+
+        if content.is_empty() {
+            bail!("content cannot be empty.");
         }
 
         let new_content = Content {
