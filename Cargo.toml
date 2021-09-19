@@ -25,16 +25,12 @@ version = "2.0.0-beta.3"
 
 [dependencies.clap]
 version = "3.0.0-beta.4"
-features = ["yaml"]
 
 # deps - serde
 
 [dependencies.serde]
 version = "1.0.126"
 features = ["derive"]
-
-[dependencies.yaml-rust]
-version = "0.4.1" # dependent to clap
 
 [dependencies.serde_json]
 version = "1.0.64"
@@ -73,9 +69,6 @@ version = "1.5.4"
 
 [dependencies.shell-words]
 version = "1.0.0"
-
-[dependencies.lazy_static]
-version = "1.4.0"
 
 [dependencies.range_parser]
 git = "https://github.com/Nanai10a/range_parser"
