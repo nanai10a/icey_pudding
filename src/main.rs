@@ -1,3 +1,5 @@
+use tracing_subscriber::EnvFilter;
+
 async fn async_main() {
     let AppValues { token, flag } = get_values();
 
@@ -12,6 +14,13 @@ async fn async_main() {
     };
 
     let mut c = cb.await.expect("cannot build serenity client.");
+
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .with_thread_ids(true)
+        .with_thread_names(true)
+        .pretty()
+        .init();
 
     c.start_autosharded()
         .await
