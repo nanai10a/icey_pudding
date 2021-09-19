@@ -1,8 +1,13 @@
 use super::{RepositoryError, Result as RepoResult};
 
 pub fn find_mut<T, P>(v: &mut [T], preficate: P) -> RepoResult<&mut T>
-where P: FnMut(&&mut T) -> bool {
+where
+    T: ::core::fmt::Debug,
+    P: FnMut(&&mut T) -> bool,
+{
     let mut res = v.iter_mut().filter(preficate).collect::<Vec<_>>();
+
+    tracing::trace!("found - {:?}", res);
 
     match res.len() {
         0 => Err(RepositoryError::NotFound),
@@ -12,8 +17,13 @@ where P: FnMut(&&mut T) -> bool {
 }
 
 pub fn find_ref<T, P>(v: &[T], preficate: P) -> RepoResult<&T>
-where P: FnMut(&&T) -> bool {
+where
+    T: ::core::fmt::Debug,
+    P: FnMut(&&T) -> bool,
+{
     let mut res = v.iter().filter(preficate).collect::<Vec<_>>();
+
+    tracing::trace!("found - {:?}", res);
 
     match res.len() {
         0 => Err(RepositoryError::NotFound),
