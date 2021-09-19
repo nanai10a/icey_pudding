@@ -117,3 +117,24 @@ pub fn convert_range_display<T: ConvertRange<R> + Clone, R: ToString>(t: T) -> S
 
     format!("{}..{}", ss, es)
 }
+
+pub trait FutureTranspose {
+    type To;
+
+    fn transpose(self) -> Self::To;
+}
+
+impl<F, O> FutureTranspose for Option<F>
+where F: ::core::future::Future<Output = O>
+{
+    type To = impl ::core::future::Future<Output = Option<O>>;
+
+    fn transpose(self) -> Self::To {
+        async {
+            match self {
+                None => None,
+                Some(f) => Some(f.await),
+            }
+        }
+    }
+}
