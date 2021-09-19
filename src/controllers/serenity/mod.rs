@@ -5,7 +5,7 @@ macro_rules! return_inner {
         $s.$u.handle($d).await?;
         let ret = $s.$r.lock().await.recv().await.unwrap();
 
-        drop(guard);
+        ::core::mem::drop(guard);
 
         Ok(ret)
     }};
