@@ -31,7 +31,7 @@ use crate::entities::{Author, ContentId, PartialAuthor, Posted, UserId};
 use crate::presenters::impls::serenity::View;
 use crate::usecases;
 use crate::usecases::content::ContentMutation;
-use crate::utils::LetChain;
+use crate::utils::{FutureTranspose, LetChain};
 
 pub struct SerenityReturnController {
     pub user: user::SerenityUserController,
@@ -205,10 +205,11 @@ impl SerenityReturnController {
                                 .await
                                 .map_err(|e| anyhow!("cannot get author: {}", e))?;
 
-                            let nick = match ex_guild_id {
-                                Some(i) => user.nick_in(http, i).await,
-                                None => None,
-                            };
+                            let nick = ex_guild_id
+                                .map(|i| user.nick_in(http, i))
+                                .transpose()
+                                .await
+                                .flatten();
                             let id = user.id.let_(|i| i.0).let_(UserId);
                             let name = user.name;
 
@@ -257,10 +258,11 @@ impl SerenityReturnController {
                                 .await
                                 .map_err(|e| anyhow!("cannot get author: {}", e))?;
 
-                            let nick = match ex_guild_id {
-                                Some(i) => user.nick_in(http, i).await,
-                                None => None,
-                            };
+                            let nick = ex_guild_id
+                                .map(|i| user.nick_in(http, i))
+                                .transpose()
+                                .await
+                                .flatten();
                             let id = user.id.let_(|i| i.0).let_(UserId);
                             let name = user.name;
 
