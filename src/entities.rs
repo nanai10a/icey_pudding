@@ -107,7 +107,7 @@ impl ::core::fmt::Display for Posted {
             f,
             "{} ({} | {})",
             self.name,
-            self.nick.as_ref().unwrap_or(&"".to_string()),
+            self.nick.as_ref().unwrap_or(&"None".to_string()),
             self.id
         )
     }
