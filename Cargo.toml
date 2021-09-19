@@ -4,21 +4,78 @@ version = "0.1.0-beta.2"
 edition = "2018"
 authors = ["Nanai10a (github.com/Nanai10a)"]
 
-[dependencies]
-tokio = { version = "1.7.1", features = ["full"] }
-serenity = { version = "0.10.8", default-features = false, features = ["builder", "cache", "client", "gateway", "model", "http", "utils", "rustls_backend"] }
-anyhow = "1.0.41"
-uuid = { version = "0.8.2", features = ["v4", "serde"] }
-chrono = "0.4.19"
-regex = "1.5.4"
-serde_json = "1.0.64"
-clap = { version = "3.0.0-beta.4", features = ["yaml"] }
-yaml-rust = "0.4.1" # dependent to clap
-shell-words = "1.0.0"
-mongodb = "2.0.0-beta.3"
-serde = { version = "1.0.126", features = ["derive"] }
-async-trait = "0.1.51"
-range_parser = { git = "https://github.com/Nanai10a/range_parser" }
-lazy_static = "1.4.0"
-async-recursion = "0.3.2"
-smallvec = "1.6.1"
+
+# deps - main
+[dependencies.serenity]
+version = "0.10.8"
+default-features = false
+features = [
+  "builder",
+  "cache",
+  "client",
+  "gateway",
+  "model",
+  "http",
+  "utils",
+  "rustls_backend",
+]
+
+[dependencies.mongodb]
+version = "2.0.0-beta.3"
+
+[dependencies.clap]
+version = "3.0.0-beta.4"
+features = ["yaml"]
+
+# deps - serde
+
+[dependencies.serde]
+version = "1.0.126"
+features = ["derive"]
+
+[dependencies.yaml-rust]
+version = "0.4.1" # dependent to clap
+
+[dependencies.serde_json]
+version = "1.0.64"
+
+# deps - async
+
+[dependencies.tokio]
+version = "1.7.1"
+features = ["full"]
+
+[dependencies.async-trait]
+version = "0.1.51"
+
+[dependencies.async-recursion]
+version = "0.3.2"
+
+# deps - datas
+
+[dependencies.uuid]
+version = "0.8.2"
+features = ["v4", "serde"]
+
+[dependencies.chrono]
+version = "0.4.19"
+
+[dependencies.smallvec]
+version = "1.6.1"
+
+# deps - utils
+
+[dependencies.anyhow]
+version = "1.0.41"
+
+[dependencies.regex]
+version = "1.5.4"
+
+[dependencies.shell-words]
+version = "1.0.0"
+
+[dependencies.lazy_static]
+version = "1.4.0"
+
+[dependencies.range_parser]
+git = "https://github.com/Nanai10a/range_parser"
