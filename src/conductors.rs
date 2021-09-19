@@ -44,7 +44,7 @@ impl EventHandler for Conductor {
                     .await,
         };
 
-        #[cfg(debug)]
+        #[cfg(debug_assertions)]
         match _res {
             Ok(o) => dbg!(o).let_(::core::mem::drop),
             Err(e) => dbg!(e).let_(::core::mem::drop),
