@@ -72,3 +72,9 @@ version = "1.0.0"
 
 [dependencies.range_parser]
 git = "https://github.com/Nanai10a/range_parser"
+
+[dependencies.tracing]
+version = "0.1.28"
+
+[dependencies.tracing-subscriber]
+version = "0.2.23"
