@@ -15,11 +15,13 @@ pub struct Conductor {
 #[async_trait]
 impl EventHandler for Conductor {
     async fn message(&self, ctx: Context, msg: Message) {
+        tracing::trace!("msg - {:?}", msg);
+
         if msg.author.bot {
             return;
         }
 
-        let _res = match match self.contr.parse(&msg, &ctx).await {
+        let res = match match self.contr.parse(&msg, &ctx).await {
             Some(r) => r,
             None => return,
         } {
@@ -44,10 +46,17 @@ impl EventHandler for Conductor {
                     .await,
         };
 
-        #[cfg(debug_assertions)]
-        match _res {
-            Ok(o) => dbg!(o).let_(::core::mem::drop),
-            Err(e) => dbg!(e).let_(::core::mem::drop),
+        match res {
+            Ok(o) => tracing::info!(
+                "replied - id {} | channel_id {} | guild_id {} | time {}",
+                o.id,
+                o.channel_id,
+                o.guild_id
+                    .map(|i| i.to_string())
+                    .unwrap_or_else(|| "None".to_string()),
+                o.timestamp,
+            ),
+            Err(e) => tracing::warn!("repling err - {}", e),
         }
     }
 }
