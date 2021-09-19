@@ -4,10 +4,22 @@ version = "0.1.0-rc.1"
 edition = "2018"
 authors = ["Nanai10a (github.com/Nanai10a)"]
 
-# deps - main
+[dependencies]
+mongodb = "2.0.0"
+clap = "3.0.0-beta.4"
+serde_json = "1.0.68"
+async-trait = "0.1.51"
+async-recursion = "0.3.2"
+chrono = "0.4.19"
+smallvec = "1.6.1"
+anyhow = "1.0.44"
+regex = "1.5.4"
+shell-words = "1.0.0"
+tracing = "0.1.28"
+tracing-subscriber = "0.2.23"
 
 [dependencies.serenity]
-version = "0.10.8"
+version = "0.10.9"
 default-features = false
 features = [
   "builder",
@@ -20,61 +32,17 @@ features = [
   "rustls_backend",
 ]
 
-[dependencies.mongodb]
-version = "2.0.0-beta.3"
-
-[dependencies.clap]
-version = "3.0.0-beta.4"
-
-# deps - serde
-
 [dependencies.serde]
-version = "1.0.126"
+version = "1.0.130"
 features = ["derive"]
 
-[dependencies.serde_json]
-version = "1.0.64"
-
-# deps - async
-
 [dependencies.tokio]
-version = "1.7.1"
+version = "1.11.0"
 features = ["full"]
-
-[dependencies.async-trait]
-version = "0.1.51"
-
-[dependencies.async-recursion]
-version = "0.3.2"
-
-# deps - datas
 
 [dependencies.uuid]
 version = "0.8.2"
 features = ["v4", "serde"]
 
-[dependencies.chrono]
-version = "0.4.19"
-
-[dependencies.smallvec]
-version = "1.6.1"
-
-# deps - utils
-
-[dependencies.anyhow]
-version = "1.0.41"
-
-[dependencies.regex]
-version = "1.5.4"
-
-[dependencies.shell-words]
-version = "1.0.0"
-
 [dependencies.range_parser]
 git = "https://github.com/Nanai10a/range_parser"
-
-[dependencies.tracing]
-version = "0.1.28"
-
-[dependencies.tracing-subscriber]
-version = "0.2.23"
