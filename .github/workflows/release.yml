@@ -84,7 +84,7 @@ jobs:
       id: ext
       run: |
         e='.tar.gz'
-        if '${{ contains( matrix.target, "windows") }}'; then
+        if "${{ contains( matrix.target, 'windows') }}"; then
           e='.zip'
         fi
         echo ::set-output name=tag::$e
