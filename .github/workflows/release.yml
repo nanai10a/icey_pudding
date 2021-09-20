@@ -96,7 +96,7 @@ jobs:
           *.md \
           LICENSE \
           src/**/*.rs \
-          target/${{ matrix.target }}/release/icey_pudding
+          target/release/icey_pudding
 
     - name: upload-assets
       uses: actions/upload-release-asset@v1
