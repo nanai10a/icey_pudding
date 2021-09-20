@@ -69,9 +69,3 @@ jobs:
       with:
         command: test
         args: --workspace --release --all-features
-
-    - name: bloat
-      uses: orf/cargo-bloat-action@v1
-      with:
-        bloat_args: --release --all-features
-        token: ${{ github.token }}
