@@ -12,6 +12,9 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
 
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
     steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -87,7 +90,7 @@ jobs:
         if "${{ contains( matrix.target, 'windows') }}"; then
           e='.zip'
         fi
-        echo ::set-output name=tag::$e
+        echo ::set-output name=ext::$e
 
     - name: packaging
       run: |
