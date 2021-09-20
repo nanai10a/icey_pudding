@@ -11,7 +11,7 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: checkout
       uses: actions/checkout@v2
@@ -49,22 +49,15 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
 
-    - name: toolchain-cache
-      id: t-cache
-      uses: actions/cache@v2
-      with:
-        path: /usr/share/rust
-        key: ${{ matrix.target }}-toolchain-${{ hashFiles('**/rust-toolchain.toml') }}
-
     - name: toolchain
-      if: steps.t-cache.outputs.cache-hit != 'true'
       uses: actions-rs/toolchain@v1
       with:
+        toolchain: nightly
         target: ${{ matrix.target }}
         profile: minimal
         default: true
 
-    - name: cargo-cache
+    - name: cache
       uses: actions/cache@v2
       with:
         path: |
