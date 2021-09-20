@@ -1,6 +1,6 @@
 [package]
 name = "icey_pudding"
-version = "0.1.0-rc.2"
+version = "0.1.0"
 edition = "2018"
 authors = ["Nanai10a (github.com/Nanai10a)"]
 
