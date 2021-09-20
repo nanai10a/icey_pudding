@@ -103,7 +103,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
-        upload_url: ${{ needs.prepare.create_release.outputs.upload_url }}
+        upload_url: ${{ needs.prepare.outputs.upload_url }}
         asset_path: target/packaged${{ steps.ext.outputs.ext }}
-        asset_name: icey_pudding-${{ matrix.target }}-${{ needs.prepare.tag.outputs.tag }}${{ steps.ext.outputs.ext }}
+        asset_name: icey_pudding-${{ matrix.target }}-${{ needs.prepare.outputs.tag }}${{ steps.ext.outputs.ext }}
         asset_content_type: application/gzip
