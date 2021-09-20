@@ -3,7 +3,7 @@ name: release
 on:
   push:
     tags:
-      - '*'
+    - '*'
 
 env:
   CARGO_TERM_COLOR: always
@@ -64,7 +64,7 @@ jobs:
         profile: minimal
         default: true
 
-    - name: cache
+    - name: cargo-cache
       uses: actions/cache@v2
       with:
         path: |
@@ -78,16 +78,14 @@ jobs:
     - name: build
       uses: actions-rs/cargo@v1
       with:
-        use-cross: true
         command: build
-        args: --workspace --release --all-features --target ${{ matrix.target }}
+        args: --workspace --release --all-features
 
     - name: test
       uses: actions-rs/cargo@v1
       with:
-        use-cross: true
         command: test
-        args: --workspace --release --all-features --target ${{ matrix.target }}
+        args: --workspace --release --all-features
 
     - name: determine-pkg-ext
       id: ext
