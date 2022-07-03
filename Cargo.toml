@@ -23,6 +23,7 @@ default-features = false
 features = [
   "builder",
   "cache",
+  "chrono",
   "client",
   "gateway",
   "model",
