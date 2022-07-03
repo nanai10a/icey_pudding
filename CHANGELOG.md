@@ -1,4 +1,5 @@
-# 🎉 v0.1.0 released!
+# 🎉 v0.1.1 released!
 
-- first release.
-
+- bump dependencies
+- migrate to newer version
+- change edition to 2021
