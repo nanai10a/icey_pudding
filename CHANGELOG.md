@@ -3,3 +3,4 @@
 - bump dependencies
 - migrate to newer version
 - change edition to 2021
+- fix warnings
