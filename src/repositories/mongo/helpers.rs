@@ -203,5 +203,5 @@ pub async fn modify_set<T>(
         (name.as_ref(), coll, client, &id_bson, &target_bson, ty),
     )
     .await;
-    Ok(res.let_(convert_repo_err)?.let_(convert_404_or)?)
+    res.let_(convert_repo_err)?.let_(convert_404_or)
 }
