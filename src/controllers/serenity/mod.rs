@@ -94,7 +94,7 @@ impl SerenityReturnController {
 
         tracing::debug!("split - '{}' to {:?}", raw, splitted);
 
-        use clap::Clap;
+        use clap::Parser;
 
         Cmd::try_parse_from(splitted)
             .map_err(|e| anyhow!(e.to_string()))

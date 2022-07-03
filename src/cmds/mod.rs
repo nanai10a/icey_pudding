@@ -1,3 +1,4 @@
+use clap::Parser;
 use uuid::Uuid;
 
 use crate::usecases::content::ContentQuery;
@@ -9,14 +10,14 @@ pub use parser::PartialContentMutation;
 use parser::*;
 
 /// this is a ICEy_PUDDING.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 #[clap(author, version)]
 pub struct Cmd {
     #[clap(subcommand)]
     pub cmd: RootMod,
 }
 
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub enum RootMod {
     /// about user.
     #[clap(short_flag = 'U')]
@@ -33,7 +34,7 @@ pub enum RootMod {
     },
 }
 
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub enum UserMod {
     #[clap(short_flag = 'c')]
     Register(UserRegisterCmd),
@@ -54,7 +55,7 @@ pub enum UserMod {
     Unregister(UserUnregisterCmd),
 }
 
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub enum ContentMod {
     #[clap(short_flag = 'c')]
     Post(ContentPostCmd),
@@ -79,12 +80,12 @@ pub enum ContentMod {
 }
 
 /// register user with executed user's id.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct UserRegisterCmd;
 
 /// get user with id.
 /// if not given id, fallback to executed user's id.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct UserGetCmd {
     /// u64,
     #[clap(name = "USER_ID")]
@@ -92,7 +93,7 @@ pub struct UserGetCmd {
 }
 
 /// get users with query.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct UserGetsCmd {
     /// json
     ///
@@ -116,7 +117,7 @@ pub struct UserGetsCmd {
 }
 
 /// edit user with id and mutation.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct UserEditCmd {
     /// u64
     #[clap(name = "USER_ID")]
@@ -139,13 +140,13 @@ pub struct UserEditCmd {
 }
 
 /// about executed user's bookmark.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct UserBookmarkCmd {
     #[clap(subcommand)]
     pub op: UserBookmarkOp,
 }
 
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub enum UserBookmarkOp {
     /// bookmark content.
     #[clap(short_flag = 'd')]
@@ -177,7 +178,7 @@ pub enum UserBookmarkOp {
 }
 
 /// unregister user with executed user's id.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct UserUnregisterCmd {
     /// u64
     #[clap(name = "USER_ID")]
@@ -185,7 +186,7 @@ pub struct UserUnregisterCmd {
 }
 
 /// post content with executed user's id.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 #[clap(group = ::clap::ArgGroup::new("author").required(true))]
 pub struct ContentPostCmd {
     /// str
@@ -202,7 +203,7 @@ pub struct ContentPostCmd {
 }
 
 /// get content with id.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct ContentGetCmd {
     /// uuid
     #[clap(name = "CONTENT_ID")]
@@ -210,7 +211,7 @@ pub struct ContentGetCmd {
 }
 
 /// get contents with query.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct ContentGetsCmd {
     /// json
     ///
@@ -255,7 +256,7 @@ pub struct ContentGetsCmd {
 }
 
 /// edit content with id and mutation.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct ContentEditCmd {
     /// uuid
     #[clap(name = "CONTENT_ID")]
@@ -289,14 +290,14 @@ pub struct ContentEditCmd {
     pub mutation: PartialContentMutation,
 }
 
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct ContentLikeCmd {
     #[clap(subcommand)]
     pub op: ContentLikeOp,
 }
 
 /// about like with executed user.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub enum ContentLikeOp {
     /// like content.
     #[clap(short_flag = 'd')]
@@ -328,13 +329,13 @@ pub enum ContentLikeOp {
 }
 
 /// about pin with executed user.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct ContentPinCmd {
     #[clap(subcommand)]
     pub op: ContentPinOp,
 }
 
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub enum ContentPinOp {
     /// pin content.
     #[clap(short_flag = 'd')]
@@ -366,7 +367,7 @@ pub enum ContentPinOp {
 }
 
 /// withdraw content with id.
-#[derive(Debug, Clone, ::clap::Clap)]
+#[derive(Debug, Clone, Parser)]
 pub struct ContentWithdrawCmd {
     /// uuid
     #[clap(name = "CONTENT_ID")]
