@@ -224,7 +224,7 @@ impl SerenityReturnController {
                             content,
                             posted,
                             author,
-                            created: *ex_timestamp,
+                            created: **ex_timestamp,
                         })
                         .await
                         .map(|v| smallvec![v])
@@ -273,7 +273,7 @@ impl SerenityReturnController {
                     let mutation = ContentMutation {
                         author,
                         content,
-                        edited: *ex_timestamp,
+                        edited: **ex_timestamp,
                     };
 
                     self.content

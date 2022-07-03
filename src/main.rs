@@ -3,9 +3,8 @@ use tracing_subscriber::EnvFilter;
 async fn async_main() {
     let AppValues { token, flag } = get_values();
 
-    use serenity::client::bridge::gateway::GatewayIntents;
-    let cb = ::serenity::client::ClientBuilder::new(token)
-        .intents(GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES);
+    use serenity::model::gateway::GatewayIntents;
+    let cb = ::serenity::client::ClientBuilder::new(token, GatewayIntents::GUILD_MESSAGES | GatewayIntents::DIRECT_MESSAGES);
 
     let cb = match flag {
         Flag::InMemory => cb.event_handler(::icey_pudding::in_memory()),
