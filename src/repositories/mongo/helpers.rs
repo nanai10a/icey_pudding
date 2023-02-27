@@ -67,7 +67,7 @@ pub async fn process_transaction(s: &mut ClientSession) -> MongoResult<()> {
 pub async fn exec_transaction<F, I, FO, RO>(f: F, arg: I) -> MongoResult<RO>
 where
     F: Fn<I, Output = FO>,
-    I: Clone,
+    I: Clone + ::core::marker::Tuple,
     FO: ::core::future::Future<Output = MongoResult<RO>>,
 {
     loop {
